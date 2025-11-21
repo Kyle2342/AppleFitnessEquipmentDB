@@ -1,0 +1,494 @@
+-- MySQL Workbench Forward Engineering
+
+SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
+SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
+SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+
+-- -----------------------------------------------------
+-- Schema mydb
+-- -----------------------------------------------------
+-- -----------------------------------------------------
+-- Schema applefitnessequipmentdb
+-- -----------------------------------------------------
+
+-- -----------------------------------------------------
+-- Schema applefitnessequipmentdb
+-- -----------------------------------------------------
+CREATE SCHEMA IF NOT EXISTS `applefitnessequipmentdb` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci ;
+USE `applefitnessequipmentdb` ;
+
+-- -----------------------------------------------------
+-- Table `applefitnessequipmentdb`.`clients`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`clients` (
+  `ClientID` INT NOT NULL AUTO_INCREMENT,
+  `ClientType` ENUM('Individual', 'Business') NOT NULL,
+  `FirstName` VARCHAR(50) NULL DEFAULT NULL,
+  `LastName` VARCHAR(50) NULL DEFAULT NULL,
+  `CompanyName` VARCHAR(150) NULL DEFAULT NULL,
+  `PhoneNumber` VARCHAR(20) NULL DEFAULT NULL,
+  `Email` VARCHAR(100) NULL DEFAULT NULL,
+  `Notes` TEXT NULL DEFAULT NULL,
+  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`ClientID`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `applefitnessequipmentdb`.`clientslocations`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`clientslocations` (
+  `ClientLocationID` INT NOT NULL AUTO_INCREMENT,
+  `ClientID` INT NOT NULL,
+  `LocationType` ENUM('Billing', 'Job') NOT NULL,
+  `CompanyName` VARCHAR(150) NULL DEFAULT NULL,
+  `ContactName` VARCHAR(150) NULL DEFAULT NULL,
+  `StreetAddress` VARCHAR(150) NOT NULL,
+  `BuildingName` VARCHAR(100) NULL DEFAULT NULL,
+  `Suite` VARCHAR(50) NULL DEFAULT NULL,
+  `RoomNumber` VARCHAR(50) NULL DEFAULT NULL,
+  `Department` VARCHAR(100) NULL DEFAULT NULL,
+  `City` VARCHAR(50) NOT NULL,
+  `County` VARCHAR(50) NOT NULL,
+  `State` VARCHAR(50) NOT NULL DEFAULT 'PA',
+  `ZIPCode` VARCHAR(20) NOT NULL,
+  `Country` VARCHAR(50) NOT NULL DEFAULT 'USA',
+  `Phone` VARCHAR(20) NULL DEFAULT NULL,
+  `Fax` VARCHAR(20) NULL DEFAULT NULL,
+  `Email` VARCHAR(100) NULL DEFAULT NULL,
+  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`ClientLocationID`),
+  INDEX `fk_clientlocation_client` (`ClientID` ASC) VISIBLE,
+  CONSTRAINT `fk_clientlocation_client`
+    FOREIGN KEY (`ClientID`)
+    REFERENCES `applefitnessequipmentdb`.`clients` (`ClientID`)
+    ON DELETE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `applefitnessequipmentdb`.`company`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`company` (
+  `CompanyID` INT NOT NULL AUTO_INCREMENT,
+  `CompanyName` VARCHAR(150) NOT NULL DEFAULT 'Apple Fitness Equipment',
+  `StreetAddress` VARCHAR(100) NOT NULL DEFAULT '1412 Majestic View Dr.',
+  `City` VARCHAR(50) NOT NULL DEFAULT 'State College',
+  `County` VARCHAR(50) NOT NULL DEFAULT 'Centre',
+  `State` VARCHAR(50) NOT NULL DEFAULT 'PA',
+  `ZIPCode` VARCHAR(20) NOT NULL DEFAULT '16801',
+  `Country` VARCHAR(50) NOT NULL DEFAULT 'USA',
+  `Phone` VARCHAR(45) NOT NULL DEFAULT '814-826-2922',
+  `Fax` VARCHAR(45) NOT NULL DEFAULT '814-826-2933',
+  `Email` VARCHAR(100) NOT NULL DEFAULT 'gbartram90@gmail.com',
+  `WebsiteURL` VARCHAR(150) NOT NULL DEFAULT 'https://applefitnessequipment.com/',
+  `YearFounded` YEAR NULL DEFAULT NULL,
+  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`CompanyID`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `applefitnessequipmentdb`.`employees`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`employees` (
+  `EmployeeID` INT NOT NULL AUTO_INCREMENT,
+  `FirstName` VARCHAR(50) NOT NULL,
+  `LastName` VARCHAR(50) NOT NULL,
+  `MiddleInitial` CHAR(1) NULL DEFAULT NULL,
+  `DateOfBirth` DATE NULL DEFAULT NULL,
+  `Gender` ENUM('Male', 'Female') NULL DEFAULT NULL,
+  `WorkEmail` VARCHAR(100) NULL DEFAULT NULL,
+  `PersonalEmail` VARCHAR(100) NULL DEFAULT NULL,
+  `WorkPhone` VARCHAR(20) NULL DEFAULT NULL,
+  `MobilePhone` VARCHAR(20) NULL DEFAULT NULL,
+  `HomeBuildingName` VARCHAR(100) NULL DEFAULT NULL,
+  `HomeSuiteNumber` VARCHAR(50) NULL DEFAULT NULL,
+  `HomeStreetAddress` VARCHAR(100) NOT NULL,
+  `HomeCity` VARCHAR(50) NOT NULL,
+  `HomeState` VARCHAR(50) NOT NULL DEFAULT 'PA',
+  `HomeZIPCode` VARCHAR(20) NOT NULL,
+  `HomeCountry` VARCHAR(50) NOT NULL DEFAULT 'USA',
+  `PositionTitle` VARCHAR(100) NOT NULL,
+  `EmploymentType` ENUM('Full-Time', 'Part-Time') NOT NULL,
+  `HireDate` DATE NOT NULL,
+  `TerminationDate` DATE NULL DEFAULT NULL,
+  `ActiveStatus` TINYINT(1) NOT NULL,
+  `EmergencyContactName` VARCHAR(100) NULL DEFAULT NULL,
+  `EmergencyContactPhone` VARCHAR(20) NULL DEFAULT NULL,
+  `EmergencyContactRelationship` VARCHAR(50) NULL DEFAULT NULL,
+  `Username` VARCHAR(50) NOT NULL,
+  `PasswordHash` VARCHAR(255) NOT NULL,
+  `PayType` ENUM('Hourly', 'Salary') NOT NULL,
+  `PayRate` DECIMAL(10,2) NOT NULL,
+  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`EmployeeID`),
+  UNIQUE INDEX `Username` (`Username` ASC) VISIBLE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `applefitnessequipmentdb`.`employeestimelogs`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`employeestimelogs` (
+  `TimeLogID` INT NOT NULL AUTO_INCREMENT,
+  `EmployeeID` INT NOT NULL,
+  `DayOfWeek` ENUM('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday') NOT NULL,
+  `LogDate` DATE NOT NULL,
+  `TimeInFirst` TIME NOT NULL,
+  `TimeOutFirst` TIME NOT NULL,
+  `TimeInSecond` TIME NULL DEFAULT NULL,
+  `TimeOutSecond` TIME NULL DEFAULT NULL,
+  `TotalHours` DECIMAL(5,2) NULL DEFAULT NULL,
+  `Miles` DECIMAL(6,2) NULL DEFAULT NULL,
+  `PTOHours` DECIMAL(5,2) NULL DEFAULT NULL,
+  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`TimeLogID`),
+  INDEX `fk_timelog_employee` (`EmployeeID` ASC) VISIBLE,
+  CONSTRAINT `fk_timelog_employee`
+    FOREIGN KEY (`EmployeeID`)
+    REFERENCES `applefitnessequipmentdb`.`employees` (`EmployeeID`)
+    ON DELETE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `applefitnessequipmentdb`.`equipmentquotes`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`equipmentquotes` (
+  `EquipmentQuoteID` INT NOT NULL AUTO_INCREMENT,
+  `ClientID` INT NOT NULL,
+  `BillingLocationID` INT NOT NULL,
+  `JobAtLocationID` INT NOT NULL,
+  `BillToCompanyName` VARCHAR(150) NULL DEFAULT NULL,
+  `BillToContactName` VARCHAR(150) NULL DEFAULT NULL,
+  `BillToStreetAddress` VARCHAR(150) NULL DEFAULT NULL,
+  `BillToBuildingName` VARCHAR(100) NULL DEFAULT NULL,
+  `BillToSuite` VARCHAR(50) NULL DEFAULT NULL,
+  `BillToRoomNumber` VARCHAR(50) NULL DEFAULT NULL,
+  `BillToDepartment` VARCHAR(100) NULL DEFAULT NULL,
+  `BillToCounty` VARCHAR(50) NOT NULL,
+  `BillToCity` VARCHAR(50) NOT NULL,
+  `BillToState` VARCHAR(50) NOT NULL DEFAULT 'PA',
+  `BillToZIPCode` VARCHAR(20) NOT NULL,
+  `BillToCountry` VARCHAR(50) NOT NULL DEFAULT 'USA',
+  `BillToPhone` VARCHAR(45) NULL DEFAULT NULL,
+  `BillToFax` VARCHAR(45) NULL DEFAULT NULL,
+  `BillToPONumber` VARCHAR(45) NULL DEFAULT NULL,
+  `JobAtCompanyName` VARCHAR(150) NULL DEFAULT NULL,
+  `JobAtContactName` VARCHAR(150) NULL DEFAULT NULL,
+  `JobAtStreetAddress` VARCHAR(150) NULL DEFAULT NULL,
+  `JobAtBuildingName` VARCHAR(100) NULL DEFAULT NULL,
+  `JobAtSuite` VARCHAR(50) NULL DEFAULT NULL,
+  `JobAtRoomNumber` VARCHAR(50) NULL DEFAULT NULL,
+  `JobAtDepartment` VARCHAR(100) NULL DEFAULT NULL,
+  `JobAtCounty` VARCHAR(50) NOT NULL,
+  `JobAtCity` VARCHAR(50) NOT NULL,
+  `JobAtState` VARCHAR(50) NOT NULL DEFAULT 'PA',
+  `JobAtZIPCode` VARCHAR(20) NOT NULL,
+  `JobAtCountry` VARCHAR(50) NOT NULL DEFAULT 'USA',
+  `JobAtEmail` VARCHAR(45) NULL DEFAULT NULL,
+  `JobAtPONumber` VARCHAR(45) NULL DEFAULT NULL,
+  `QuoteNumber` VARCHAR(45) NOT NULL,
+  `QuoteDate` DATE NOT NULL,
+  `Status` ENUM('Draft', 'Sent', 'Accepted', 'Declined', 'Expired') NOT NULL DEFAULT 'Draft',
+  `ContactName` VARCHAR(150) NOT NULL,
+  `SalespersonName` VARCHAR(150) NOT NULL DEFAULT 'Greg Bartram',
+  `ShipVia` VARCHAR(150) NOT NULL DEFAULT 'AFE Truck/Trailer',
+  `FreightTerms` VARCHAR(150) NOT NULL DEFAULT 'Ppd & Add',
+  `PaymentTerms` VARCHAR(150) NOT NULL DEFAULT 'See Notes',
+  `FOBLocation` VARCHAR(150) NOT NULL DEFAULT 'Truck Curbside',
+  `TotalDiscountAmount` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+  `SubtotalAmount` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+  `FreightAmount` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+  `ExtendedTotalAmount` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+  `SalesTaxRatePercent` DECIMAL(5,2) NOT NULL DEFAULT '6.00',
+  `SalesTaxAmount` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+  `QuoteTotalAmount` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+  `Notes` TEXT NULL DEFAULT NULL,
+  `TermsAndConditions` TEXT NULL DEFAULT NULL,
+  `ExtraInfo` TEXT NULL DEFAULT NULL,
+  `SignatureBoolean` TINYINT(1) NOT NULL DEFAULT '0',
+  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`EquipmentQuoteID`),
+  UNIQUE INDEX `QuoteNumber` (`QuoteNumber` ASC) VISIBLE,
+  INDEX `fk_equipmentquotes_client` (`ClientID` ASC) VISIBLE,
+  INDEX `fk_equipmentquotes_bill_location` (`BillingLocationID` ASC) VISIBLE,
+  INDEX `fk_equipmentquotes_job_location` (`JobAtLocationID` ASC) VISIBLE,
+  CONSTRAINT `fk_equipmentquotes_bill_location`
+    FOREIGN KEY (`BillingLocationID`)
+    REFERENCES `applefitnessequipmentdb`.`clientslocations` (`ClientLocationID`),
+  CONSTRAINT `fk_equipmentquotes_client`
+    FOREIGN KEY (`ClientID`)
+    REFERENCES `applefitnessequipmentdb`.`clients` (`ClientID`),
+  CONSTRAINT `fk_equipmentquotes_job_location`
+    FOREIGN KEY (`JobAtLocationID`)
+    REFERENCES `applefitnessequipmentdb`.`clientslocations` (`ClientLocationID`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `applefitnessequipmentdb`.`equipmentquotesitems`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`equipmentquotesitems` (
+  `EquipmentQuoteItemID` INT NOT NULL AUTO_INCREMENT,
+  `EquipmentQuoteID` INT NOT NULL,
+  `RowNumber` INT NOT NULL,
+  `Qty` DECIMAL(10,2) NOT NULL,
+  `Model` VARCHAR(50) NULL DEFAULT NULL,
+  `Description` VARCHAR(255) NOT NULL,
+  `UnitCost` DECIMAL(10,2) NOT NULL,
+  `DiscountUnitPrice` DECIMAL(10,2) NOT NULL,
+  `UnitTotal` DECIMAL(10,2) GENERATED ALWAYS AS ((`Qty` * `DiscountUnitPrice`)) STORED,
+  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`EquipmentQuoteItemID`),
+  UNIQUE INDEX `EquipmentQuoteID` (`EquipmentQuoteID` ASC, `RowNumber` ASC) VISIBLE,
+  CONSTRAINT `fk_eq_quote`
+    FOREIGN KEY (`EquipmentQuoteID`)
+    REFERENCES `applefitnessequipmentdb`.`equipmentquotes` (`EquipmentQuoteID`)
+    ON DELETE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `applefitnessequipmentdb`.`preventivemaintenanceagreements`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`preventivemaintenanceagreements` (
+  `PreventiveMaintenanceAgreementID` INT NOT NULL AUTO_INCREMENT,
+  `ClientID` INT NOT NULL,
+  `BillingLocationID` INT NOT NULL,
+  `JobLocationID` INT NOT NULL,
+  `PropertyName` VARCHAR(150) NULL DEFAULT NULL,
+  `FacilityName` VARCHAR(150) NULL DEFAULT NULL,
+  `AddressLine` VARCHAR(150) NOT NULL,
+  `City` VARCHAR(100) NOT NULL,
+  `State` VARCHAR(50) NOT NULL DEFAULT 'PA',
+  `ZIPCode` VARCHAR(20) NOT NULL,
+  `ContactName` VARCHAR(150) NOT NULL,
+  `ContactEmail` VARCHAR(150) NULL DEFAULT NULL,
+  `PhoneNumber1` VARCHAR(45) NULL DEFAULT NULL,
+  `PhoneNumber2` VARCHAR(45) NULL DEFAULT NULL,
+  `AgreementNumber` VARCHAR(50) NOT NULL,
+  `CoverageText` TEXT NOT NULL,
+  `StartDate` DATE NOT NULL,
+  `EndDate` DATE NOT NULL,
+  `VisitFrequency` ENUM('Monthly', 'Quarterly', 'Semi-Annual', 'Annual') NOT NULL,
+  `Status` ENUM('Draft', 'Active', 'Expired', 'Canceled') NULL DEFAULT 'Draft',
+  `ChargePerMile` DECIMAL(5,2) NOT NULL DEFAULT '0.75',
+  `ChargePerHour` DECIMAL(5,2) NOT NULL DEFAULT '80.00',
+  `VisitPrice` DECIMAL(10,2) NOT NULL,
+  `TaxRatePercent` DECIMAL(5,2) NOT NULL DEFAULT '6.00',
+  `TaxAmount` DECIMAL(10,2) GENERATED ALWAYS AS ((`VisitPrice` * (`TaxRatePercent` / 100))) STORED,
+  `PricePerYear` DECIMAL(10,2) GENERATED ALWAYS AS (((`VisitPrice` * (case when (`VisitFrequency` = _utf8mb4'Monthly') then 12 when (`VisitFrequency` = _utf8mb4'Quarterly') then 4 when (`VisitFrequency` = _utf8mb4'Semi-Annual') then 2 when (`VisitFrequency` = _utf8mb4'Annual') then 1 end)) * (1 + (`TaxRatePercent` / 100)))) STORED,
+  `RequiresAdditionalInsurance` TINYINT(1) NULL DEFAULT '0',
+  `CancelationNoticeDays` INT NULL DEFAULT '30',
+  `PaymentDueAfterWorkDays` INT NULL DEFAULT '30',
+  `LateFeePercentage` DECIMAL(5,2) NULL DEFAULT '10.00',
+  `FacilityAgentSignature` VARCHAR(150) NULL DEFAULT NULL,
+  `SignatureDate` DATE NULL DEFAULT NULL,
+  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`PreventiveMaintenanceAgreementID`),
+  UNIQUE INDEX `AgreementNumber` (`AgreementNumber` ASC) VISIBLE,
+  INDEX `fk_pma_client` (`ClientID` ASC) VISIBLE,
+  INDEX `fk_pma_bill_location` (`BillingLocationID` ASC) VISIBLE,
+  INDEX `fk_pma_job_location` (`JobLocationID` ASC) VISIBLE,
+  CONSTRAINT `fk_pma_bill_location`
+    FOREIGN KEY (`BillingLocationID`)
+    REFERENCES `applefitnessequipmentdb`.`clientslocations` (`ClientLocationID`),
+  CONSTRAINT `fk_pma_client`
+    FOREIGN KEY (`ClientID`)
+    REFERENCES `applefitnessequipmentdb`.`clients` (`ClientID`),
+  CONSTRAINT `fk_pma_job_location`
+    FOREIGN KEY (`JobLocationID`)
+    REFERENCES `applefitnessequipmentdb`.`clientslocations` (`ClientLocationID`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `applefitnessequipmentdb`.`invoices`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`invoices` (
+  `InvoiceID` INT NOT NULL AUTO_INCREMENT,
+  `ClientID` INT NOT NULL,
+  `BillingLocationID` INT NOT NULL,
+  `JobLocationID` INT NOT NULL,
+  `PreventiveMaintenanceAgreementID` INT NULL DEFAULT NULL,
+  `EquipmentQuoteID` INT NULL DEFAULT NULL,
+  `InvoiceNumber` VARCHAR(45) NOT NULL,
+  `QuoteNumber` VARCHAR(45) NULL DEFAULT NULL,
+  `InvoiceDate` DATE NOT NULL,
+  `DueDate` DATE NOT NULL,
+  `PONumber` VARCHAR(45) NULL DEFAULT NULL,
+  `Terms` VARCHAR(100) NOT NULL,
+  `Status` ENUM('Draft', 'Open', 'Paid', 'Overdue', 'Void') NOT NULL DEFAULT 'Draft',
+  `SubtotalAmount` DECIMAL(8,2) NOT NULL DEFAULT '0.00',
+  `TaxRatePercent` DECIMAL(5,2) NOT NULL DEFAULT '6.00',
+  `TaxAmount` DECIMAL(6,2) NOT NULL DEFAULT '0.00',
+  `TotalAmount` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+  `PaymentsApplied` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+  `BalanceDue` DECIMAL(10,2) GENERATED ALWAYS AS ((`TotalAmount` - `PaymentsApplied`)) STORED,
+  `PaidDate` DATE NULL DEFAULT NULL,
+  `ReturnedCheckFee` DECIMAL(10,2) NOT NULL DEFAULT '40.00',
+  `InterestPercent` DECIMAL(5,2) NOT NULL DEFAULT '10.00',
+  `InterestStartDays` INT NOT NULL DEFAULT '90',
+  `InterestIntervalDays` INT NOT NULL DEFAULT '30',
+  `FromCompanyName` VARCHAR(100) NOT NULL DEFAULT 'Apple Fitness Equipment',
+  `FromStreetAddress` VARCHAR(100) NOT NULL DEFAULT '1412 Majestic View Dr.',
+  `FromCity` VARCHAR(50) NOT NULL DEFAULT 'State College',
+  `FromState` VARCHAR(50) NOT NULL DEFAULT 'PA',
+  `FromZIPCode` VARCHAR(20) NOT NULL DEFAULT '16801',
+  `FromPhone` VARCHAR(45) NOT NULL DEFAULT '814-826-2922',
+  `FromFax` VARCHAR(45) NOT NULL DEFAULT '814-826-2933',
+  `BillToCompanyName` VARCHAR(150) NULL DEFAULT NULL,
+  `BillToContactName` VARCHAR(150) NULL DEFAULT NULL,
+  `BillToStreetAddress` VARCHAR(150) NULL DEFAULT NULL,
+  `BillToBuildingName` VARCHAR(100) NULL DEFAULT NULL,
+  `BillToSuite` VARCHAR(50) NULL DEFAULT NULL,
+  `BillToRoomNumber` VARCHAR(50) NULL DEFAULT NULL,
+  `BillToDepartment` VARCHAR(100) NULL DEFAULT NULL,
+  `BillToCountyOrCity` VARCHAR(50) NOT NULL,
+  `BillToState` VARCHAR(50) NOT NULL DEFAULT 'PA',
+  `BillToZIPCode` VARCHAR(20) NOT NULL,
+  `BillToCountry` VARCHAR(50) NOT NULL DEFAULT 'USA',
+  `BillToPhone` VARCHAR(45) NULL DEFAULT NULL,
+  `BillToPONumber` VARCHAR(45) NULL DEFAULT NULL,
+  `JobAtCompanyName` VARCHAR(150) NULL DEFAULT NULL,
+  `JobAtContactName` VARCHAR(150) NULL DEFAULT NULL,
+  `JobAtStreetAddress` VARCHAR(150) NULL DEFAULT NULL,
+  `JobAtBuildingName` VARCHAR(100) NULL DEFAULT NULL,
+  `JobAtSuite` VARCHAR(50) NULL DEFAULT NULL,
+  `JobAtRoomNumber` VARCHAR(50) NULL DEFAULT NULL,
+  `JobAtDepartment` VARCHAR(100) NULL DEFAULT NULL,
+  `JobAtCountyOrCity` VARCHAR(50) NOT NULL,
+  `JobAtState` VARCHAR(50) NOT NULL DEFAULT 'PA',
+  `JobAtZIPCode` VARCHAR(20) NOT NULL,
+  `JobAtCountry` VARCHAR(50) NOT NULL DEFAULT 'USA',
+  `JobAtPhone` VARCHAR(45) NULL DEFAULT NULL,
+  `JobAtPONumber` VARCHAR(45) NULL DEFAULT NULL,
+  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`InvoiceID`),
+  UNIQUE INDEX `InvoiceNumber` (`InvoiceNumber` ASC) VISIBLE,
+  INDEX `fk_invoice_pmagreement` (`PreventiveMaintenanceAgreementID` ASC) VISIBLE,
+  INDEX `fk_invoice_equipmentquote` (`EquipmentQuoteID` ASC) VISIBLE,
+  INDEX `fk_invoice_client` (`ClientID` ASC) VISIBLE,
+  INDEX `fk_invoice_bill_location` (`BillingLocationID` ASC) VISIBLE,
+  INDEX `fk_invoice_job_location` (`JobLocationID` ASC) VISIBLE,
+  CONSTRAINT `fk_invoice_bill_location`
+    FOREIGN KEY (`BillingLocationID`)
+    REFERENCES `applefitnessequipmentdb`.`clientslocations` (`ClientLocationID`),
+  CONSTRAINT `fk_invoice_client`
+    FOREIGN KEY (`ClientID`)
+    REFERENCES `applefitnessequipmentdb`.`clients` (`ClientID`),
+  CONSTRAINT `fk_invoice_equipmentquote`
+    FOREIGN KEY (`EquipmentQuoteID`)
+    REFERENCES `applefitnessequipmentdb`.`equipmentquotes` (`EquipmentQuoteID`),
+  CONSTRAINT `fk_invoice_job_location`
+    FOREIGN KEY (`JobLocationID`)
+    REFERENCES `applefitnessequipmentdb`.`clientslocations` (`ClientLocationID`),
+  CONSTRAINT `fk_invoice_pmagreement`
+    FOREIGN KEY (`PreventiveMaintenanceAgreementID`)
+    REFERENCES `applefitnessequipmentdb`.`preventivemaintenanceagreements` (`PreventiveMaintenanceAgreementID`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `applefitnessequipmentdb`.`preventivemaintenanceagreementsequipments`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`preventivemaintenanceagreementsequipments` (
+  `PreventiveMaintenanceAgreementEquipmentID` INT NOT NULL AUTO_INCREMENT,
+  `PreventiveMaintenanceAgreementID` INT NOT NULL,
+  `ClientID` INT NOT NULL,
+  `LocationID` INT NOT NULL,
+  `RowNumber` INT NOT NULL,
+  `EquipmentType` VARCHAR(100) NOT NULL,
+  `Make` VARCHAR(100) NOT NULL,
+  `Model` VARCHAR(100) NOT NULL,
+  `SerialNumber` VARCHAR(100) NOT NULL,
+  `Notes` TEXT NULL DEFAULT NULL,
+  `Status` ENUM('Active', 'PendingInspection', 'Paused', 'ReplacementPlanned', 'Removed') NULL DEFAULT 'PendingInspection',
+  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`PreventiveMaintenanceAgreementEquipmentID`),
+  UNIQUE INDEX `ClientID` (`ClientID` ASC, `SerialNumber` ASC) VISIBLE,
+  INDEX `fk_equipment_location` (`LocationID` ASC) VISIBLE,
+  INDEX `fk_equipment_agreement` (`PreventiveMaintenanceAgreementID` ASC) VISIBLE,
+  CONSTRAINT `fk_equipment_agreement`
+    FOREIGN KEY (`PreventiveMaintenanceAgreementID`)
+    REFERENCES `applefitnessequipmentdb`.`preventivemaintenanceagreements` (`PreventiveMaintenanceAgreementID`),
+  CONSTRAINT `fk_equipment_client`
+    FOREIGN KEY (`ClientID`)
+    REFERENCES `applefitnessequipmentdb`.`clients` (`ClientID`),
+  CONSTRAINT `fk_equipment_location`
+    FOREIGN KEY (`LocationID`)
+    REFERENCES `applefitnessequipmentdb`.`clientslocations` (`ClientLocationID`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+-- -----------------------------------------------------
+-- Table `applefitnessequipmentdb`.`invoicesitems`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`invoicesitems` (
+  `InvoiceItemID` INT NOT NULL AUTO_INCREMENT,
+  `InvoiceID` INT NOT NULL,
+  `RowNumber` INT NOT NULL,
+  `Description` VARCHAR(255) NOT NULL,
+  `Notes` TEXT NULL DEFAULT NULL,
+  `Qty` DECIMAL(10,2) NOT NULL DEFAULT '1.00',
+  `Rate` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+  `LineTotal` DECIMAL(10,2) GENERATED ALWAYS AS ((`Qty` * `Rate`)) STORED,
+  `SourceType` ENUM('Manual', 'QuoteItem', 'PMAEquipment') NOT NULL DEFAULT 'Manual',
+  `SourceEquipmentQuoteItemID` INT NULL DEFAULT NULL,
+  `SourcePreventiveMaintenanceAgreementEquipmentID` INT NULL DEFAULT NULL,
+  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`InvoiceItemID`),
+  UNIQUE INDEX `InvoiceID` (`InvoiceID` ASC, `RowNumber` ASC) VISIBLE,
+  INDEX `fk_invoice_items_quote_item` (`SourceEquipmentQuoteItemID` ASC) VISIBLE,
+  INDEX `fk_invoice_items_pma_equipment` (`SourcePreventiveMaintenanceAgreementEquipmentID` ASC) VISIBLE,
+  CONSTRAINT `fk_invoice_items_invoice`
+    FOREIGN KEY (`InvoiceID`)
+    REFERENCES `applefitnessequipmentdb`.`invoices` (`InvoiceID`)
+    ON DELETE CASCADE,
+  CONSTRAINT `fk_invoice_items_pma_equipment`
+    FOREIGN KEY (`SourcePreventiveMaintenanceAgreementEquipmentID`)
+    REFERENCES `applefitnessequipmentdb`.`preventivemaintenanceagreementsequipments` (`PreventiveMaintenanceAgreementEquipmentID`),
+  CONSTRAINT `fk_invoice_items_quote_item`
+    FOREIGN KEY (`SourceEquipmentQuoteItemID`)
+    REFERENCES `applefitnessequipmentdb`.`equipmentquotesitems` (`EquipmentQuoteItemID`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb4
+COLLATE = utf8mb4_0900_ai_ci;
+
+
+SET SQL_MODE=@OLD_SQL_MODE;
+SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
+SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;

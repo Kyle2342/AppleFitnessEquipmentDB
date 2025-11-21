@@ -1,0 +1,571 @@
+package com.applefitnessequipment.ui;
+
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.sql.SQLException;
+import java.util.List;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
+import javax.swing.table.DefaultTableModel;
+
+import com.applefitnessequipment.dao.ClientDAO;
+import com.applefitnessequipment.dao.ClientLocationDAO;
+import com.applefitnessequipment.model.Client;
+import com.applefitnessequipment.model.ClientLocation;
+
+public class ClientLocationsPanel extends JPanel {
+    private ClientLocationDAO locationDAO;
+    private ClientDAO clientDAO;
+    private JTable locationsTable;
+    private DefaultTableModel tableModel;
+    private JComboBox<Object> clientFilterCombo;  // For filtering - holds String "Show All" and Client objects
+    private JComboBox<String> locationTypeFilterCombo;  // For filtering by type
+    private JComboBox<Client> formClientCombo;  // For form
+    private JComboBox<String> locationTypeCombo;
+    private JTextField companyNameField, contactNameField, streetAddressField;
+    private JTextField buildingField, suiteField, roomField, deptField;
+    private JTextField cityField, countyField, stateField, zipField, countryField;
+    private JTextField phoneField, faxField, emailField;
+    private JButton addButton, updateButton, deleteButton, clearButton;
+    private ClientLocation selectedLocation;
+    private List<ClientLocation> allLocations;  // Cache for filtering
+
+    public ClientLocationsPanel() {
+        locationDAO = new ClientLocationDAO();
+        clientDAO = new ClientDAO();
+        initComponents();
+        loadClients();
+        loadLocations();
+        
+        // Add component listener to refresh clients when tab is shown
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent e) {
+                loadClients();
+            }
+        });
+    }
+
+    private void initComponents() {
+        setLayout(new BorderLayout(10, 10));
+        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Top Panel - Filters (bigger and cleaner like ClientsPanel)
+        JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        
+        filterPanel.add(new JLabel("Filter by Client:"));
+        clientFilterCombo = new JComboBox<>();
+        clientFilterCombo.setFont(ModernUIHelper.NORMAL_FONT);
+        clientFilterCombo.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new java.awt.Color(180, 180, 180), 1),
+            BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+        // Make it wider like in ClientsPanel
+        clientFilterCombo.setPrototypeDisplayValue("A Very Long Client Name For Sizing");
+        clientFilterCombo.addActionListener(e -> filterLocations());  // Auto-filter on change
+        filterPanel.add(clientFilterCombo);
+        
+        filterPanel.add(Box.createHorizontalStrut(20));
+        filterPanel.add(new JLabel("Filter by Type:"));
+        locationTypeFilterCombo = new JComboBox<>(new String[]{"Show All", "Billing", "Job"});
+        locationTypeFilterCombo.setFont(ModernUIHelper.NORMAL_FONT);
+        locationTypeFilterCombo.addActionListener(e -> filterLocations());  // Auto-filter on change
+        filterPanel.add(locationTypeFilterCombo);
+
+        add(filterPanel, BorderLayout.NORTH);
+
+        // Center Panel - Table
+        String[] columns = {"ID", "Client ID", "Type", "Company", "Address", "City", "State", "Phone"};
+        tableModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        locationsTable = new JTable(tableModel);
+        locationsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        
+        // Apply modern styling
+        ModernUIHelper.styleTable(locationsTable);
+        
+        // Hide the ID columns
+        locationsTable.getColumnModel().getColumn(0).setMinWidth(0);
+        locationsTable.getColumnModel().getColumn(0).setMaxWidth(0);
+        locationsTable.getColumnModel().getColumn(0).setWidth(0);
+        locationsTable.getColumnModel().getColumn(1).setMinWidth(0);
+        locationsTable.getColumnModel().getColumn(1).setMaxWidth(0);
+        locationsTable.getColumnModel().getColumn(1).setWidth(0);
+        
+        locationsTable.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int selectedRow = locationsTable.getSelectedRow();
+                if (selectedRow >= 0) {
+                    loadSelectedLocation();
+                }
+            }
+        });
+        
+        // Allow deselection by clicking on empty space
+        locationsTable.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                int row = locationsTable.rowAtPoint(e.getPoint());
+                if (row == -1) {
+                    clearForm();
+                }
+            }
+        });
+        
+        JScrollPane scrollPane = new JScrollPane(locationsTable);
+        add(scrollPane, BorderLayout.CENTER);
+
+        // Right Panel - Form
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBorder(ModernUIHelper.createModernBorder("Client Location Details"));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        int row = 0;
+
+        // Client (for creating new locations)
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("Client:*"), gbc);
+        gbc.gridx = 1;
+        formClientCombo = new JComboBox<>();
+        ModernUIHelper.styleComboBox(formClientCombo);
+        formPanel.add(formClientCombo, gbc);
+        row++;
+
+        // Location Type
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("Location Type:*"), gbc);
+        gbc.gridx = 1;
+        locationTypeCombo = new JComboBox<>(new String[]{"Billing", "Job"});
+        ModernUIHelper.styleComboBox(locationTypeCombo);
+        formPanel.add(locationTypeCombo, gbc);
+        row++;
+
+        // Company Name
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("Company Name:"), gbc);
+        gbc.gridx = 1;
+        companyNameField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        ModernUIHelper.styleTextField(companyNameField);
+        formPanel.add(companyNameField, gbc);
+        row++;
+
+        // Contact Name
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("Contact Name:"), gbc);
+        gbc.gridx = 1;
+        contactNameField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        ModernUIHelper.styleTextField(contactNameField);
+        formPanel.add(contactNameField, gbc);
+        row++;
+
+        // Street Address
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("Street Address:*"), gbc);
+        gbc.gridx = 1;
+        streetAddressField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        ModernUIHelper.styleTextField(streetAddressField);
+        formPanel.add(streetAddressField, gbc);
+        row++;
+
+        // Building
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("Building:"), gbc);
+        gbc.gridx = 1;
+        buildingField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        ModernUIHelper.styleTextField(buildingField);
+        formPanel.add(buildingField, gbc);
+        row++;
+
+        // Suite
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("Suite:"), gbc);
+        gbc.gridx = 1;
+        suiteField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        ModernUIHelper.styleTextField(suiteField);
+        formPanel.add(suiteField, gbc);
+        row++;
+
+        // Room
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("Room:"), gbc);
+        gbc.gridx = 1;
+        roomField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        ModernUIHelper.styleTextField(roomField);
+        formPanel.add(roomField, gbc);
+        row++;
+
+        // Department
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("Department:"), gbc);
+        gbc.gridx = 1;
+        deptField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        ModernUIHelper.styleTextField(deptField);
+        formPanel.add(deptField, gbc);
+        row++;
+
+        // City
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("City:*"), gbc);
+        gbc.gridx = 1;
+        cityField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        ModernUIHelper.styleTextField(cityField);
+        formPanel.add(cityField, gbc);
+        row++;
+
+        // County
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("County:*"), gbc);
+        gbc.gridx = 1;
+        countyField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        ModernUIHelper.styleTextField(countyField);
+        formPanel.add(countyField, gbc);
+        row++;
+
+        // State
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("State:*"), gbc);
+        gbc.gridx = 1;
+        stateField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        stateField.setText("PA");
+        ModernUIHelper.styleTextField(stateField);
+        formPanel.add(stateField, gbc);
+        row++;
+
+        // ZIP
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("ZIP Code:*"), gbc);
+        gbc.gridx = 1;
+        zipField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        ModernUIHelper.styleTextField(zipField);
+        formPanel.add(zipField, gbc);
+        row++;
+
+        // Country
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("Country:*"), gbc);
+        gbc.gridx = 1;
+        countryField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        countryField.setText("USA");
+        ModernUIHelper.styleTextField(countryField);
+        formPanel.add(countryField, gbc);
+        row++;
+
+        // Phone
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("Phone:"), gbc);
+        gbc.gridx = 1;
+        phoneField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        ModernUIHelper.styleTextField(phoneField);
+        formPanel.add(phoneField, gbc);
+        row++;
+
+        // Fax
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("Fax:"), gbc);
+        gbc.gridx = 1;
+        faxField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        ModernUIHelper.styleTextField(faxField);
+        formPanel.add(faxField, gbc);
+        row++;
+
+        // Email
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("Email:"), gbc);
+        gbc.gridx = 1;
+        emailField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        ModernUIHelper.styleTextField(emailField);
+        formPanel.add(emailField, gbc);
+        row++;
+
+        // Buttons
+        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridwidth = 2;
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        
+        addButton = new JButton("Add");
+        addButton.addActionListener(e -> addLocation());
+        ModernUIHelper.styleButton(addButton, "success");
+        buttonPanel.add(addButton);
+
+        updateButton = new JButton("Update");
+        updateButton.addActionListener(e -> updateLocation());
+        updateButton.setEnabled(false);
+        ModernUIHelper.styleButton(updateButton, "warning");
+        buttonPanel.add(updateButton);
+
+        deleteButton = new JButton("Delete");
+        deleteButton.addActionListener(e -> deleteLocation());
+        deleteButton.setEnabled(false);
+        ModernUIHelper.styleButton(deleteButton, "danger");
+        buttonPanel.add(deleteButton);
+
+        clearButton = new JButton("Clear");
+        clearButton.addActionListener(e -> clearForm());
+        ModernUIHelper.styleButton(clearButton, "secondary");
+        buttonPanel.add(clearButton);
+
+        formPanel.add(buttonPanel, gbc);
+
+        JScrollPane formScrollPane = new JScrollPane(formPanel);
+        formScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        add(formScrollPane, BorderLayout.EAST);
+    }
+
+    private void loadClients() {
+        try {
+            List<Client> clients = clientDAO.getAllClients();
+            
+            // Populate filter combo
+            clientFilterCombo.removeAllItems();
+            clientFilterCombo.addItem("Show All");  // String as first item
+            for (Client client : clients) {
+                clientFilterCombo.addItem(client);  // Client objects after
+            }
+            
+            // Populate form combo
+            formClientCombo.removeAllItems();
+            for (Client client : clients) {
+                formClientCombo.addItem(client);
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error loading clients: " + ex.getMessage(),
+                "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void loadLocations() {
+        try {
+            allLocations = locationDAO.getAllClientLocations();
+            filterLocations();  // Apply current filters
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error loading locations: " + ex.getMessage(),
+                "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void filterLocations() {
+        if (allLocations == null) return;
+        
+        Object clientFilter = clientFilterCombo.getSelectedItem();
+        String typeFilter = (String) locationTypeFilterCombo.getSelectedItem();
+        
+        tableModel.setRowCount(0);
+        for (ClientLocation loc : allLocations) {
+            // Apply client filter
+            boolean clientMatches = clientFilter == null || 
+                                   "Show All".equals(clientFilter) ||
+                                   (clientFilter instanceof Client && 
+                                    ((Client)clientFilter).getClientId().equals(loc.getClientId()));
+            
+            // Apply type filter
+            boolean typeMatches = "Show All".equals(typeFilter) ||
+                                 typeFilter.equals(loc.getLocationType());
+            
+            if (clientMatches && typeMatches) {
+                tableModel.addRow(new Object[]{
+                    loc.getClientLocationId(),
+                    loc.getClientId(),
+                    loc.getLocationType(),
+                    loc.getCompanyName(),
+                    loc.getStreetAddress(),
+                    loc.getCity(),
+                    loc.getState(),
+                    loc.getPhone()
+                });
+            }
+        }
+    }
+
+    private void loadSelectedLocation() {
+        int selectedRow = locationsTable.getSelectedRow();
+        if (selectedRow >= 0) {
+            int locationId = (Integer) tableModel.getValueAt(selectedRow, 0);
+            try {
+                selectedLocation = locationDAO.getClientLocationById(locationId);
+                if (selectedLocation != null) {
+                    // Find and select the client
+                    for (int i = 0; i < formClientCombo.getItemCount(); i++) {
+                        Client c = formClientCombo.getItemAt(i);
+                        if (c != null && c.getClientId().equals(selectedLocation.getClientId())) {
+                            formClientCombo.setSelectedIndex(i);
+                            break;
+                        }
+                    }
+                    
+                    locationTypeCombo.setSelectedItem(selectedLocation.getLocationType());
+                    companyNameField.setText(selectedLocation.getCompanyName());
+                    contactNameField.setText(selectedLocation.getContactName());
+                    streetAddressField.setText(selectedLocation.getStreetAddress());
+                    buildingField.setText(selectedLocation.getBuildingName());
+                    suiteField.setText(selectedLocation.getSuite());
+                    roomField.setText(selectedLocation.getRoomNumber());
+                    deptField.setText(selectedLocation.getDepartment());
+                    cityField.setText(selectedLocation.getCity());
+                    countyField.setText(selectedLocation.getCounty());
+                    stateField.setText(selectedLocation.getState());
+                    zipField.setText(selectedLocation.getZipCode());
+                    countryField.setText(selectedLocation.getCountry());
+                    phoneField.setText(selectedLocation.getPhone());
+                    faxField.setText(selectedLocation.getFax());
+                    emailField.setText(selectedLocation.getEmail());
+                    
+                    updateButton.setEnabled(true);
+                    deleteButton.setEnabled(true);
+                }
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(this, "Error loading location details: " + ex.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void addLocation() {
+        if (!validateForm()) return;
+
+        ClientLocation location = new ClientLocation();
+        populateLocationFromForm(location);
+
+        try {
+            if (locationDAO.addClientLocation(location)) {
+                JOptionPane.showMessageDialog(this, "Location added successfully!");
+                clearForm();
+                loadLocations();  // Auto-refresh
+            } else {
+                JOptionPane.showMessageDialog(this, "Failed to add location.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error adding location: " + ex.getMessage(),
+                "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void updateLocation() {
+        if (selectedLocation == null) return;
+        if (!validateForm()) return;
+
+        populateLocationFromForm(selectedLocation);
+
+        try {
+            if (locationDAO.updateClientLocation(selectedLocation)) {
+                JOptionPane.showMessageDialog(this, "Location updated successfully!");
+                clearForm();
+                loadLocations();  // Auto-refresh
+            } else {
+                JOptionPane.showMessageDialog(this, "Failed to update location.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error updating location: " + ex.getMessage(),
+                "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void deleteLocation() {
+        if (selectedLocation == null) return;
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+            "Are you sure you want to delete this location?",
+            "Confirm Delete", JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                if (locationDAO.deleteClientLocation(selectedLocation.getClientLocationId())) {
+                    JOptionPane.showMessageDialog(this, "Location deleted successfully!");
+                    clearForm();
+                    loadLocations();  // Auto-refresh
+                } else {
+                    JOptionPane.showMessageDialog(this, "Failed to delete location.",
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(this, "Error deleting location: " + ex.getMessage(),
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void populateLocationFromForm(ClientLocation location) {
+        Client selectedClient = (Client) formClientCombo.getSelectedItem();
+        location.setClientId(selectedClient.getClientId());
+        location.setLocationType((String) locationTypeCombo.getSelectedItem());
+        location.setCompanyName(companyNameField.getText().trim());
+        location.setContactName(contactNameField.getText().trim());
+        location.setStreetAddress(streetAddressField.getText().trim());
+        location.setBuildingName(buildingField.getText().trim());
+        location.setSuite(suiteField.getText().trim());
+        location.setRoomNumber(roomField.getText().trim());
+        location.setDepartment(deptField.getText().trim());
+        location.setCity(cityField.getText().trim());
+        location.setCounty(countyField.getText().trim());
+        location.setState(stateField.getText().trim());
+        location.setZipCode(zipField.getText().trim());
+        location.setCountry(countryField.getText().trim());
+        location.setPhone(phoneField.getText().trim());
+        location.setFax(faxField.getText().trim());
+        location.setEmail(emailField.getText().trim());
+    }
+
+    private void clearForm() {
+        if (formClientCombo.getItemCount() > 0) {
+            formClientCombo.setSelectedIndex(0);
+        }
+        locationTypeCombo.setSelectedIndex(0);
+        companyNameField.setText("");
+        contactNameField.setText("");
+        streetAddressField.setText("");
+        buildingField.setText("");
+        suiteField.setText("");
+        roomField.setText("");
+        deptField.setText("");
+        cityField.setText("");
+        countyField.setText("");
+        stateField.setText("PA");
+        zipField.setText("");
+        countryField.setText("USA");
+        phoneField.setText("");
+        faxField.setText("");
+        emailField.setText("");
+        selectedLocation = null;
+        updateButton.setEnabled(false);
+        deleteButton.setEnabled(false);
+        locationsTable.clearSelection();
+    }
+
+    private boolean validateForm() {
+        if (formClientCombo.getSelectedItem() == null) {
+            JOptionPane.showMessageDialog(this, "Please select a client.",
+                "Validation Error", JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+
+        if (streetAddressField.getText().trim().isEmpty() || cityField.getText().trim().isEmpty() ||
+            countyField.getText().trim().isEmpty() || stateField.getText().trim().isEmpty() ||
+            zipField.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Street address, city, county, state, and ZIP are required.",
+                "Validation Error", JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+
+        return true;
+    }
+}
