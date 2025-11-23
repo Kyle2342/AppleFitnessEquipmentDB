@@ -13,3 +13,6 @@ Thumbs.db
 
 # Log files
 *.log
+
+# Database credentials
+src/main/java/com/applefitnessequipment/db/DBConnection.java
