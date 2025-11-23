@@ -47,6 +47,7 @@ public class ClientsPanel extends JPanel {
     private Client selectedClient;
     private List<Client> allClients;
     private boolean isUpdatingPhone = false;
+    private boolean isFormAutoPopulated = false;  // Track if form was populated from table selection
 
     public ClientsPanel() {
         clientDAO = new ClientDAO();
@@ -119,12 +120,39 @@ public class ClientsPanel extends JPanel {
             public void mousePressed(java.awt.event.MouseEvent e) {
                 int row = clientsTable.rowAtPoint(e.getPoint());
                 if (row == -1) {
-                    clearForm();
+                    clientsTable.clearSelection();
+                    // Only clear form if it was auto-populated from selection
+                    if (isFormAutoPopulated) {
+                        clearForm();
+                    } else {
+                        // Just deselect but keep manual data
+                        selectedClient = null;
+                        updateButton.setEnabled(false);
+                        deleteButton.setEnabled(false);
+                    }
                 }
             }
         });
-        
+
         JScrollPane scrollPane = new JScrollPane(clientsTable);
+
+        // Clear form when clicking on scroll pane background
+        scrollPane.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                clientsTable.clearSelection();
+                // Only clear form if it was auto-populated from selection
+                if (isFormAutoPopulated) {
+                    clearForm();
+                } else {
+                    // Just deselect but keep manual data
+                    selectedClient = null;
+                    updateButton.setEnabled(false);
+                    deleteButton.setEnabled(false);
+                }
+            }
+        });
+
         add(scrollPane, BorderLayout.CENTER);
 
         // Right Panel - Form
@@ -246,6 +274,23 @@ public class ClientsPanel extends JPanel {
         buttonPanel.add(clearButton);
 
         formPanel.add(buttonPanel, gbc);
+
+        // Clear selection when clicking on form panel background
+        formPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                clientsTable.clearSelection();
+                // Only clear form if it was auto-populated from selection
+                if (isFormAutoPopulated) {
+                    clearForm();
+                } else {
+                    // Just deselect but keep manual data
+                    selectedClient = null;
+                    updateButton.setEnabled(false);
+                    deleteButton.setEnabled(false);
+                }
+            }
+        });
 
         add(formPanel, BorderLayout.EAST);
     }
@@ -395,6 +440,7 @@ public class ClientsPanel extends JPanel {
                     
                     emailField.setText(selectedClient.getEmail());
                     notesArea.setText(selectedClient.getNotes());
+                    isFormAutoPopulated = true;  // Mark as auto-populated from selection
                     updateButton.setEnabled(true);
                     deleteButton.setEnabled(true);
                 }
@@ -409,10 +455,13 @@ public class ClientsPanel extends JPanel {
         if (!validateForm()) return;
 
         Client client = new Client();
-        client.setClientType((String) clientTypeCombo.getSelectedItem());
+        String clientType = (String) clientTypeCombo.getSelectedItem();
+        client.setClientType(clientType);
         client.setFirstName(firstNameField.getText().trim());
         client.setLastName(lastNameField.getText().trim());
-        client.setCompanyName(companyNameField.getText().trim());
+        // Set CompanyName to null for Individual clients (database constraint)
+        String companyName = companyNameField.getText().trim();
+        client.setCompanyName("Individual".equals(clientType) || companyName.isEmpty() ? null : companyName);
         client.setPhoneNumber(getPhoneDigits(phoneField.getText()));  // Save only digits
         client.setEmail(emailField.getText().trim());
         client.setNotes(notesArea.getText().trim());
@@ -436,10 +485,13 @@ public class ClientsPanel extends JPanel {
         if (selectedClient == null) return;
         if (!validateForm()) return;
 
-        selectedClient.setClientType((String) clientTypeCombo.getSelectedItem());
+        String clientType = (String) clientTypeCombo.getSelectedItem();
+        selectedClient.setClientType(clientType);
         selectedClient.setFirstName(firstNameField.getText().trim());
         selectedClient.setLastName(lastNameField.getText().trim());
-        selectedClient.setCompanyName(companyNameField.getText().trim());
+        // Set CompanyName to null for Individual clients (database constraint)
+        String companyName = companyNameField.getText().trim();
+        selectedClient.setCompanyName("Individual".equals(clientType) || companyName.isEmpty() ? null : companyName);
         selectedClient.setPhoneNumber(getPhoneDigits(phoneField.getText()));  // Save only digits
         selectedClient.setEmail(emailField.getText().trim());
         selectedClient.setNotes(notesArea.getText().trim());
@@ -492,6 +544,7 @@ public class ClientsPanel extends JPanel {
         emailField.setText("");
         notesArea.setText("");
         selectedClient = null;
+        isFormAutoPopulated = false;  // Reset flag when form is cleared
         updateButton.setEnabled(false);
         deleteButton.setEnabled(false);
         clientsTable.clearSelection();
@@ -515,5 +568,9 @@ public class ClientsPanel extends JPanel {
         }
         
         return true;
+    }
+
+    public void refreshData() {
+        loadClients();
     }
 }

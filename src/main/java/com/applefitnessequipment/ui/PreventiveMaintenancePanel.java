@@ -20,7 +20,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JTextArea;
+// import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
@@ -46,7 +46,7 @@ public class PreventiveMaintenancePanel extends JPanel {
     private JTextField agreementNumberField, propertyNameField, facilityNameField;
     private JTextField addressLineField, cityField, stateField, zipCodeField;
     private JTextField contactNameField, contactEmailField, phone1Field, phone2Field;
-    private JTextArea coverageTextArea;
+    // private JTextArea coverageTextArea;
     private JTextField startDateField, endDateField;
     private JComboBox<String> visitFrequencyCombo, statusCombo;
     private JTextField chargePerMileField, chargePerHourField, visitPriceField, taxRateField;
@@ -68,11 +68,8 @@ public class PreventiveMaintenancePanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Top Panel
+        // Top Panel - removed refresh button, data loads automatically
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton refreshButton = new JButton("Refresh");
-        refreshButton.addActionListener(e -> loadAgreements());
-        topPanel.add(refreshButton);
         add(topPanel, BorderLayout.NORTH);
 
         // Center Panel - Table
@@ -104,7 +101,18 @@ public class PreventiveMaintenancePanel extends JPanel {
             }
         });
         
-        add(new JScrollPane(pmaTable), BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(pmaTable);
+
+        // Clear form when clicking on scroll pane background
+        scrollPane.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                pmaTable.clearSelection();
+                clearForm();
+            }
+        });
+
+        add(scrollPane, BorderLayout.CENTER);
 
         // Right Panel - Scrollable Form
         JPanel formPanel = new JPanel(new GridBagLayout());
@@ -242,18 +250,18 @@ public class PreventiveMaintenancePanel extends JPanel {
         formPanel.add(phone2Field, gbc);
         row++;
 
-        // Coverage Text
-        gbc.gridx = 0; gbc.gridy = row;
-        gbc.anchor = GridBagConstraints.NORTH;
-        formPanel.add(new JLabel("Coverage:*"), gbc);
-        gbc.gridx = 1;
-        gbc.fill = GridBagConstraints.BOTH;
-        coverageTextArea = new JTextArea(3, 15);
-        coverageTextArea.setLineWrap(true);
-        formPanel.add(new JScrollPane(coverageTextArea), gbc);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.CENTER;
-        row++;
+        // Coverage Text - commented out
+        // gbc.gridx = 0; gbc.gridy = row;
+        // gbc.anchor = GridBagConstraints.NORTH;
+        // formPanel.add(new JLabel("Coverage:*"), gbc);
+        // gbc.gridx = 1;
+        // gbc.fill = GridBagConstraints.BOTH;
+        // coverageTextArea = new JTextArea(3, 15);
+        // coverageTextArea.setLineWrap(true);
+        // formPanel.add(new JScrollPane(coverageTextArea), gbc);
+        // gbc.fill = GridBagConstraints.HORIZONTAL;
+        // gbc.anchor = GridBagConstraints.CENTER;
+        // row++;
 
         // Start Date
         gbc.gridx = 0; gbc.gridy = row;
@@ -288,7 +296,7 @@ public class PreventiveMaintenancePanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Status:*"), gbc);
         gbc.gridx = 1;
-        statusCombo = new JComboBox<>(new String[]{"Draft", "Active", "Expired", "Canceled"});
+        statusCombo = new JComboBox<>(new String[]{"Draft", "Sent", "Expired", "Active", "Declined", "Canceled", "Completed"});
         ModernUIHelper.styleComboBox(statusCombo);
         formPanel.add(statusCombo, gbc);
         row++;
@@ -400,6 +408,15 @@ public class PreventiveMaintenancePanel extends JPanel {
 
         formPanel.add(buttonPanel, gbc);
 
+        // Clear selection when clicking on form panel background
+        formPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                pmaTable.clearSelection();
+                clearForm();
+            }
+        });
+
         JScrollPane formScrollPane = new JScrollPane(formPanel);
         formScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         add(formScrollPane, BorderLayout.EAST);
@@ -499,7 +516,7 @@ public class PreventiveMaintenancePanel extends JPanel {
                 contactEmailField.setText(selectedPMA.getContactEmail());
                 phone1Field.setText(selectedPMA.getPhoneNumber1());
                 phone2Field.setText(selectedPMA.getPhoneNumber2());
-                coverageTextArea.setText(selectedPMA.getCoverageText());
+                // coverageTextArea.setText(selectedPMA.getCoverageText());
                 startDateField.setText(selectedPMA.getStartDate().format(dateFormatter));
                 endDateField.setText(selectedPMA.getEndDate().format(dateFormatter));
                 visitFrequencyCombo.setSelectedItem(selectedPMA.getVisitFrequency());
@@ -590,7 +607,7 @@ public class PreventiveMaintenancePanel extends JPanel {
         pma.setContactEmail(contactEmailField.getText().trim());
         pma.setPhoneNumber1(phone1Field.getText().trim());
         pma.setPhoneNumber2(phone2Field.getText().trim());
-        pma.setCoverageText(coverageTextArea.getText().trim());
+        // pma.setCoverageText(coverageTextArea.getText().trim());
         pma.setStartDate(LocalDate.parse(startDateField.getText().trim(), dateFormatter));
         pma.setEndDate(LocalDate.parse(endDateField.getText().trim(), dateFormatter));
         pma.setVisitFrequency((String) visitFrequencyCombo.getSelectedItem());
@@ -618,7 +635,7 @@ public class PreventiveMaintenancePanel extends JPanel {
         contactEmailField.setText("");
         phone1Field.setText("");
         phone2Field.setText("");
-        coverageTextArea.setText("");
+        // coverageTextArea.setText("");
         startDateField.setText(LocalDate.now().format(dateFormatter));
         endDateField.setText(LocalDate.now().plusYears(1).format(dateFormatter));
         visitFrequencyCombo.setSelectedIndex(0);
@@ -644,8 +661,8 @@ public class PreventiveMaintenancePanel extends JPanel {
             return false;
         }
         if (agreementNumberField.getText().trim().isEmpty() || addressLineField.getText().trim().isEmpty() ||
-            cityField.getText().trim().isEmpty() || contactNameField.getText().trim().isEmpty() ||
-            coverageTextArea.getText().trim().isEmpty()) {
+            cityField.getText().trim().isEmpty() || contactNameField.getText().trim().isEmpty()
+            /* || coverageTextArea.getText().trim().isEmpty() */) {
             JOptionPane.showMessageDialog(this, "Please fill all required fields.");
             return false;
         }
@@ -664,5 +681,10 @@ public class PreventiveMaintenancePanel extends JPanel {
             return false;
         }
         return true;
+    }
+
+    public void refreshData() {
+        loadClients();
+        loadAgreements();
     }
 }

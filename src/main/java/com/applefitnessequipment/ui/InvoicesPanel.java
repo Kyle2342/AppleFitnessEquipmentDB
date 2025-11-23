@@ -21,11 +21,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.text.AbstractDocument;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.DocumentFilter;
 
 import com.applefitnessequipment.dao.ClientDAO;
 import com.applefitnessequipment.dao.ClientLocationDAO;
@@ -43,7 +41,7 @@ public class InvoicesPanel extends JPanel {
     private JTextField invoiceNumberField, invoiceDateField, dueDateField, termsField;
     private JTextField subtotalField, taxRateField, taxAmountField, totalAmountField, paymentsField;
     private JComboBox<Client> clientCombo;
-    private JComboBox<Object> filterCombo;  // For filtering table
+    private JTextField searchField;  // For filtering table
     private JComboBox<ClientLocation> billLocationCombo, jobLocationCombo;
     private JComboBox<String> statusCombo;
     private JButton addButton, updateButton, deleteButton, clearButton;
@@ -64,25 +62,23 @@ public class InvoicesPanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Top Panel with Filter
+        // Top Panel with Search
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        topPanel.add(new JLabel("Filter by Client:"));
-        
-        filterCombo = new JComboBox<>();
-        filterCombo.addItem("Show All");  // Default option
-        filterCombo.addActionListener(e -> filterInvoices());
-        ModernUIHelper.styleComboBox(filterCombo);
-        topPanel.add(filterCombo);
-        
-        JButton refreshButton = new JButton("Refresh");
-        refreshButton.addActionListener(e -> loadInvoices());
-        ModernUIHelper.styleButton(refreshButton, "primary");
-        topPanel.add(refreshButton);
-        
+        topPanel.add(new JLabel("Search Client:"));
+
+        searchField = new JTextField(20);
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { filterInvoices(); }
+            public void removeUpdate(DocumentEvent e) { filterInvoices(); }
+            public void changedUpdate(DocumentEvent e) { filterInvoices(); }
+        });
+        ModernUIHelper.styleTextField(searchField);
+        topPanel.add(searchField);
+
         add(topPanel, BorderLayout.NORTH);
 
         // Center Panel - Table
-        String[] columns = {"ID", "Invoice #", "Client ID", "Invoice Date", "Due Date", "Status", "Total", "Balance"};
+        String[] columns = {"ID", "Invoice #", "Client", "Invoice Date", "Due Date", "Status", "Total", "Balance"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -91,17 +87,14 @@ public class InvoicesPanel extends JPanel {
         };
         invoicesTable = new JTable(tableModel);
         invoicesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        
+
         // Apply modern styling
         ModernUIHelper.styleTable(invoicesTable);
-        
-        // Hide ID columns
+
+        // Hide ID column only
         invoicesTable.getColumnModel().getColumn(0).setMinWidth(0);
         invoicesTable.getColumnModel().getColumn(0).setMaxWidth(0);
         invoicesTable.getColumnModel().getColumn(0).setWidth(0);
-        invoicesTable.getColumnModel().getColumn(2).setMinWidth(0);
-        invoicesTable.getColumnModel().getColumn(2).setMaxWidth(0);
-        invoicesTable.getColumnModel().getColumn(2).setWidth(0);
         
         invoicesTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && invoicesTable.getSelectedRow() >= 0) {
@@ -115,7 +108,18 @@ public class InvoicesPanel extends JPanel {
             }
         });
         
-        add(new JScrollPane(invoicesTable), BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(invoicesTable);
+
+        // Clear form when clicking on scroll pane background
+        scrollPane.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                invoicesTable.clearSelection();
+                clearForm();
+            }
+        });
+
+        add(scrollPane, BorderLayout.CENTER);
 
         // Right Panel - Form
         JPanel formPanel = new JPanel(new GridBagLayout());
@@ -266,6 +270,15 @@ public class InvoicesPanel extends JPanel {
 
         formPanel.add(buttonPanel, gbc);
 
+        // Clear selection when clicking on form panel background
+        formPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                invoicesTable.clearSelection();
+                clearForm();
+            }
+        });
+
         JScrollPane formScrollPane = new JScrollPane(formPanel);
         add(formScrollPane, BorderLayout.EAST);
     }
@@ -274,12 +287,9 @@ public class InvoicesPanel extends JPanel {
         try {
             List<Client> clients = clientDAO.getAllClients();
             clientCombo.removeAllItems();
-            filterCombo.removeAllItems();
-            filterCombo.addItem("Show All");
-            
+
             for (Client client : clients) {
                 clientCombo.addItem(client);
-                filterCombo.addItem(client);
             }
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading clients: " + ex.getMessage());
@@ -314,21 +324,24 @@ public class InvoicesPanel extends JPanel {
 
     private void filterInvoices() {
         if (allInvoices == null) return;
-        
+
         tableModel.setRowCount(0);
-        Object selected = filterCombo.getSelectedItem();
-        
+        String searchText = searchField.getText().toLowerCase().trim();
+
         for (Invoice inv : allInvoices) {
-            // If "Show All" or filter matches client ID
-            boolean include = selected == null || selected.equals("Show All") || 
-                            (selected instanceof Client && ((Client)selected).getClientId().equals(inv.getClientId()));
-            
+            // Get client name for filtering
+            String clientName = getClientNameForInvoice(inv);
+
+            // Filter by search text (matches client name)
+            boolean include = searchText.isEmpty() || clientName.toLowerCase().contains(searchText);
+
             if (include) {
                 BigDecimal balance = inv.getTotalAmount().subtract(inv.getPaymentsApplied());
+
                 tableModel.addRow(new Object[]{
                     inv.getInvoiceId(),
                     inv.getInvoiceNumber(),
-                    inv.getClientId(),
+                    clientName,
                     inv.getInvoiceDate(),
                     inv.getDueDate(),
                     inv.getStatus(),
@@ -339,37 +352,96 @@ public class InvoicesPanel extends JPanel {
         }
     }
 
+    private String getClientNameForInvoice(Invoice inv) {
+        // Try to get client by ID first
+        if (inv.getClientId() != null) {
+            try {
+                Client client = clientDAO.getClientById(inv.getClientId());
+                if (client != null) {
+                    // Use company name if available, otherwise contact name
+                    if (client.getCompanyName() != null && !client.getCompanyName().isEmpty()) {
+                        return client.getCompanyName();
+                    } else {
+                        return client.getFirstName() + " " + client.getLastName();
+                    }
+                }
+            } catch (SQLException e) {
+                // Fall through to use stored bill-to info
+            }
+        }
+
+        // Fall back to stored bill-to information
+        if (inv.getBillToCompanyName() != null && !inv.getBillToCompanyName().isEmpty()) {
+            return inv.getBillToCompanyName();
+        } else if (inv.getBillToContactName() != null && !inv.getBillToContactName().isEmpty()) {
+            return inv.getBillToContactName();
+        }
+
+        return "Unknown";
+    }
+
     private void loadSelectedInvoice() {
         int row = invoicesTable.getSelectedRow();
         if (row < 0) return;
-        
+
         int invoiceId = (Integer) tableModel.getValueAt(row, 0);
         try {
             selectedInvoice = invoiceDAO.getInvoiceById(invoiceId);
             if (selectedInvoice != null) {
-                // Select client
-                for (int i = 0; i < clientCombo.getItemCount(); i++) {
-                    if (clientCombo.getItemAt(i).getClientId().equals(selectedInvoice.getClientId())) {
-                        clientCombo.setSelectedIndex(i);
-                        break;
+                // Try to select client - check if client still exists
+                boolean clientFound = false;
+                if (selectedInvoice.getClientId() != null) {
+                    for (int i = 0; i < clientCombo.getItemCount(); i++) {
+                        if (clientCombo.getItemAt(i).getClientId().equals(selectedInvoice.getClientId())) {
+                            clientCombo.setSelectedIndex(i);
+                            clientFound = true;
+                            break;
+                        }
                     }
                 }
-                
-                // Load and select locations
-                loadLocationsForClient();
-                for (int i = 0; i < billLocationCombo.getItemCount(); i++) {
-                    if (billLocationCombo.getItemAt(i).getClientLocationId().equals(selectedInvoice.getBillingLocationId())) {
-                        billLocationCombo.setSelectedIndex(i);
-                        break;
+
+                // If client not found, show stored bill-to info in a message or disable editing
+                if (!clientFound) {
+                    // Get the stored client name for display
+                    String storedClientName = "";
+                    if (selectedInvoice.getBillToCompanyName() != null && !selectedInvoice.getBillToCompanyName().isEmpty()) {
+                        storedClientName = selectedInvoice.getBillToCompanyName();
+                    } else if (selectedInvoice.getBillToContactName() != null && !selectedInvoice.getBillToContactName().isEmpty()) {
+                        storedClientName = selectedInvoice.getBillToContactName();
+                    } else {
+                        storedClientName = "Unknown Client";
+                    }
+
+                    // Clear selection and show warning
+                    if (clientCombo.getItemCount() > 0) {
+                        clientCombo.setSelectedIndex(-1);
+                    }
+
+                    // Show info about the original client
+                    JOptionPane.showMessageDialog(this,
+                        "Original client no longer exists.\n" +
+                        "Stored Bill To: " + storedClientName + "\n" +
+                        "Address: " + (selectedInvoice.getBillToStreetAddress() != null ? selectedInvoice.getBillToStreetAddress() : "N/A"),
+                        "Client Not Found", JOptionPane.INFORMATION_MESSAGE);
+                }
+
+                // Load and select locations (only if client was found)
+                if (clientFound) {
+                    loadLocationsForClient();
+                    for (int i = 0; i < billLocationCombo.getItemCount(); i++) {
+                        if (billLocationCombo.getItemAt(i).getClientLocationId().equals(selectedInvoice.getBillingLocationId())) {
+                            billLocationCombo.setSelectedIndex(i);
+                            break;
+                        }
+                    }
+                    for (int i = 0; i < jobLocationCombo.getItemCount(); i++) {
+                        if (jobLocationCombo.getItemAt(i).getClientLocationId().equals(selectedInvoice.getJobLocationId())) {
+                            jobLocationCombo.setSelectedIndex(i);
+                            break;
+                        }
                     }
                 }
-                for (int i = 0; i < jobLocationCombo.getItemCount(); i++) {
-                    if (jobLocationCombo.getItemAt(i).getClientLocationId().equals(selectedInvoice.getJobLocationId())) {
-                        jobLocationCombo.setSelectedIndex(i);
-                        break;
-                    }
-                }
-                
+
                 invoiceNumberField.setText(selectedInvoice.getInvoiceNumber());
                 invoiceDateField.setText(selectedInvoice.getInvoiceDate().format(dateFormatter));
                 dueDateField.setText(selectedInvoice.getDueDate().format(dateFormatter));
@@ -380,7 +452,7 @@ public class InvoicesPanel extends JPanel {
                 taxAmountField.setText(selectedInvoice.getTaxAmount().toString());
                 totalAmountField.setText(selectedInvoice.getTotalAmount().toString());
                 paymentsField.setText(selectedInvoice.getPaymentsApplied().toString());
-                
+
                 updateButton.setEnabled(true);
                 deleteButton.setEnabled(true);
             }
@@ -503,5 +575,10 @@ public class InvoicesPanel extends JPanel {
             return false;
         }
         return true;
+    }
+
+    public void refreshData() {
+        loadClients();
+        loadInvoices();
     }
 }

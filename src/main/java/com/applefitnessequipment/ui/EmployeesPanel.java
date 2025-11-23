@@ -119,6 +119,16 @@ public class EmployeesPanel extends JPanel {
         });
         
         JScrollPane scrollPane = new JScrollPane(employeesTable);
+
+        // Clear form when clicking on scroll pane background
+        scrollPane.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                employeesTable.clearSelection();
+                clearForm();
+            }
+        });
+
         add(scrollPane, BorderLayout.CENTER);
 
         // Right Panel - Form (Scrollable)
@@ -358,6 +368,15 @@ public class EmployeesPanel extends JPanel {
         buttonPanel.add(clearButton);
 
         formPanel.add(buttonPanel, gbc);
+
+        // Clear selection when clicking on form panel background
+        formPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                employeesTable.clearSelection();
+                clearForm();
+            }
+        });
 
         JScrollPane formScrollPane = new JScrollPane(formPanel);
         formScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
@@ -621,5 +640,9 @@ public class EmployeesPanel extends JPanel {
         }
 
         return true;
+    }
+
+    public void refreshData() {
+        loadEmployees();
     }
 }

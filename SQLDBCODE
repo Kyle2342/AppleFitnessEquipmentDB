@@ -1,494 +1,590 @@
--- MySQL Workbench Forward Engineering
+/* ============================================================
+   Create Database and Select It
+============================================================ */
+CREATE DATABASE IF NOT EXISTS applefitnessequipmentdb;
+USE applefitnessequipmentdb;
 
-SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
-SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
-SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+/* ============================================================
+   TABLE 1: Employees
+   Stores employee personal, contact, login, and payroll data.
+============================================================ */
+CREATE TABLE Employees (
+    EmployeeID          INT AUTO_INCREMENT PRIMARY KEY,
 
--- -----------------------------------------------------
--- Schema mydb
--- -----------------------------------------------------
--- -----------------------------------------------------
--- Schema applefitnessequipmentdb
--- -----------------------------------------------------
+    -- Personal Info
+    FirstName           VARCHAR(50) NOT NULL,
+    LastName            VARCHAR(50) NOT NULL,
+    MiddleInitial       CHAR(1) NULL,
+    DateOfBirth         DATE NULL,
+    Gender              ENUM('Male','Female') NULL,
 
--- -----------------------------------------------------
--- Schema applefitnessequipmentdb
--- -----------------------------------------------------
-CREATE SCHEMA IF NOT EXISTS `applefitnessequipmentdb` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci ;
-USE `applefitnessequipmentdb` ;
+    -- Contact Info
+    WorkEmail           VARCHAR(100) NULL,
+    PersonalEmail       VARCHAR(100) NULL,
+    WorkPhone           VARCHAR(20)  NULL,
+    MobilePhone         VARCHAR(20)  NULL,
 
--- -----------------------------------------------------
--- Table `applefitnessequipmentdb`.`clients`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`clients` (
-  `ClientID` INT NOT NULL AUTO_INCREMENT,
-  `ClientType` ENUM('Individual', 'Business') NOT NULL,
-  `FirstName` VARCHAR(50) NULL DEFAULT NULL,
-  `LastName` VARCHAR(50) NULL DEFAULT NULL,
-  `CompanyName` VARCHAR(150) NULL DEFAULT NULL,
-  `PhoneNumber` VARCHAR(20) NULL DEFAULT NULL,
-  `Email` VARCHAR(100) NULL DEFAULT NULL,
-  `Notes` TEXT NULL DEFAULT NULL,
-  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`ClientID`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb4
-COLLATE = utf8mb4_0900_ai_ci;
+    -- Address
+    HomeBuildingName        VARCHAR(100) NULL,      -- e.g. "The Oaks Apartments"
+    HomeSuiteNumber         VARCHAR(50)  NULL,      -- e.g. "Suite 210" or "Apt 4B"
+    HomeStreetAddress       VARCHAR(100) NOT NULL,  -- e.g. "1412 Majestic View Dr."
+    HomeCity                VARCHAR(50)  NOT NULL,
+    HomeState               VARCHAR(50)  NOT NULL DEFAULT 'PA',
+    HomeZIPCode             VARCHAR(20)  NOT NULL,
+    HomeCountry             VARCHAR(50)  NOT NULL DEFAULT 'USA',
 
+    -- Employment Details
+    PositionTitle       VARCHAR(100) NOT NULL,     -- e.g. Technician, Sales Rep, Manager
+    EmploymentType      ENUM('Full-Time','Part-Time') NOT NULL,
+    HireDate            DATE NOT NULL,
+    TerminationDate     DATE NULL,
+    ActiveStatus        BOOLEAN NOT NULL DEFAULT 1,
+    
+    -- Emergency contact
+	EmergencyContactName 		 VARCHAR(100) NULL,
+	EmergencyContactPhone 		 VARCHAR(20)  NULL,
+	EmergencyContactRelationship VARCHAR(50)  NULL,
+    
+    -- Login Info
+    Username 			VARCHAR(50) NOT NULL UNIQUE,
+	PasswordHash 		VARCHAR(255) NOT NULL,
 
--- -----------------------------------------------------
--- Table `applefitnessequipmentdb`.`clientslocations`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`clientslocations` (
-  `ClientLocationID` INT NOT NULL AUTO_INCREMENT,
-  `ClientID` INT NOT NULL,
-  `LocationType` ENUM('Billing', 'Job') NOT NULL,
-  `CompanyName` VARCHAR(150) NULL DEFAULT NULL,
-  `ContactName` VARCHAR(150) NULL DEFAULT NULL,
-  `StreetAddress` VARCHAR(150) NOT NULL,
-  `BuildingName` VARCHAR(100) NULL DEFAULT NULL,
-  `Suite` VARCHAR(50) NULL DEFAULT NULL,
-  `RoomNumber` VARCHAR(50) NULL DEFAULT NULL,
-  `Department` VARCHAR(100) NULL DEFAULT NULL,
-  `City` VARCHAR(50) NOT NULL,
-  `County` VARCHAR(50) NOT NULL,
-  `State` VARCHAR(50) NOT NULL DEFAULT 'PA',
-  `ZIPCode` VARCHAR(20) NOT NULL,
-  `Country` VARCHAR(50) NOT NULL DEFAULT 'USA',
-  `Phone` VARCHAR(20) NULL DEFAULT NULL,
-  `Fax` VARCHAR(20) NULL DEFAULT NULL,
-  `Email` VARCHAR(100) NULL DEFAULT NULL,
-  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`ClientLocationID`),
-  INDEX `fk_clientlocation_client` (`ClientID` ASC) VISIBLE,
-  CONSTRAINT `fk_clientlocation_client`
-    FOREIGN KEY (`ClientID`)
-    REFERENCES `applefitnessequipmentdb`.`clients` (`ClientID`)
-    ON DELETE CASCADE)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb4
-COLLATE = utf8mb4_0900_ai_ci;
+    -- Pay and tracking 
+	PayType ENUM('Hourly','Salary') NOT NULL,	
+	PayRate DECIMAL(10,2) 			NOT NULL,  -- Either hourly rate OR annual salary
+    
+    CHECK (PayRate >= 0),
 
+    -- Record keeping
+    CreatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                   ON UPDATE CURRENT_TIMESTAMP
+);
 
--- -----------------------------------------------------
--- Table `applefitnessequipmentdb`.`company`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`company` (
-  `CompanyID` INT NOT NULL AUTO_INCREMENT,
-  `CompanyName` VARCHAR(150) NOT NULL DEFAULT 'Apple Fitness Equipment',
-  `StreetAddress` VARCHAR(100) NOT NULL DEFAULT '1412 Majestic View Dr.',
-  `City` VARCHAR(50) NOT NULL DEFAULT 'State College',
-  `County` VARCHAR(50) NOT NULL DEFAULT 'Centre',
-  `State` VARCHAR(50) NOT NULL DEFAULT 'PA',
-  `ZIPCode` VARCHAR(20) NOT NULL DEFAULT '16801',
-  `Country` VARCHAR(50) NOT NULL DEFAULT 'USA',
-  `Phone` VARCHAR(45) NOT NULL DEFAULT '814-826-2922',
-  `Fax` VARCHAR(45) NOT NULL DEFAULT '814-826-2933',
-  `Email` VARCHAR(100) NOT NULL DEFAULT 'gbartram90@gmail.com',
-  `WebsiteURL` VARCHAR(150) NOT NULL DEFAULT 'https://applefitnessequipment.com/',
-  `YearFounded` YEAR NULL DEFAULT NULL,
-  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`CompanyID`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb4
-COLLATE = utf8mb4_0900_ai_ci;
+/* ============================================================
+   TABLE 2: Employee Time Logs
+   Tracks employee clock-in/out and work hours.
+============================================================ */
+CREATE TABLE EmployeesTimeLogs (
+    TimeLogID         INT AUTO_INCREMENT PRIMARY KEY,
 
+    EmployeeID        INT NOT NULL,  -- FK to Employees table
+    
+	DayOfWeek         ENUM('Monday','Tuesday','Wednesday','Thursday','Friday') NOT NULL,
+    LogDate           DATE NOT NULL, -- the work date (e.g. 2025-10-27)
 
--- -----------------------------------------------------
--- Table `applefitnessequipmentdb`.`employees`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`employees` (
-  `EmployeeID` INT NOT NULL AUTO_INCREMENT,
-  `FirstName` VARCHAR(50) NOT NULL,
-  `LastName` VARCHAR(50) NOT NULL,
-  `MiddleInitial` CHAR(1) NULL DEFAULT NULL,
-  `DateOfBirth` DATE NULL DEFAULT NULL,
-  `Gender` ENUM('Male', 'Female') NULL DEFAULT NULL,
-  `WorkEmail` VARCHAR(100) NULL DEFAULT NULL,
-  `PersonalEmail` VARCHAR(100) NULL DEFAULT NULL,
-  `WorkPhone` VARCHAR(20) NULL DEFAULT NULL,
-  `MobilePhone` VARCHAR(20) NULL DEFAULT NULL,
-  `HomeBuildingName` VARCHAR(100) NULL DEFAULT NULL,
-  `HomeSuiteNumber` VARCHAR(50) NULL DEFAULT NULL,
-  `HomeStreetAddress` VARCHAR(100) NOT NULL,
-  `HomeCity` VARCHAR(50) NOT NULL,
-  `HomeState` VARCHAR(50) NOT NULL DEFAULT 'PA',
-  `HomeZIPCode` VARCHAR(20) NOT NULL,
-  `HomeCountry` VARCHAR(50) NOT NULL DEFAULT 'USA',
-  `PositionTitle` VARCHAR(100) NOT NULL,
-  `EmploymentType` ENUM('Full-Time', 'Part-Time') NOT NULL,
-  `HireDate` DATE NOT NULL,
-  `TerminationDate` DATE NULL DEFAULT NULL,
-  `ActiveStatus` TINYINT(1) NOT NULL,
-  `EmergencyContactName` VARCHAR(100) NULL DEFAULT NULL,
-  `EmergencyContactPhone` VARCHAR(20) NULL DEFAULT NULL,
-  `EmergencyContactRelationship` VARCHAR(50) NULL DEFAULT NULL,
-  `Username` VARCHAR(50) NOT NULL,
-  `PasswordHash` VARCHAR(255) NOT NULL,
-  `PayType` ENUM('Hourly', 'Salary') NOT NULL,
-  `PayRate` DECIMAL(10,2) NOT NULL,
-  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`EmployeeID`),
-  UNIQUE INDEX `Username` (`Username` ASC) VISIBLE)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb4
-COLLATE = utf8mb4_0900_ai_ci;
+    -- Clock-in / clock-out
+    TimeInFirst      TIME NOT NULL,
+    TimeOutFirst     TIME NOT NULL,
+	TimeInSecond     TIME NULL,
+    TimeOutSecond    TIME NULL,
 
+    -- Calculated / additional data
+    TotalHours DECIMAL(5,2) 
+    AS (
+        (
+            TIME_TO_SEC(TimeOutFirst) - TIME_TO_SEC(TimeInFirst)
+            + IF(TimeInSecond IS NULL OR TimeOutSecond IS NULL,
+                0,
+                TIME_TO_SEC(TimeOutSecond) - TIME_TO_SEC(TimeInSecond)
+            )
+        ) / 3600
+    ) STORED,
+    Miles             DECIMAL(6,2) NULL,
+    
+    CHECK (TimeOutFirst > TimeInFirst),
+    CHECK (
+        (TimeInSecond IS NULL AND TimeOutSecond IS NULL)
+        OR (TimeInSecond IS NOT NULL AND TimeOutSecond IS NOT NULL AND TimeOutSecond > TimeInSecond)
+    ),
+	CHECK (TotalHours >= 0),
+    CHECK (Miles IS NULL OR Miles >= 0),
+    
+    -- don’t want duplicate logs for the same employee/date.
+    UNIQUE KEY uq_employee_logdate (EmployeeID, LogDate),
 
--- -----------------------------------------------------
--- Table `applefitnessequipmentdb`.`employeestimelogs`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`employeestimelogs` (
-  `TimeLogID` INT NOT NULL AUTO_INCREMENT,
-  `EmployeeID` INT NOT NULL,
-  `DayOfWeek` ENUM('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday') NOT NULL,
-  `LogDate` DATE NOT NULL,
-  `TimeInFirst` TIME NOT NULL,
-  `TimeOutFirst` TIME NOT NULL,
-  `TimeInSecond` TIME NULL DEFAULT NULL,
-  `TimeOutSecond` TIME NULL DEFAULT NULL,
-  `TotalHours` DECIMAL(5,2) NULL DEFAULT NULL,
-  `Miles` DECIMAL(6,2) NULL DEFAULT NULL,
-  `PTOHours` DECIMAL(5,2) NULL DEFAULT NULL,
-  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`TimeLogID`),
-  INDEX `fk_timelog_employee` (`EmployeeID` ASC) VISIBLE,
-  CONSTRAINT `fk_timelog_employee`
-    FOREIGN KEY (`EmployeeID`)
-    REFERENCES `applefitnessequipmentdb`.`employees` (`EmployeeID`)
-    ON DELETE CASCADE)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb4
-COLLATE = utf8mb4_0900_ai_ci;
+    -- Record keeping
+    CreatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                   ON UPDATE CURRENT_TIMESTAMP,
 
+    CONSTRAINT fk_timelog_employee FOREIGN KEY (EmployeeID)
+        REFERENCES Employees(EmployeeID)
+        ON DELETE CASCADE,
+        
+	INDEX idx_timelogs_employeeid (EmployeeID)
+);
 
--- -----------------------------------------------------
--- Table `applefitnessequipmentdb`.`equipmentquotes`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`equipmentquotes` (
-  `EquipmentQuoteID` INT NOT NULL AUTO_INCREMENT,
-  `ClientID` INT NOT NULL,
-  `BillingLocationID` INT NOT NULL,
-  `JobAtLocationID` INT NOT NULL,
-  `BillToCompanyName` VARCHAR(150) NULL DEFAULT NULL,
-  `BillToContactName` VARCHAR(150) NULL DEFAULT NULL,
-  `BillToStreetAddress` VARCHAR(150) NULL DEFAULT NULL,
-  `BillToBuildingName` VARCHAR(100) NULL DEFAULT NULL,
-  `BillToSuite` VARCHAR(50) NULL DEFAULT NULL,
-  `BillToRoomNumber` VARCHAR(50) NULL DEFAULT NULL,
-  `BillToDepartment` VARCHAR(100) NULL DEFAULT NULL,
-  `BillToCounty` VARCHAR(50) NOT NULL,
-  `BillToCity` VARCHAR(50) NOT NULL,
-  `BillToState` VARCHAR(50) NOT NULL DEFAULT 'PA',
-  `BillToZIPCode` VARCHAR(20) NOT NULL,
-  `BillToCountry` VARCHAR(50) NOT NULL DEFAULT 'USA',
-  `BillToPhone` VARCHAR(45) NULL DEFAULT NULL,
-  `BillToFax` VARCHAR(45) NULL DEFAULT NULL,
-  `BillToPONumber` VARCHAR(45) NULL DEFAULT NULL,
-  `JobAtCompanyName` VARCHAR(150) NULL DEFAULT NULL,
-  `JobAtContactName` VARCHAR(150) NULL DEFAULT NULL,
-  `JobAtStreetAddress` VARCHAR(150) NULL DEFAULT NULL,
-  `JobAtBuildingName` VARCHAR(100) NULL DEFAULT NULL,
-  `JobAtSuite` VARCHAR(50) NULL DEFAULT NULL,
-  `JobAtRoomNumber` VARCHAR(50) NULL DEFAULT NULL,
-  `JobAtDepartment` VARCHAR(100) NULL DEFAULT NULL,
-  `JobAtCounty` VARCHAR(50) NOT NULL,
-  `JobAtCity` VARCHAR(50) NOT NULL,
-  `JobAtState` VARCHAR(50) NOT NULL DEFAULT 'PA',
-  `JobAtZIPCode` VARCHAR(20) NOT NULL,
-  `JobAtCountry` VARCHAR(50) NOT NULL DEFAULT 'USA',
-  `JobAtEmail` VARCHAR(45) NULL DEFAULT NULL,
-  `JobAtPONumber` VARCHAR(45) NULL DEFAULT NULL,
-  `QuoteNumber` VARCHAR(45) NOT NULL,
-  `QuoteDate` DATE NOT NULL,
-  `Status` ENUM('Draft', 'Sent', 'Accepted', 'Declined', 'Expired') NOT NULL DEFAULT 'Draft',
-  `ContactName` VARCHAR(150) NOT NULL,
-  `SalespersonName` VARCHAR(150) NOT NULL DEFAULT 'Greg Bartram',
-  `ShipVia` VARCHAR(150) NOT NULL DEFAULT 'AFE Truck/Trailer',
-  `FreightTerms` VARCHAR(150) NOT NULL DEFAULT 'Ppd & Add',
-  `PaymentTerms` VARCHAR(150) NOT NULL DEFAULT 'See Notes',
-  `FOBLocation` VARCHAR(150) NOT NULL DEFAULT 'Truck Curbside',
-  `TotalDiscountAmount` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
-  `SubtotalAmount` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
-  `FreightAmount` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
-  `ExtendedTotalAmount` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
-  `SalesTaxRatePercent` DECIMAL(5,2) NOT NULL DEFAULT '6.00',
-  `SalesTaxAmount` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
-  `QuoteTotalAmount` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
-  `Notes` TEXT NULL DEFAULT NULL,
-  `TermsAndConditions` TEXT NULL DEFAULT NULL,
-  `ExtraInfo` TEXT NULL DEFAULT NULL,
-  `SignatureBoolean` TINYINT(1) NOT NULL DEFAULT '0',
-  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`EquipmentQuoteID`),
-  UNIQUE INDEX `QuoteNumber` (`QuoteNumber` ASC) VISIBLE,
-  INDEX `fk_equipmentquotes_client` (`ClientID` ASC) VISIBLE,
-  INDEX `fk_equipmentquotes_bill_location` (`BillingLocationID` ASC) VISIBLE,
-  INDEX `fk_equipmentquotes_job_location` (`JobAtLocationID` ASC) VISIBLE,
-  CONSTRAINT `fk_equipmentquotes_bill_location`
-    FOREIGN KEY (`BillingLocationID`)
-    REFERENCES `applefitnessequipmentdb`.`clientslocations` (`ClientLocationID`),
-  CONSTRAINT `fk_equipmentquotes_client`
-    FOREIGN KEY (`ClientID`)
-    REFERENCES `applefitnessequipmentdb`.`clients` (`ClientID`),
-  CONSTRAINT `fk_equipmentquotes_job_location`
-    FOREIGN KEY (`JobAtLocationID`)
-    REFERENCES `applefitnessequipmentdb`.`clientslocations` (`ClientLocationID`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb4
-COLLATE = utf8mb4_0900_ai_ci;
+/* ============================================================
+   TABLE 3: Clients
+   Stores both business and individual customer records.
+============================================================ */
+CREATE TABLE Clients (
+    ClientID        INT AUTO_INCREMENT PRIMARY KEY,
 
+    -- Type of client
+    ClientType      ENUM('Individual','Business') NOT NULL,
 
--- -----------------------------------------------------
--- Table `applefitnessequipmentdb`.`equipmentquotesitems`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`equipmentquotesitems` (
-  `EquipmentQuoteItemID` INT NOT NULL AUTO_INCREMENT,
-  `EquipmentQuoteID` INT NOT NULL,
-  `RowNumber` INT NOT NULL,
-  `Qty` DECIMAL(10,2) NOT NULL,
-  `Model` VARCHAR(50) NULL DEFAULT NULL,
-  `Description` VARCHAR(255) NOT NULL,
-  `UnitCost` DECIMAL(10,2) NOT NULL,
-  `DiscountUnitPrice` DECIMAL(10,2) NOT NULL,
-  `UnitTotal` DECIMAL(10,2) GENERATED ALWAYS AS ((`Qty` * `DiscountUnitPrice`)) STORED,
-  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`EquipmentQuoteItemID`),
-  UNIQUE INDEX `EquipmentQuoteID` (`EquipmentQuoteID` ASC, `RowNumber` ASC) VISIBLE,
-  CONSTRAINT `fk_eq_quote`
-    FOREIGN KEY (`EquipmentQuoteID`)
-    REFERENCES `applefitnessequipmentdb`.`equipmentquotes` (`EquipmentQuoteID`)
-    ON DELETE CASCADE)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb4
-COLLATE = utf8mb4_0900_ai_ci;
+    -- For individuals
+    FirstName       VARCHAR(50) NULL,
+    LastName        VARCHAR(50) NULL,
 
+    -- For business clients
+    CompanyName     VARCHAR(150) NULL,
 
--- -----------------------------------------------------
--- Table `applefitnessequipmentdb`.`preventivemaintenanceagreements`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`preventivemaintenanceagreements` (
-  `PreventiveMaintenanceAgreementID` INT NOT NULL AUTO_INCREMENT,
-  `ClientID` INT NOT NULL,
-  `BillingLocationID` INT NOT NULL,
-  `JobLocationID` INT NOT NULL,
-  `PropertyName` VARCHAR(150) NULL DEFAULT NULL,
-  `FacilityName` VARCHAR(150) NULL DEFAULT NULL,
-  `AddressLine` VARCHAR(150) NOT NULL,
-  `City` VARCHAR(100) NOT NULL,
-  `State` VARCHAR(50) NOT NULL DEFAULT 'PA',
-  `ZIPCode` VARCHAR(20) NOT NULL,
-  `ContactName` VARCHAR(150) NOT NULL,
-  `ContactEmail` VARCHAR(150) NULL DEFAULT NULL,
-  `PhoneNumber1` VARCHAR(45) NULL DEFAULT NULL,
-  `PhoneNumber2` VARCHAR(45) NULL DEFAULT NULL,
-  `AgreementNumber` VARCHAR(50) NOT NULL,
-  `CoverageText` TEXT NOT NULL,
-  `StartDate` DATE NOT NULL,
-  `EndDate` DATE NOT NULL,
-  `VisitFrequency` ENUM('Monthly', 'Quarterly', 'Semi-Annual', 'Annual') NOT NULL,
-  `Status` ENUM('Draft', 'Active', 'Expired', 'Canceled') NULL DEFAULT 'Draft',
-  `ChargePerMile` DECIMAL(5,2) NOT NULL DEFAULT '0.75',
-  `ChargePerHour` DECIMAL(5,2) NOT NULL DEFAULT '80.00',
-  `VisitPrice` DECIMAL(10,2) NOT NULL,
-  `TaxRatePercent` DECIMAL(5,2) NOT NULL DEFAULT '6.00',
-  `TaxAmount` DECIMAL(10,2) GENERATED ALWAYS AS ((`VisitPrice` * (`TaxRatePercent` / 100))) STORED,
-  `PricePerYear` DECIMAL(10,2) GENERATED ALWAYS AS (((`VisitPrice` * (case when (`VisitFrequency` = _utf8mb4'Monthly') then 12 when (`VisitFrequency` = _utf8mb4'Quarterly') then 4 when (`VisitFrequency` = _utf8mb4'Semi-Annual') then 2 when (`VisitFrequency` = _utf8mb4'Annual') then 1 end)) * (1 + (`TaxRatePercent` / 100)))) STORED,
-  `RequiresAdditionalInsurance` TINYINT(1) NULL DEFAULT '0',
-  `CancelationNoticeDays` INT NULL DEFAULT '30',
-  `PaymentDueAfterWorkDays` INT NULL DEFAULT '30',
-  `LateFeePercentage` DECIMAL(5,2) NULL DEFAULT '10.00',
-  `FacilityAgentSignature` VARCHAR(150) NULL DEFAULT NULL,
-  `SignatureDate` DATE NULL DEFAULT NULL,
-  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`PreventiveMaintenanceAgreementID`),
-  UNIQUE INDEX `AgreementNumber` (`AgreementNumber` ASC) VISIBLE,
-  INDEX `fk_pma_client` (`ClientID` ASC) VISIBLE,
-  INDEX `fk_pma_bill_location` (`BillingLocationID` ASC) VISIBLE,
-  INDEX `fk_pma_job_location` (`JobLocationID` ASC) VISIBLE,
-  CONSTRAINT `fk_pma_bill_location`
-    FOREIGN KEY (`BillingLocationID`)
-    REFERENCES `applefitnessequipmentdb`.`clientslocations` (`ClientLocationID`),
-  CONSTRAINT `fk_pma_client`
-    FOREIGN KEY (`ClientID`)
-    REFERENCES `applefitnessequipmentdb`.`clients` (`ClientID`),
-  CONSTRAINT `fk_pma_job_location`
-    FOREIGN KEY (`JobLocationID`)
-    REFERENCES `applefitnessequipmentdb`.`clientslocations` (`ClientLocationID`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb4
-COLLATE = utf8mb4_0900_ai_ci;
+    -- Common contact info
+    PhoneNumber     VARCHAR(20)  NULL,
+    Email           VARCHAR(100) NULL,
 
+    Notes               TEXT NULL,
+    
+    -- Record keeping
+    CreatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                   ON UPDATE CURRENT_TIMESTAMP,
+                                   
+    -- individuals should NOT have a company name
+    CONSTRAINT chk_individual_no_company CHECK (
+        ClientType = 'Business' OR CompanyName IS NULL
+    ),
 
--- -----------------------------------------------------
--- Table `applefitnessequipmentdb`.`invoices`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`invoices` (
-  `InvoiceID` INT NOT NULL AUTO_INCREMENT,
-  `ClientID` INT NOT NULL,
-  `BillingLocationID` INT NOT NULL,
-  `JobLocationID` INT NOT NULL,
-  `PreventiveMaintenanceAgreementID` INT NULL DEFAULT NULL,
-  `EquipmentQuoteID` INT NULL DEFAULT NULL,
-  `InvoiceNumber` VARCHAR(45) NOT NULL,
-  `QuoteNumber` VARCHAR(45) NULL DEFAULT NULL,
-  `InvoiceDate` DATE NOT NULL,
-  `DueDate` DATE NOT NULL,
-  `PONumber` VARCHAR(45) NULL DEFAULT NULL,
-  `Terms` VARCHAR(100) NOT NULL,
-  `Status` ENUM('Draft', 'Open', 'Paid', 'Overdue', 'Void') NOT NULL DEFAULT 'Draft',
-  `SubtotalAmount` DECIMAL(8,2) NOT NULL DEFAULT '0.00',
-  `TaxRatePercent` DECIMAL(5,2) NOT NULL DEFAULT '6.00',
-  `TaxAmount` DECIMAL(6,2) NOT NULL DEFAULT '0.00',
-  `TotalAmount` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
-  `PaymentsApplied` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
-  `BalanceDue` DECIMAL(10,2) GENERATED ALWAYS AS ((`TotalAmount` - `PaymentsApplied`)) STORED,
-  `PaidDate` DATE NULL DEFAULT NULL,
-  `ReturnedCheckFee` DECIMAL(10,2) NOT NULL DEFAULT '40.00',
-  `InterestPercent` DECIMAL(5,2) NOT NULL DEFAULT '10.00',
-  `InterestStartDays` INT NOT NULL DEFAULT '90',
-  `InterestIntervalDays` INT NOT NULL DEFAULT '30',
-  `FromCompanyName` VARCHAR(100) NOT NULL DEFAULT 'Apple Fitness Equipment',
-  `FromStreetAddress` VARCHAR(100) NOT NULL DEFAULT '1412 Majestic View Dr.',
-  `FromCity` VARCHAR(50) NOT NULL DEFAULT 'State College',
-  `FromState` VARCHAR(50) NOT NULL DEFAULT 'PA',
-  `FromZIPCode` VARCHAR(20) NOT NULL DEFAULT '16801',
-  `FromPhone` VARCHAR(45) NOT NULL DEFAULT '814-826-2922',
-  `FromFax` VARCHAR(45) NOT NULL DEFAULT '814-826-2933',
-  `BillToCompanyName` VARCHAR(150) NULL DEFAULT NULL,
-  `BillToContactName` VARCHAR(150) NULL DEFAULT NULL,
-  `BillToStreetAddress` VARCHAR(150) NULL DEFAULT NULL,
-  `BillToBuildingName` VARCHAR(100) NULL DEFAULT NULL,
-  `BillToSuite` VARCHAR(50) NULL DEFAULT NULL,
-  `BillToRoomNumber` VARCHAR(50) NULL DEFAULT NULL,
-  `BillToDepartment` VARCHAR(100) NULL DEFAULT NULL,
-  `BillToCountyOrCity` VARCHAR(50) NOT NULL,
-  `BillToState` VARCHAR(50) NOT NULL DEFAULT 'PA',
-  `BillToZIPCode` VARCHAR(20) NOT NULL,
-  `BillToCountry` VARCHAR(50) NOT NULL DEFAULT 'USA',
-  `BillToPhone` VARCHAR(45) NULL DEFAULT NULL,
-  `BillToPONumber` VARCHAR(45) NULL DEFAULT NULL,
-  `JobAtCompanyName` VARCHAR(150) NULL DEFAULT NULL,
-  `JobAtContactName` VARCHAR(150) NULL DEFAULT NULL,
-  `JobAtStreetAddress` VARCHAR(150) NULL DEFAULT NULL,
-  `JobAtBuildingName` VARCHAR(100) NULL DEFAULT NULL,
-  `JobAtSuite` VARCHAR(50) NULL DEFAULT NULL,
-  `JobAtRoomNumber` VARCHAR(50) NULL DEFAULT NULL,
-  `JobAtDepartment` VARCHAR(100) NULL DEFAULT NULL,
-  `JobAtCountyOrCity` VARCHAR(50) NOT NULL,
-  `JobAtState` VARCHAR(50) NOT NULL DEFAULT 'PA',
-  `JobAtZIPCode` VARCHAR(20) NOT NULL,
-  `JobAtCountry` VARCHAR(50) NOT NULL DEFAULT 'USA',
-  `JobAtPhone` VARCHAR(45) NULL DEFAULT NULL,
-  `JobAtPONumber` VARCHAR(45) NULL DEFAULT NULL,
-  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`InvoiceID`),
-  UNIQUE INDEX `InvoiceNumber` (`InvoiceNumber` ASC) VISIBLE,
-  INDEX `fk_invoice_pmagreement` (`PreventiveMaintenanceAgreementID` ASC) VISIBLE,
-  INDEX `fk_invoice_equipmentquote` (`EquipmentQuoteID` ASC) VISIBLE,
-  INDEX `fk_invoice_client` (`ClientID` ASC) VISIBLE,
-  INDEX `fk_invoice_bill_location` (`BillingLocationID` ASC) VISIBLE,
-  INDEX `fk_invoice_job_location` (`JobLocationID` ASC) VISIBLE,
-  CONSTRAINT `fk_invoice_bill_location`
-    FOREIGN KEY (`BillingLocationID`)
-    REFERENCES `applefitnessequipmentdb`.`clientslocations` (`ClientLocationID`),
-  CONSTRAINT `fk_invoice_client`
-    FOREIGN KEY (`ClientID`)
-    REFERENCES `applefitnessequipmentdb`.`clients` (`ClientID`),
-  CONSTRAINT `fk_invoice_equipmentquote`
-    FOREIGN KEY (`EquipmentQuoteID`)
-    REFERENCES `applefitnessequipmentdb`.`equipmentquotes` (`EquipmentQuoteID`),
-  CONSTRAINT `fk_invoice_job_location`
-    FOREIGN KEY (`JobLocationID`)
-    REFERENCES `applefitnessequipmentdb`.`clientslocations` (`ClientLocationID`),
-  CONSTRAINT `fk_invoice_pmagreement`
-    FOREIGN KEY (`PreventiveMaintenanceAgreementID`)
-    REFERENCES `applefitnessequipmentdb`.`preventivemaintenanceagreements` (`PreventiveMaintenanceAgreementID`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb4
-COLLATE = utf8mb4_0900_ai_ci;
+    -- Ensure required fields exist for each type
+    CONSTRAINT chk_client_required_fields CHECK (
+        (ClientType = 'Individual' AND FirstName IS NOT NULL AND LastName IS NOT NULL)
+        OR
+        (ClientType = 'Business' AND CompanyName IS NOT NULL)
+    )
+    
+);
 
+/* ============================================================
+   TABLE 4: Client Locations
+   Stores billing and job-site addresses.
+============================================================ */
+CREATE TABLE ClientsLocations (
+    ClientLocationID   INT AUTO_INCREMENT PRIMARY KEY,
 
--- -----------------------------------------------------
--- Table `applefitnessequipmentdb`.`preventivemaintenanceagreementsequipments`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`preventivemaintenanceagreementsequipments` (
-  `PreventiveMaintenanceAgreementEquipmentID` INT NOT NULL AUTO_INCREMENT,
-  `PreventiveMaintenanceAgreementID` INT NOT NULL,
-  `ClientID` INT NOT NULL,
-  `LocationID` INT NOT NULL,
-  `RowNumber` INT NOT NULL,
-  `EquipmentType` VARCHAR(100) NOT NULL,
-  `Make` VARCHAR(100) NOT NULL,
-  `Model` VARCHAR(100) NOT NULL,
-  `SerialNumber` VARCHAR(100) NOT NULL,
-  `Notes` TEXT NULL DEFAULT NULL,
-  `Status` ENUM('Active', 'PendingInspection', 'Paused', 'ReplacementPlanned', 'Removed') NULL DEFAULT 'PendingInspection',
-  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`PreventiveMaintenanceAgreementEquipmentID`),
-  UNIQUE INDEX `ClientID` (`ClientID` ASC, `SerialNumber` ASC) VISIBLE,
-  INDEX `fk_equipment_location` (`LocationID` ASC) VISIBLE,
-  INDEX `fk_equipment_agreement` (`PreventiveMaintenanceAgreementID` ASC) VISIBLE,
-  CONSTRAINT `fk_equipment_agreement`
-    FOREIGN KEY (`PreventiveMaintenanceAgreementID`)
-    REFERENCES `applefitnessequipmentdb`.`preventivemaintenanceagreements` (`PreventiveMaintenanceAgreementID`),
-  CONSTRAINT `fk_equipment_client`
-    FOREIGN KEY (`ClientID`)
-    REFERENCES `applefitnessequipmentdb`.`clients` (`ClientID`),
-  CONSTRAINT `fk_equipment_location`
-    FOREIGN KEY (`LocationID`)
-    REFERENCES `applefitnessequipmentdb`.`clientslocations` (`ClientLocationID`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb4
-COLLATE = utf8mb4_0900_ai_ci;
+    ClientID           INT NOT NULL,   -- FK to Client table
+    
+    -- Type of location
+    LocationType       ENUM('Billing','Job') NOT NULL,
 
+    -- Detailed address fields
+	CompanyName			VARCHAR(150) NULL,
+	ContactName    		VARCHAR(150) NULL,
+    StreetAddress     	VARCHAR(150) NOT NULL,   -- e.g. "123 College Ave"
+    BuildingName     	VARCHAR(100) NULL,       -- e.g. "IM Building"
+    Suite              	VARCHAR(50)  NULL,       -- e.g. "Suite 210"
+    RoomNumber        	VARCHAR(50)  NULL,       -- e.g. "Room 104"
+    Department        	VARCHAR(100) NULL,       -- e.g. "Facilities"
+    City      			VARCHAR(50)  NOT NULL,
+	County 				VARCHAR(50)  NULL,
+    State              	VARCHAR(50)  NOT NULL DEFAULT 'PA',
+    ZIPCode            	VARCHAR(20)  NOT NULL,
+    Country            	VARCHAR(50)  NOT NULL DEFAULT 'USA',
+    Phone              	VARCHAR(20)  NULL,
+	Fax              	VARCHAR(20)  NULL,
+    Email              	VARCHAR(100) NULL,
 
--- -----------------------------------------------------
--- Table `applefitnessequipmentdb`.`invoicesitems`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `applefitnessequipmentdb`.`invoicesitems` (
-  `InvoiceItemID` INT NOT NULL AUTO_INCREMENT,
-  `InvoiceID` INT NOT NULL,
-  `RowNumber` INT NOT NULL,
-  `Description` VARCHAR(255) NOT NULL,
-  `Notes` TEXT NULL DEFAULT NULL,
-  `Qty` DECIMAL(10,2) NOT NULL DEFAULT '1.00',
-  `Rate` DECIMAL(10,2) NOT NULL DEFAULT '0.00',
-  `LineTotal` DECIMAL(10,2) GENERATED ALWAYS AS ((`Qty` * `Rate`)) STORED,
-  `SourceType` ENUM('Manual', 'QuoteItem', 'PMAEquipment') NOT NULL DEFAULT 'Manual',
-  `SourceEquipmentQuoteItemID` INT NULL DEFAULT NULL,
-  `SourcePreventiveMaintenanceAgreementEquipmentID` INT NULL DEFAULT NULL,
-  `CreatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `UpdatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`InvoiceItemID`),
-  UNIQUE INDEX `InvoiceID` (`InvoiceID` ASC, `RowNumber` ASC) VISIBLE,
-  INDEX `fk_invoice_items_quote_item` (`SourceEquipmentQuoteItemID` ASC) VISIBLE,
-  INDEX `fk_invoice_items_pma_equipment` (`SourcePreventiveMaintenanceAgreementEquipmentID` ASC) VISIBLE,
-  CONSTRAINT `fk_invoice_items_invoice`
-    FOREIGN KEY (`InvoiceID`)
-    REFERENCES `applefitnessequipmentdb`.`invoices` (`InvoiceID`)
-    ON DELETE CASCADE,
-  CONSTRAINT `fk_invoice_items_pma_equipment`
-    FOREIGN KEY (`SourcePreventiveMaintenanceAgreementEquipmentID`)
-    REFERENCES `applefitnessequipmentdb`.`preventivemaintenanceagreementsequipments` (`PreventiveMaintenanceAgreementEquipmentID`),
-  CONSTRAINT `fk_invoice_items_quote_item`
-    FOREIGN KEY (`SourceEquipmentQuoteItemID`)
-    REFERENCES `applefitnessequipmentdb`.`equipmentquotesitems` (`EquipmentQuoteItemID`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb4
-COLLATE = utf8mb4_0900_ai_ci;
+    -- Record keeping
+    CreatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                   ON UPDATE CURRENT_TIMESTAMP,
 
+    CONSTRAINT fk_clientlocation_client
+        FOREIGN KEY (ClientID) REFERENCES Clients(ClientID)
+        ON DELETE CASCADE,
+        
+    INDEX idx_clientlocations_clientid (ClientID)
+);
 
-SET SQL_MODE=@OLD_SQL_MODE;
-SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
-SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+/* ============================================================
+   TABLE 5: Company (internal)
+============================================================ */
+CREATE TABLE Company (
+    CompanyID         	 TINYINT UNSIGNED NOT NULL PRIMARY KEY DEFAULT 1,
+    
+    CompanyName          VARCHAR(150) NOT NULL DEFAULT 'Apple Fitness Equipment',
+    StreetAddress        VARCHAR(100) NOT NULL DEFAULT '1412 Majestic View Dr.',
+    City                 VARCHAR(50)  NOT NULL DEFAULT 'State College',
+    County				 VARCHAR(50)  NOT NULL DEFAULT 'Centre',
+    State                VARCHAR(50)  NOT NULL DEFAULT 'PA',
+    ZIPCode              VARCHAR(20)  NOT NULL DEFAULT '16801',
+    Country              VARCHAR(50)  NOT NULL DEFAULT 'USA',
+
+    -- Contact
+    Phone                VARCHAR(45)  NOT NULL DEFAULT '8148262922',
+    Fax                  VARCHAR(45)  NOT NULL DEFAULT '8148262933',
+    Email                VARCHAR(100) NOT NULL DEFAULT 'gbartram90@gmail.com',
+    WebsiteURL           VARCHAR(150) NOT NULL DEFAULT 'https://applefitnessequipment.com/',
+
+    YearFounded      	 YEAR,
+
+    -- Record keeping
+    CreatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                   ON UPDATE CURRENT_TIMESTAMP,
+                                   
+	CONSTRAINT chk_single_company CHECK (CompanyID = 1)
+);
+
+/* ============================================================
+   TABLE 6: Preventive Maintenance Agreements
+============================================================ */
+CREATE TABLE PreventiveMaintenanceAgreements (
+    PreventiveMaintenanceAgreementID           INT AUTO_INCREMENT PRIMARY KEY,
+
+    -- Relationships
+    ClientID              INT NULL,						-- FK -> Client
+    BillingLocationID     INT NULL,             		-- FK -> ClientLocation (billing)
+    JobLocationID         INT NULL,              		-- FK -> ClientLocation (job/ship-to)
+    
+    -- Header snapshot
+    PropertyName          VARCHAR(150) NULL,   	   -- "Property/Facility" text
+    FacilityName          VARCHAR(150) NULL,       -- optional separate facility label
+    AddressLine           VARCHAR(150) NOT NULL,   -- street address
+    City                  VARCHAR(100) NOT NULL,
+    State                 VARCHAR(50)  NOT NULL DEFAULT 'PA',
+    ZIPCode               VARCHAR(20)  NOT NULL,
+    ContactName           VARCHAR(150) NOT NULL,
+    ContactEmail          VARCHAR(150) NULL,
+    PhoneNumber1          VARCHAR(45)  NULL,
+    PhoneNumber2          VARCHAR(45)  NULL,
+    
+    -- Agreement Details
+    AgreementNumber       VARCHAR(50) NOT NULL UNIQUE,
+    AgreementTerms		  TEXT NOT NULL,
+    StartDate             DATE NOT NULL,
+    EndDate               DATE NOT NULL,
+    VisitFrequency        ENUM('Monthly', 'Quarterly', 'Semi-Annual', 'Annual') 	NOT NULL,
+    Status                ENUM('Draft', 'Sent', 'Expired', 'Active', 'Declined', 'Canceled', 'Completed') 	NOT NULL DEFAULT 'Draft',
+
+    -- Financial Terms
+    ChargePerMile		  DECIMAL(5,2) 	NOT NULL DEFAULT 0.75,
+    ChargePerHour		  DECIMAL(5,2) 	NOT NULL DEFAULT 80.00,
+    VisitPrice            DECIMAL(10,2) NOT NULL,
+    TaxRatePercent        DECIMAL(5,2) 	NOT NULL DEFAULT 6.00,
+    TaxAmount 			  DECIMAL(10,2) GENERATED ALWAYS AS (VisitPrice * (TaxRatePercent / 100)) STORED,
+    PricePerYear          DECIMAL(10,2) GENERATED ALWAYS AS ((VisitPrice * 
+                               CASE 
+                                    WHEN VisitFrequency='Monthly' THEN 12
+                                    WHEN VisitFrequency='Quarterly' THEN 4
+                                    WHEN VisitFrequency='Semi-Annual' THEN 2
+                                    WHEN VisitFrequency='Annual' THEN 1
+                               END) * (1 + (TaxRatePercent / 100))) STORED,
+
+    RequiresAdditionalInsurance BOOLEAN DEFAULT FALSE,
+
+    -- Legal & Tracking
+    CancelationNoticeDays   INT DEFAULT 30,
+	PaymentDueAfterWorkDays INT DEFAULT 30,
+	LateFeePercentage       DECIMAL(5,2) DEFAULT 10.00,
+	FacilityAgentSignature  VARCHAR(150) NULL,
+    SignatureDate      		DATE NULL,
+
+    -- Record keeping
+    CreatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                   ON UPDATE CURRENT_TIMESTAMP,
+
+	CONSTRAINT fk_pma_client FOREIGN KEY (ClientID)
+		REFERENCES Clients(ClientID)
+		ON DELETE SET NULL,
+
+	CONSTRAINT fk_pma_bill_location FOREIGN KEY (BillingLocationID)
+		REFERENCES ClientsLocations(ClientLocationID)
+		ON DELETE SET NULL,
+
+	CONSTRAINT fk_pma_job_location FOREIGN KEY (JobLocationID)
+		REFERENCES ClientsLocations(ClientLocationID)
+		ON DELETE SET NULL
+);
+
+/* ============================================================
+   TABLE 7: PM Agreement Equipment List
+============================================================ */
+CREATE TABLE PreventiveMaintenanceAgreementsEquipments (
+    PreventiveMaintenanceAgreementEquipmentID INT AUTO_INCREMENT PRIMARY KEY,
+    
+    PreventiveMaintenanceAgreementID 	INT NOT NULL,  -- FK -> PreventiveMaintenanceAgreements
+
+	RowNumber        INT NOT NULL,      -- row order on the form (1,2,3,...)
+    EquipmentType    VARCHAR(100) NOT NULL,
+    Make             VARCHAR(100) NOT NULL,
+    Model            VARCHAR(100) NOT NULL,
+    SerialNumber     VARCHAR(100) NOT NULL,
+    
+	Notes TEXT NULL,
+    
+    CHECK (RowNumber > 0),
+    
+    -- Record keeping
+    CreatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                   ON UPDATE CURRENT_TIMESTAMP,
+
+	UNIQUE (PreventiveMaintenanceAgreementID, RowNumber),
+
+    CONSTRAINT fk_equipment_agreement FOREIGN KEY (PreventiveMaintenanceAgreementID)
+        REFERENCES PreventiveMaintenanceAgreements(PreventiveMaintenanceAgreementID)
+        ON DELETE CASCADE
+        
+);
+
+/* ============================================================
+   TABLE 8: Equipment Quotes
+============================================================ */
+CREATE TABLE EquipmentQuotes (
+    -- Primary key
+    EquipmentQuoteID      INT AUTO_INCREMENT PRIMARY KEY,
+
+    -- Relationships
+    ClientID            INT NULL,                -- e.g., Meridian (can become NULL if client deleted)
+    BillingLocationID   INT NULL,                -- SOLD TO address (can become NULL if location deleted)
+    JobAtLocationID     INT NULL,                -- JOB at address (can become NULL if location deleted)
+    
+	-- "BILL TO" snapshot
+    BillToCompanyName    VARCHAR(150) NULL,
+    BillToContactName    VARCHAR(150) NULL,
+	BillToStreetAddress  VARCHAR(150) NOT NULL,      -- e.g. "123 College Ave"
+	BillToBuildingName   VARCHAR(100) NULL,      -- e.g. "IM Building" or "Health Sciences Center"
+	BillToSuite   		 VARCHAR(50)  NULL,      -- e.g. "Suite 210" or "Floor 3"
+	BillToRoomNumber     VARCHAR(50)  NULL,      -- e.g. "Room 104"
+	BillToDepartment     VARCHAR(100) NULL,      -- e.g. "Athletics Department" or "Facilities"
+    BillToCounty		 VARCHAR(50)  NULL,
+    BillToCity   		 VARCHAR(50)  NOT NULL,
+    BillToState          VARCHAR(50)  NOT NULL DEFAULT 'PA',
+    BillToZIPCode        VARCHAR(20)  NOT NULL,
+    BillToCountry        VARCHAR(50)  NOT NULL DEFAULT 'USA',
+	BillToPhone          VARCHAR(45)  NULL,
+    BillToFax            VARCHAR(45)  NULL,
+	BillToPONumber       VARCHAR(45)  NULL,
+
+    -- "JOB AT"/"SHIP TO" snapshot
+    JobAtCompanyName    VARCHAR(150) NULL,
+	JobAtContactName    VARCHAR(150) NULL,
+	JobAtStreetAddress  VARCHAR(150) NOT NULL,      -- e.g. "123 College Ave"
+	JobAtBuildingName   VARCHAR(100) NULL,      -- e.g. "IM Building" or "Health Sciences Center"
+	JobAtSuite   		VARCHAR(50)  NULL,      -- e.g. "Suite 210" or "Floor 3"
+	JobAtRoomNumber     VARCHAR(50)  NULL,      -- e.g. "Room 104"
+	JobAtDepartment     VARCHAR(100) NULL,      -- e.g. "Athletics Department" or "Facilities"
+    JobAtCounty  		VARCHAR(50)  NUll,
+    JobAtCity   		VARCHAR(50)  NOT NULL,
+    JobAtState          VARCHAR(50)  NOT NULL DEFAULT 'PA',
+    JobAtZIPCode        VARCHAR(20)  NOT NULL,
+    JobAtCountry        VARCHAR(50)  NOT NULL DEFAULT 'USA',
+	JobAtEmail          VARCHAR(45)  NULL,
+	JobAtPONumber       VARCHAR(45)  NULL,
+
+    -- Core quote info
+    QuoteNumber           VARCHAR(45) NOT NULL,   -- e.g. 24-09-501
+    QuoteDate             DATE        NOT NULL,
+    Status                ENUM('Draft', 'Sent', 'Expired', 'Accepted', 'Declined', 'Canceled', 'Completed') NOT NULL DEFAULT 'Draft',
+
+    -- Sales / logistics fields (from the PDF layout)
+	ContactName      	  VARCHAR(150) NOT NULL,      -- e.g. Greg Bartram
+    SalespersonName       VARCHAR(150) NOT NULL DEFAULT 'Greg Bartram',      	-- e.g. Greg Bartram
+    ShipVia				  VARCHAR(150) NOT NULL DEFAULT 'AFE Truck/Trailer',    -- e.g. AFE Truck/Trailer
+	FreightTerms          VARCHAR(150) NOT NULL DEFAULT 'Ppd & Add',      		-- e.g. "Ppd & Add"
+    PaymentTerms          VARCHAR(150) NOT NULL DEFAULT 'See Notes',  			-- e.g. "Cash in Advance"
+	FOBLocation           VARCHAR(150) NOT NULL DEFAULT 'Truck Curbside',       -- e.g. "FOB" field if used
+
+    -- Money fields
+	SubtotalAmount        DECIMAL(10,2) NOT NULL,
+	TotalDiscountAmount   DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    FreightAmount         DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+	ExtendedTotalAmount   DECIMAL(10,2) NOT NULL,
+    SalesTaxRatePercent   DECIMAL(5,2)  NOT NULL DEFAULT 6.00,
+    SalesTaxAmount        DECIMAL(10,2) NOT NULL,
+    QuoteTotalAmount      DECIMAL(10,2) NOT NULL,
+
+    Notes                TEXT NULL,
+    TermsAndConditions   TEXT NULL,
+	ExtraInfo            TEXT NULL,
+
+	SignatureBoolean BOOLEAN NOT NULL DEFAULT 0,
+
+    -- Record keeping
+    CreatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                   ON UPDATE CURRENT_TIMESTAMP,
+                                        
+	UNIQUE (QuoteNumber),
+
+    CONSTRAINT fk_equipmentquotes_client
+        FOREIGN KEY (ClientID)       REFERENCES Clients(ClientID)
+        ON DELETE SET NULL,
+        
+    CONSTRAINT fk_equipmentquotes_bill_location
+        FOREIGN KEY (BillingLocationID) REFERENCES ClientsLocations(ClientLocationID)
+		ON DELETE SET NULL,
+
+    CONSTRAINT fk_equipmentquotes_job_location
+        FOREIGN KEY (JobAtLocationID)   REFERENCES ClientsLocations(ClientLocationID)
+		ON DELETE SET NULL
+);
+
+/* ============================================================
+   TABLE 9: Equipment Quote Line Items
+============================================================ */
+CREATE TABLE EquipmentQuotesItems (
+    EquipmentQuoteItemID 	 INT AUTO_INCREMENT PRIMARY KEY,
+    
+    EquipmentQuoteID         INT NOT NULL,      -- FK -> EquipmentQuotes
+
+    RowNumber                INT 			NOT NULL,   -- row order on the form (1,2,3,...)
+    Qty                      DECIMAL(10,2) 	NOT NULL,  	-- "Qty"
+    Model                    VARCHAR(50) 	NULL,       -- "Model"
+    Description              VARCHAR(255) 	NOT NULL,   -- "Description"
+    UnitCost                 DECIMAL(10,2) 	NOT NULL,   -- "Unit Cost" (list/original)
+    DiscountUnitPrice        DECIMAL(10,2) 	NOT NULL,   -- "Disc Unit Price" (what customer pays)
+	UnitTotal DECIMAL(10,2)  GENERATED ALWAYS AS (Qty * DiscountUnitPrice) STORED,
+    
+	-- Record keeping
+    CreatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                   ON UPDATE CURRENT_TIMESTAMP,
+    
+    UNIQUE (EquipmentQuoteID, RowNumber),
+
+    CONSTRAINT fk_eq_quote
+        FOREIGN KEY (EquipmentQuoteID) REFERENCES EquipmentQuotes(EquipmentQuoteID)
+		ON DELETE CASCADE
+);
+
+/* ============================================================
+   TABLE 10: Invoices
+============================================================ */
+CREATE TABLE Invoices (
+    -- Primary key
+    InvoiceID            INT AUTO_INCREMENT PRIMARY KEY,
+
+    -- Foreign keys for relationships / reporting
+    ClientID             INT NULL,             -- who is being billed
+    BillingLocationID    INT NULL,             -- FK -> ClientLocation (billing)
+    JobLocationID        INT NULL,             -- FK -> ClientLocation (job/ship-to)
+
+    -- Source of this invoice: either a PM agreement or an equipment quote
+    PreventiveMaintenanceAgreementID        INT NULL,	-- FK -> PreventiveMaintenanceAgreement
+    EquipmentQuoteID     					INT NULL,	-- FK -> EquipmentQuote
+
+    -- Core invoice data
+    InvoiceNumber        VARCHAR(45) NOT NULL UNIQUE,
+    QuoteNumber			 VARCHAR(45) NULL,
+    InvoiceDate          DATE        NOT NULL,
+    DueDate              DATE        NOT NULL,
+    PONumber             VARCHAR(45) NULL,
+    Terms                VARCHAR(50) NOT NULL DEFAULT 'Net 30',
+    Status               ENUM('Draft','Open','Paid','Overdue','Void')
+                         NOT NULL DEFAULT 'Draft',
+
+    -- Money fields
+    SubtotalAmount       DECIMAL(10,2)  NOT NULL,
+    TaxRatePercent       DECIMAL(10,2)  NOT NULL DEFAULT 6.00,   -- e.g. 6.00 for 6%
+    TaxAmount            DECIMAL(10,2)  NOT NULL,
+    TotalAmount          DECIMAL(10,2)  NOT NULL,
+    PaymentsApplied      DECIMAL(10,2)  NOT NULL DEFAULT 0.00,
+    BalanceDue           DECIMAL(10,2)  GENERATED ALWAYS AS (TotalAmount - PaymentsApplied) STORED,
+    PaidDate             DATE NULL,
+
+	-- Payment and penalty terms snapshot
+	ReturnedCheckFee      DECIMAL(10,2) NOT NULL DEFAULT 40.00,		-- $40 fee for returned checks
+	InterestPercent       DECIMAL(5,2)  NOT NULL DEFAULT 10.00,     -- 10% monthly interest
+	InterestStartDays     INT 			NOT NULL DEFAULT 90,        -- starts after 90 days unpaid
+	InterestIntervalDays  INT 			NOT NULL DEFAULT 30,        -- applied every 30 days thereafter
+
+    -- "FROM" - your business info as printed on the invoice
+    FromCompanyName      VARCHAR(100) NOT NULL DEFAULT 'Apple Fitness Equipment',
+	FromStreetAddress    VARCHAR(100) NOT NULL DEFAULT '1412 Majestic View Dr.',
+    FromCity             VARCHAR(50)  NOT NULL DEFAULT 'State College',
+    FromState            VARCHAR(50)  NOT NULL DEFAULT 'PA',
+    FromZIPCode          VARCHAR(20)  NOT NULL DEFAULT '16801',
+	FromPhone            VARCHAR(45)  NOT NULL DEFAULT '8148262922',
+	FromFax              VARCHAR(45)  NOT NULL DEFAULT '8148262933',
+
+    -- "BILL TO" snapshot
+    BillToCompanyName    VARCHAR(150) NULL,
+    BillToContactName    VARCHAR(150) NULL,
+	BillToStreetAddress  VARCHAR(150) NOT NULL,     -- e.g. "123 College Ave"
+	BillToBuildingName   VARCHAR(100) NULL,      	-- e.g. "IM Building" or "Health Sciences Center"
+	BillToSuite   		 VARCHAR(50)  NULL,      	-- e.g. "Suite 210" or "Floor 3"
+	BillToRoomNumber     VARCHAR(50)  NULL,      	-- e.g. "Room 104"
+	BillToDepartment     VARCHAR(100) NULL,      	-- e.g. "Athletics Department" or "Facilities"
+	BillToCity   		 VARCHAR(50)  NOT NULL,
+    BillToCounty		 VARCHAR(50)  NULL,
+    BillToState          VARCHAR(50)  NOT NULL DEFAULT 'PA',
+    BillToZIPCode        VARCHAR(20)  NOT NULL,
+    BillToCountry        VARCHAR(50)  NOT NULL DEFAULT 'USA',
+	BillToPhone          VARCHAR(45)  NULL,
+	BillToPONumber       VARCHAR(45)  NULL,
+
+    -- "JOB AT"/"SHIP TO" snapshot (can be same as Bill To or different)
+    JobAtCompanyName    VARCHAR(150) NULL,
+	JobAtContactName    VARCHAR(150) NULL,
+	JobAtStreetAddress  VARCHAR(150) NOT NULL,      -- e.g. "123 College Ave"
+	JobAtBuildingName   VARCHAR(100) NULL,      	-- e.g. "IM Building" or "Health Sciences Center"
+	JobAtSuite   		VARCHAR(50)  NULL,      	-- e.g. "Suite 210" or "Floor 3"
+	JobAtRoomNumber     VARCHAR(50)  NULL,      	-- e.g. "Room 104"
+	JobAtDepartment     VARCHAR(100) NULL,      	-- e.g. "Athletics Department" or "Facilities"
+	JobAtCity   		VARCHAR(50)  NOT NULL,
+    JobAtCounty			VARCHAR(50)  NULL,
+    JobAtState          VARCHAR(50)  NOT NULL DEFAULT 'PA',
+    JobAtZIPCode        VARCHAR(20)  NOT NULL,
+    JobAtCountry        VARCHAR(50)  NOT NULL DEFAULT 'USA',
+	JobAtPhone          VARCHAR(45)  NULL,
+	JobAtPONumber       VARCHAR(45)  NULL,
+
+    -- Record keeping
+    CreatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                   ON UPDATE CURRENT_TIMESTAMP,
+
+    -- Foreign key constraints
+    CONSTRAINT fk_invoice_pmagreement
+        FOREIGN KEY (PreventiveMaintenanceAgreementID)  REFERENCES PreventiveMaintenanceAgreements(PreventiveMaintenanceAgreementID)
+		ON DELETE SET NULL,
+
+	CONSTRAINT fk_invoice_equipmentquote
+        FOREIGN KEY (EquipmentQuoteID)  REFERENCES EquipmentQuotes(EquipmentQuoteID)
+		ON DELETE SET NULL,
+
+    CONSTRAINT fk_invoice_client
+        FOREIGN KEY (ClientID)  REFERENCES Clients(ClientID)
+		ON DELETE SET NULL,
+
+    CONSTRAINT fk_invoice_bill_location
+        FOREIGN KEY (BillingLocationID)  REFERENCES ClientsLocations(ClientLocationID)
+		ON DELETE SET NULL,
+
+    CONSTRAINT fk_invoice_job_location
+        FOREIGN KEY (JobLocationID)  REFERENCES ClientsLocations(ClientLocationID)
+		ON DELETE SET NULL
+);
+
+/* ============================================================
+   TABLE 11: Invoice Line Items
+============================================================ */
+CREATE TABLE InvoicesItems (
+    InvoiceItemID        INT AUTO_INCREMENT PRIMARY KEY,
+
+    InvoiceID            INT NOT NULL,   						-- FK -> Invoices
+    
+    RowNumber            INT NOT NULL,   						-- line order on invoice (1,2,3...)
+	Description          VARCHAR(255)  NOT NULL,  				-- line text (equipment, labor, freight, etc.)
+	Qty                  DECIMAL(10,2) NOT NULL DEFAULT 1.00,
+    Rate                 DECIMAL(10,2) NOT NULL,
+    TotalAmount 		 DECIMAL(10,2) GENERATED ALWAYS AS (Qty * Rate) STORED,
+
+	-- Record keeping
+    CreatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                   ON UPDATE CURRENT_TIMESTAMP,
+
+    -- Unique constraint so same invoice can't accidentally duplicate row numbers
+    UNIQUE (InvoiceID, RowNumber),
+
+    CONSTRAINT fk_invoice_items_invoice
+        FOREIGN KEY (InvoiceID) REFERENCES Invoices(InvoiceID)
+		ON DELETE CASCADE
+);
+

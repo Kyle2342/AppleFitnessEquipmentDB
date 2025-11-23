@@ -47,14 +47,14 @@ public class PMAgreementDAO {
     public boolean addAgreement(PreventiveMaintenanceAgreement pma) throws SQLException {
         String sql = "INSERT INTO preventivemaintenanceagreements (ClientID, BillingLocationID, JobLocationID, " +
                     "PropertyName, FacilityName, AddressLine, City, State, ZIPCode, ContactName, ContactEmail, " +
-                    "PhoneNumber1, PhoneNumber2, AgreementNumber, CoverageText, StartDate, EndDate, " +
+                    "PhoneNumber1, PhoneNumber2, AgreementNumber, StartDate, EndDate, " +
                     "VisitFrequency, Status, ChargePerMile, ChargePerHour, VisitPrice, TaxRatePercent, " +
                     "RequiresAdditionalInsurance, CancelationNoticeDays, PaymentDueAfterWorkDays, LateFeePercentage) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
+
             pstmt.setInt(1, pma.getClientId());
             pstmt.setInt(2, pma.getBillingLocationId());
             pstmt.setInt(3, pma.getJobLocationId());
@@ -69,20 +69,20 @@ public class PMAgreementDAO {
             pstmt.setString(12, pma.getPhoneNumber1());
             pstmt.setString(13, pma.getPhoneNumber2());
             pstmt.setString(14, pma.getAgreementNumber());
-            pstmt.setString(15, pma.getCoverageText());
-            pstmt.setDate(16, java.sql.Date.valueOf(pma.getStartDate()));
-            pstmt.setDate(17, java.sql.Date.valueOf(pma.getEndDate()));
-            pstmt.setString(18, pma.getVisitFrequency());
-            pstmt.setString(19, pma.getStatus());
-            pstmt.setBigDecimal(20, pma.getChargePerMile());
-            pstmt.setBigDecimal(21, pma.getChargePerHour());
-            pstmt.setBigDecimal(22, pma.getVisitPrice());
-            pstmt.setBigDecimal(23, pma.getTaxRatePercent());
-            pstmt.setBoolean(24, pma.getRequiresAdditionalInsurance() != null ? pma.getRequiresAdditionalInsurance() : false);
-            pstmt.setInt(25, pma.getCancelationNoticeDays() != null ? pma.getCancelationNoticeDays() : 30);
-            pstmt.setInt(26, pma.getPaymentDueAfterWorkDays() != null ? pma.getPaymentDueAfterWorkDays() : 30);
-            pstmt.setBigDecimal(27, pma.getLateFeePercentage());
-            
+            // pstmt.setString(15, pma.getCoverageText());
+            pstmt.setDate(15, java.sql.Date.valueOf(pma.getStartDate()));
+            pstmt.setDate(16, java.sql.Date.valueOf(pma.getEndDate()));
+            pstmt.setString(17, pma.getVisitFrequency());
+            pstmt.setString(18, pma.getStatus());
+            pstmt.setBigDecimal(19, pma.getChargePerMile());
+            pstmt.setBigDecimal(20, pma.getChargePerHour());
+            pstmt.setBigDecimal(21, pma.getVisitPrice());
+            pstmt.setBigDecimal(22, pma.getTaxRatePercent());
+            pstmt.setBoolean(23, pma.getRequiresAdditionalInsurance() != null ? pma.getRequiresAdditionalInsurance() : false);
+            pstmt.setInt(24, pma.getCancelationNoticeDays() != null ? pma.getCancelationNoticeDays() : 30);
+            pstmt.setInt(25, pma.getPaymentDueAfterWorkDays() != null ? pma.getPaymentDueAfterWorkDays() : 30);
+            pstmt.setBigDecimal(26, pma.getLateFeePercentage());
+
             return pstmt.executeUpdate() > 0;
         }
     }
@@ -91,14 +91,14 @@ public class PMAgreementDAO {
         String sql = "UPDATE preventivemaintenanceagreements SET ClientID = ?, BillingLocationID = ?, JobLocationID = ?, " +
                     "PropertyName = ?, FacilityName = ?, AddressLine = ?, City = ?, State = ?, ZIPCode = ?, " +
                     "ContactName = ?, ContactEmail = ?, PhoneNumber1 = ?, PhoneNumber2 = ?, AgreementNumber = ?, " +
-                    "CoverageText = ?, StartDate = ?, EndDate = ?, VisitFrequency = ?, Status = ?, " +
+                    "StartDate = ?, EndDate = ?, VisitFrequency = ?, Status = ?, " +
                     "ChargePerMile = ?, ChargePerHour = ?, VisitPrice = ?, TaxRatePercent = ?, " +
                     "RequiresAdditionalInsurance = ?, CancelationNoticeDays = ?, PaymentDueAfterWorkDays = ?, " +
                     "LateFeePercentage = ? WHERE PreventiveMaintenanceAgreementID = ?";
-        
+
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
+
             pstmt.setInt(1, pma.getClientId());
             pstmt.setInt(2, pma.getBillingLocationId());
             pstmt.setInt(3, pma.getJobLocationId());
@@ -113,20 +113,20 @@ public class PMAgreementDAO {
             pstmt.setString(12, pma.getPhoneNumber1());
             pstmt.setString(13, pma.getPhoneNumber2());
             pstmt.setString(14, pma.getAgreementNumber());
-            pstmt.setString(15, pma.getCoverageText());
-            pstmt.setDate(16, java.sql.Date.valueOf(pma.getStartDate()));
-            pstmt.setDate(17, java.sql.Date.valueOf(pma.getEndDate()));
-            pstmt.setString(18, pma.getVisitFrequency());
-            pstmt.setString(19, pma.getStatus());
-            pstmt.setBigDecimal(20, pma.getChargePerMile());
-            pstmt.setBigDecimal(21, pma.getChargePerHour());
-            pstmt.setBigDecimal(22, pma.getVisitPrice());
-            pstmt.setBigDecimal(23, pma.getTaxRatePercent());
-            pstmt.setBoolean(24, pma.getRequiresAdditionalInsurance() != null ? pma.getRequiresAdditionalInsurance() : false);
-            pstmt.setInt(25, pma.getCancelationNoticeDays() != null ? pma.getCancelationNoticeDays() : 30);
-            pstmt.setInt(26, pma.getPaymentDueAfterWorkDays() != null ? pma.getPaymentDueAfterWorkDays() : 30);
-            pstmt.setBigDecimal(27, pma.getLateFeePercentage());
-            pstmt.setInt(28, pma.getPmaId());
+            // pstmt.setString(15, pma.getCoverageText());
+            pstmt.setDate(15, java.sql.Date.valueOf(pma.getStartDate()));
+            pstmt.setDate(16, java.sql.Date.valueOf(pma.getEndDate()));
+            pstmt.setString(17, pma.getVisitFrequency());
+            pstmt.setString(18, pma.getStatus());
+            pstmt.setBigDecimal(19, pma.getChargePerMile());
+            pstmt.setBigDecimal(20, pma.getChargePerHour());
+            pstmt.setBigDecimal(21, pma.getVisitPrice());
+            pstmt.setBigDecimal(22, pma.getTaxRatePercent());
+            pstmt.setBoolean(23, pma.getRequiresAdditionalInsurance() != null ? pma.getRequiresAdditionalInsurance() : false);
+            pstmt.setInt(24, pma.getCancelationNoticeDays() != null ? pma.getCancelationNoticeDays() : 30);
+            pstmt.setInt(25, pma.getPaymentDueAfterWorkDays() != null ? pma.getPaymentDueAfterWorkDays() : 30);
+            pstmt.setBigDecimal(26, pma.getLateFeePercentage());
+            pstmt.setInt(27, pma.getPmaId());
             
             return pstmt.executeUpdate() > 0;
         }
@@ -160,7 +160,7 @@ public class PMAgreementDAO {
         pma.setPhoneNumber1(rs.getString("PhoneNumber1"));
         pma.setPhoneNumber2(rs.getString("PhoneNumber2"));
         pma.setAgreementNumber(rs.getString("AgreementNumber"));
-        pma.setCoverageText(rs.getString("CoverageText"));
+        // pma.setCoverageText(rs.getString("CoverageText"));
         
         if (rs.getDate("StartDate") != null) {
             pma.setStartDate(rs.getDate("StartDate").toLocalDate());

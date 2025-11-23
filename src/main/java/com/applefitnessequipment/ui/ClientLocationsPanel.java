@@ -130,6 +130,16 @@ public class ClientLocationsPanel extends JPanel {
         });
         
         JScrollPane scrollPane = new JScrollPane(locationsTable);
+
+        // Clear form when clicking on scroll pane background
+        scrollPane.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                locationsTable.clearSelection();
+                clearForm();
+            }
+        });
+
         add(scrollPane, BorderLayout.CENTER);
 
         // Right Panel - Form
@@ -324,6 +334,15 @@ public class ClientLocationsPanel extends JPanel {
         buttonPanel.add(clearButton);
 
         formPanel.add(buttonPanel, gbc);
+
+        // Clear selection when clicking on form panel background
+        formPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                locationsTable.clearSelection();
+                clearForm();
+            }
+        });
 
         JScrollPane formScrollPane = new JScrollPane(formPanel);
         formScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
@@ -567,5 +586,10 @@ public class ClientLocationsPanel extends JPanel {
         }
 
         return true;
+    }
+
+    public void refreshData() {
+        loadClients();
+        loadLocations();
     }
 }

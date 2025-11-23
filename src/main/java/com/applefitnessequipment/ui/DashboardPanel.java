@@ -15,7 +15,6 @@ import java.awt.RenderingHints;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.text.NumberFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -38,11 +37,11 @@ import com.applefitnessequipment.dao.ClientDAO;
 import com.applefitnessequipment.dao.EmployeeTimeLogDAO;
 import com.applefitnessequipment.dao.EquipmentQuoteCompleteDAO;
 import com.applefitnessequipment.dao.InvoiceDAO;
-import com.applefitnessequipment.dao.PreventiveMaintenanceDAO;
+import com.applefitnessequipment.dao.PMAgreementDAO;
 import com.applefitnessequipment.model.Client;
 import com.applefitnessequipment.model.EquipmentQuoteComplete;
 import com.applefitnessequipment.model.Invoice;
-import com.applefitnessequipment.model.PreventiveMaintenance;
+import com.applefitnessequipment.model.PreventiveMaintenanceAgreement;
 
 public class DashboardPanel extends JPanel {
 
@@ -58,7 +57,7 @@ public class DashboardPanel extends JPanel {
     private ClientDAO clientDAO;
     private InvoiceDAO invoiceDAO;
     private EquipmentQuoteCompleteDAO quoteDAO;
-    private PreventiveMaintenanceDAO pmDAO;
+    private PMAgreementDAO pmDAO;
     private EmployeeTimeLogDAO timeLogDAO;
 
     // Reference to parent tabbed pane for navigation
@@ -74,7 +73,7 @@ public class DashboardPanel extends JPanel {
         clientDAO = new ClientDAO();
         invoiceDAO = new InvoiceDAO();
         quoteDAO = new EquipmentQuoteCompleteDAO();
-        pmDAO = new PreventiveMaintenanceDAO();
+        pmDAO = new PMAgreementDAO();
         timeLogDAO = new EmployeeTimeLogDAO();
     }
 
@@ -167,13 +166,13 @@ public class DashboardPanel extends JPanel {
         int clientCount = getClientCount();
         Object[] invoiceData = getInvoiceData();
         int quoteCount = getOpenQuoteCount();
-        int pmCount = getUpcomingPMCount();
+        int pmCount = getActivePMCount();
 
         // Create stat cards
-        panel.add(createStatCard("Active Clients", String.valueOf(clientCount), "Total registered clients", new Color(59, 130, 246)));
+        panel.add(createStatCard("Active Clients", String.valueOf(clientCount), "With open/overdue invoices", new Color(59, 130, 246)));
         panel.add(createStatCard("Open Invoices", "$" + formatCurrency((BigDecimal) invoiceData[1]), (int) invoiceData[0] + " pending", new Color(16, 185, 129)));
-        panel.add(createStatCard("Equipment Quotes", String.valueOf(quoteCount), "Active quotes", new Color(245, 158, 11)));
-        panel.add(createStatCard("PM Due Soon", String.valueOf(pmCount), "Next 30 days", PRIMARY_RED));
+        panel.add(createStatCard("Equipment Quotes", String.valueOf(quoteCount), "Sent or accepted", new Color(245, 158, 11)));
+        panel.add(createStatCard("Active PM", String.valueOf(pmCount), "Active agreements", PRIMARY_RED));
 
         return panel;
     }
@@ -241,10 +240,10 @@ public class DashboardPanel extends JPanel {
         JPanel buttonsPanel = new JPanel(new GridLayout(1, 4, 15, 0));
         buttonsPanel.setOpaque(false);
 
-        buttonsPanel.add(createQuickActionButton("New Client", "Add a new client", 0));
-        buttonsPanel.add(createQuickActionButton("New Quote", "Create equipment quote", 6));
-        buttonsPanel.add(createQuickActionButton("New Invoice", "Generate invoice", 4));
-        buttonsPanel.add(createQuickActionButton("Time Log", "Record work hours", 3));
+        buttonsPanel.add(createQuickActionButton("New Client", "Add a new client", 1, 0));
+        buttonsPanel.add(createQuickActionButton("New Invoice", "Generate invoice", 3, 0));
+        buttonsPanel.add(createQuickActionButton("New Equipment Quote", "Create equipment quote", 3, 1));
+        buttonsPanel.add(createQuickActionButton("New Preventive Maintenance Agreement", "Create preventive maintenance", 3, 2));
 
         section.add(sectionTitle, BorderLayout.NORTH);
         section.add(buttonsPanel, BorderLayout.CENTER);
@@ -252,7 +251,7 @@ public class DashboardPanel extends JPanel {
         return section;
     }
 
-    private JButton createQuickActionButton(String text, String tooltip, int tabIndex) {
+    private JButton createQuickActionButton(String text, String tooltip, int tabIndex, int subTabIndex) {
         // Track scale for hover animation - start smaller to allow room for scaling
         final float[] scale = {0.96f};
         final javax.swing.Timer[] animTimer = {null};
@@ -345,10 +344,18 @@ public class DashboardPanel extends JPanel {
             }
         });
 
-        // Navigate to corresponding tab
+        // Navigate to corresponding tab and sub-tab
         button.addActionListener(e -> {
             if (parentTabbedPane != null && tabIndex < parentTabbedPane.getTabCount()) {
-                parentTabbedPane.setSelectedIndex(tabIndex + 1); // +1 because Dashboard is first
+                parentTabbedPane.setSelectedIndex(tabIndex);
+                // Select sub-tab if the tab contains a nested JTabbedPane
+                java.awt.Component selectedComponent = parentTabbedPane.getComponentAt(tabIndex);
+                if (selectedComponent instanceof JTabbedPane) {
+                    JTabbedPane subPane = (JTabbedPane) selectedComponent;
+                    if (subTabIndex < subPane.getTabCount()) {
+                        subPane.setSelectedIndex(subTabIndex);
+                    }
+                }
             }
         });
 
@@ -370,7 +377,7 @@ public class DashboardPanel extends JPanel {
 
         tablesPanel.add(createRecentInvoicesCard());
         tablesPanel.add(createRecentQuotesCard());
-        tablesPanel.add(createUpcomingPMCard());
+        tablesPanel.add(createRecentPMCard());
 
         section.add(sectionTitle, BorderLayout.NORTH);
         section.add(tablesPanel, BorderLayout.CENTER);
@@ -455,8 +462,8 @@ public class DashboardPanel extends JPanel {
         return card;
     }
 
-    private JPanel createUpcomingPMCard() {
-        JPanel card = createActivityCard("Upcoming PM Agreements");
+    private JPanel createRecentPMCard() {
+        JPanel card = createActivityCard("Active PM Agreements");
 
         String[] columns = {"Agreement #", "Client", "End Date", "Status"};
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
@@ -467,22 +474,18 @@ public class DashboardPanel extends JPanel {
         };
 
         try {
-            List<PreventiveMaintenance> agreements = pmDAO.getAllAgreements();
-            LocalDate now = LocalDate.now();
-            LocalDate thirtyDays = now.plusDays(30);
+            List<PreventiveMaintenanceAgreement> agreements = pmDAO.getAllAgreements();
             int count = 0;
 
-            for (PreventiveMaintenance pm : agreements) {
+            for (PreventiveMaintenanceAgreement pm : agreements) {
                 if (count >= 5) break;
-                if (pm.getEndDate() != null &&
-                    (pm.getEndDate().isBefore(thirtyDays) || pm.getEndDate().isEqual(thirtyDays)) &&
-                    pm.getEndDate().isAfter(now)) {
-
+                // Show only Active agreements
+                if ("Active".equalsIgnoreCase(pm.getStatus())) {
                     String clientName = getClientName(pm.getClientId());
                     model.addRow(new Object[]{
                         pm.getAgreementNumber(),
                         clientName,
-                        pm.getEndDate().format(DateTimeFormatter.ofPattern("MM/dd/yyyy")),
+                        pm.getEndDate() != null ? pm.getEndDate().format(DateTimeFormatter.ofPattern("MM/dd/yyyy")) : "N/A",
                         pm.getStatus()
                     });
                     count++;
@@ -490,7 +493,7 @@ public class DashboardPanel extends JPanel {
             }
 
             if (count == 0) {
-                model.addRow(new Object[]{"No upcoming", "agreements", "due", "--"});
+                model.addRow(new Object[]{"No active", "agreements", "found", "--"});
             }
         } catch (SQLException e) {
             model.addRow(new Object[]{"--", "--", "--", "--"});
@@ -561,7 +564,18 @@ public class DashboardPanel extends JPanel {
 
     private int getClientCount() {
         try {
-            return clientDAO.getAllClients().size();
+            // Count clients that have an Open or Overdue invoice
+            List<Invoice> invoices = invoiceDAO.getAllInvoices();
+            java.util.Set<Integer> activeClientIds = new java.util.HashSet<>();
+
+            for (Invoice inv : invoices) {
+                if (inv.getClientId() != null &&
+                    ("Open".equalsIgnoreCase(inv.getStatus()) ||
+                     "Overdue".equalsIgnoreCase(inv.getStatus()))) {
+                    activeClientIds.add(inv.getClientId());
+                }
+            }
+            return activeClientIds.size();
         } catch (SQLException e) {
             return 0;
         }
@@ -598,9 +612,9 @@ public class DashboardPanel extends JPanel {
             int count = 0;
             for (EquipmentQuoteComplete quote : quotes) {
                 String status = quote.getStatus();
-                // Count active quotes: Draft or Sent (not yet Accepted, Declined, or Expired)
+                // Count quotes that are Sent or Accepted
                 if (status != null &&
-                    ("Draft".equalsIgnoreCase(status) || "Sent".equalsIgnoreCase(status))) {
+                    ("Sent".equalsIgnoreCase(status) || "Accepted".equalsIgnoreCase(status))) {
                     count++;
                 }
             }
@@ -610,17 +624,14 @@ public class DashboardPanel extends JPanel {
         }
     }
 
-    private int getUpcomingPMCount() {
+    private int getActivePMCount() {
         try {
-            List<PreventiveMaintenance> agreements = pmDAO.getAllAgreements();
-            LocalDate now = LocalDate.now();
-            LocalDate thirtyDays = now.plusDays(30);
+            List<PreventiveMaintenanceAgreement> agreements = pmDAO.getAllAgreements();
             int count = 0;
 
-            for (PreventiveMaintenance pm : agreements) {
-                if (pm.getEndDate() != null &&
-                    (pm.getEndDate().isBefore(thirtyDays) || pm.getEndDate().isEqual(thirtyDays)) &&
-                    pm.getEndDate().isAfter(now)) {
+            for (PreventiveMaintenanceAgreement pm : agreements) {
+                // Count PM agreements with status "Active"
+                if ("Active".equalsIgnoreCase(pm.getStatus())) {
                     count++;
                 }
             }

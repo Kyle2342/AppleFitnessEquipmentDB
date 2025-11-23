@@ -73,11 +73,8 @@ public class EquipmentQuotesPanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Top Panel
+        // Top Panel - removed refresh button, data loads automatically
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton refreshButton = new JButton("Refresh");
-        refreshButton.addActionListener(e -> loadQuotes());
-        topPanel.add(refreshButton);
         add(topPanel, BorderLayout.NORTH);
 
         // Center Panel - Table
@@ -109,7 +106,18 @@ public class EquipmentQuotesPanel extends JPanel {
             }
         });
         
-        add(new JScrollPane(quotesTable), BorderLayout.CENTER);
+        JScrollPane scrollPane = new JScrollPane(quotesTable);
+
+        // Clear form when clicking on scroll pane background
+        scrollPane.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                quotesTable.clearSelection();
+                clearForm();
+            }
+        });
+
+        add(scrollPane, BorderLayout.CENTER);
 
         // Right Panel - Scrollable Form
         JPanel formPanel = new JPanel(new GridBagLayout());
@@ -170,7 +178,7 @@ public class EquipmentQuotesPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Status:*"), gbc);
         gbc.gridx = 1;
-        statusCombo = new JComboBox<>(new String[]{"Draft", "Sent", "Accepted", "Declined", "Expired"});
+        statusCombo = new JComboBox<>(new String[]{"Draft", "Sent", "Expired", "Accepted", "Declined", "Canceled", "Completed"});
         ModernUIHelper.styleComboBox(statusCombo);
         formPanel.add(statusCombo, gbc);
         row++;
@@ -438,6 +446,15 @@ public class EquipmentQuotesPanel extends JPanel {
 
         formPanel.add(buttonPanel, gbc);
 
+        // Clear selection when clicking on form panel background
+        formPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                quotesTable.clearSelection();
+                clearForm();
+            }
+        });
+
         JScrollPane formScrollPane = new JScrollPane(formPanel);
         formScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         add(formScrollPane, BorderLayout.EAST);
@@ -480,7 +497,7 @@ public class EquipmentQuotesPanel extends JPanel {
                 tableModel.addRow(new Object[]{
                     quote.getQuoteId(),
                     quote.getQuoteNumber(),
-                    quote.getClientId(),
+                    getClientNameForQuote(quote),
                     quote.getQuoteDate(),
                     quote.getStatus(),
                     quote.getContactName(),
@@ -490,6 +507,24 @@ public class EquipmentQuotesPanel extends JPanel {
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading quotes: " + ex.getMessage());
         }
+    }
+
+    private String getClientNameForQuote(EquipmentQuoteComplete quote) {
+        if (quote.getClientId() != null) {
+            try {
+                Client client = clientDAO.getClientById(quote.getClientId());
+                if (client != null) {
+                    if (client.getCompanyName() != null && !client.getCompanyName().isEmpty()) {
+                        return client.getCompanyName();
+                    } else {
+                        return client.getFirstName() + " " + client.getLastName();
+                    }
+                }
+            } catch (SQLException e) {
+                // Fall through
+            }
+        }
+        return "Unknown";
     }
 
     private void loadSelectedQuote() {
@@ -717,5 +752,10 @@ public class EquipmentQuotesPanel extends JPanel {
             return false;
         }
         return true;
+    }
+
+    public void refreshData() {
+        loadClients();
+        loadQuotes();
     }
 }

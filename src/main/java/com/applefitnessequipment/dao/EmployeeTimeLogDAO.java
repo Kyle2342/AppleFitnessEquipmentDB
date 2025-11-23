@@ -64,98 +64,78 @@ public class EmployeeTimeLogDAO {
     
     public boolean addTimeLog(EmployeeTimeLog log) throws SQLException {
         String sql = "INSERT INTO employeestimelogs (EmployeeID, DayOfWeek, LogDate, TimeInFirst, " +
-                    "TimeOutFirst, TimeInSecond, TimeOutSecond, TotalHours, Miles, PTOHours) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        
+                    "TimeOutFirst, TimeInSecond, TimeOutSecond, Miles) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
+
             pstmt.setInt(1, log.getEmployeeId());
             pstmt.setString(2, log.getDayOfWeek());
             pstmt.setDate(3, java.sql.Date.valueOf(log.getLogDate()));
             pstmt.setTime(4, java.sql.Time.valueOf(log.getTimeInFirst()));
             pstmt.setTime(5, java.sql.Time.valueOf(log.getTimeOutFirst()));
-            
+
             if (log.getTimeInSecond() != null) {
                 pstmt.setTime(6, java.sql.Time.valueOf(log.getTimeInSecond()));
             } else {
                 pstmt.setNull(6, java.sql.Types.TIME);
             }
-            
+
             if (log.getTimeOutSecond() != null) {
                 pstmt.setTime(7, java.sql.Time.valueOf(log.getTimeOutSecond()));
             } else {
                 pstmt.setNull(7, java.sql.Types.TIME);
             }
-            
-            if (log.getTotalHours() != null) {
-                pstmt.setBigDecimal(8, log.getTotalHours());
+
+            // TotalHours is auto-calculated by database
+
+            if (log.getMiles() != null) {
+                pstmt.setBigDecimal(8, log.getMiles());
             } else {
                 pstmt.setNull(8, java.sql.Types.DECIMAL);
             }
-            
-            if (log.getMiles() != null) {
-                pstmt.setBigDecimal(9, log.getMiles());
-            } else {
-                pstmt.setNull(9, java.sql.Types.DECIMAL);
-            }
-            
-            if (log.getPtoHours() != null) {
-                pstmt.setBigDecimal(10, log.getPtoHours());
-            } else {
-                pstmt.setNull(10, java.sql.Types.DECIMAL);
-            }
-            
+
             return pstmt.executeUpdate() > 0;
         }
     }
-    
+
     public boolean updateTimeLog(EmployeeTimeLog log) throws SQLException {
         String sql = "UPDATE employeestimelogs SET EmployeeID = ?, DayOfWeek = ?, LogDate = ?, " +
                     "TimeInFirst = ?, TimeOutFirst = ?, TimeInSecond = ?, TimeOutSecond = ?, " +
-                    "TotalHours = ?, Miles = ?, PTOHours = ? WHERE TimeLogID = ?";
-        
+                    "Miles = ? WHERE TimeLogID = ?";
+
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
+
             pstmt.setInt(1, log.getEmployeeId());
             pstmt.setString(2, log.getDayOfWeek());
             pstmt.setDate(3, java.sql.Date.valueOf(log.getLogDate()));
             pstmt.setTime(4, java.sql.Time.valueOf(log.getTimeInFirst()));
             pstmt.setTime(5, java.sql.Time.valueOf(log.getTimeOutFirst()));
-            
+
             if (log.getTimeInSecond() != null) {
                 pstmt.setTime(6, java.sql.Time.valueOf(log.getTimeInSecond()));
             } else {
                 pstmt.setNull(6, java.sql.Types.TIME);
             }
-            
+
             if (log.getTimeOutSecond() != null) {
                 pstmt.setTime(7, java.sql.Time.valueOf(log.getTimeOutSecond()));
             } else {
                 pstmt.setNull(7, java.sql.Types.TIME);
             }
-            
-            if (log.getTotalHours() != null) {
-                pstmt.setBigDecimal(8, log.getTotalHours());
+
+            // TotalHours is auto-calculated by database
+
+            if (log.getMiles() != null) {
+                pstmt.setBigDecimal(8, log.getMiles());
             } else {
                 pstmt.setNull(8, java.sql.Types.DECIMAL);
             }
-            
-            if (log.getMiles() != null) {
-                pstmt.setBigDecimal(9, log.getMiles());
-            } else {
-                pstmt.setNull(9, java.sql.Types.DECIMAL);
-            }
-            
-            if (log.getPtoHours() != null) {
-                pstmt.setBigDecimal(10, log.getPtoHours());
-            } else {
-                pstmt.setNull(10, java.sql.Types.DECIMAL);
-            }
-            
-            pstmt.setInt(11, log.getTimeLogId());
-            
+
+            pstmt.setInt(9, log.getTimeLogId());
+
             return pstmt.executeUpdate() > 0;
         }
     }
@@ -197,10 +177,10 @@ public class EmployeeTimeLogDAO {
             log.setMiles(miles);
         }
         
-        BigDecimal ptoHours = rs.getBigDecimal("PTOHours");
-        if (ptoHours != null) {
-            log.setPtoHours(ptoHours);
-        }
+        // BigDecimal ptoHours = rs.getBigDecimal("PTOHours");
+        // if (ptoHours != null) {
+        //     log.setPtoHours(ptoHours);
+        // }
         
         log.setCreatedAt(rs.getTimestamp("CreatedAt").toLocalDateTime());
         log.setUpdatedAt(rs.getTimestamp("UpdatedAt").toLocalDateTime());

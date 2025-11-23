@@ -8,7 +8,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import javax.swing.BorderFactory;
-import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -35,9 +34,6 @@ public class InvoicesViewPanel extends JPanel {
         // Top Panel - Info
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topPanel.add(new JLabel("Invoices - View Only"));
-        JButton refreshButton = new JButton("Refresh");
-        refreshButton.addActionListener(e -> loadInvoices());
-        topPanel.add(refreshButton);
         add(topPanel, BorderLayout.NORTH);
 
         // Center Panel - Table

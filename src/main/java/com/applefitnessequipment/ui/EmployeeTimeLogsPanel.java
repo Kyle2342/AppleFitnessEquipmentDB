@@ -39,7 +39,7 @@ public class EmployeeTimeLogsPanel extends JPanel {
     private JComboBox<String> dayOfWeekCombo;
     private JTextField logDateField, timeInFirstField, timeOutFirstField;
     private JTextField timeInSecondField, timeOutSecondField;
-    private JTextField totalHoursField, milesField, ptoHoursField;
+    private JTextField totalHoursField, milesField; // ptoHoursField;
     private JButton addButton, updateButton, deleteButton, clearButton;
     private EmployeeTimeLog selectedTimeLog;
     private DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -69,7 +69,7 @@ public class EmployeeTimeLogsPanel extends JPanel {
         add(filterPanel, BorderLayout.NORTH);
 
         // Center Panel - Table
-        String[] columns = {"ID", "Employee ID", "Day", "Date", "Time In", "Time Out", "Total Hrs", "Miles", "PTO Hrs"};
+        String[] columns = {"ID", "Employee ID", "Day", "Date", "Time In", "Time Out", "Total Hrs", "Miles" /*, "PTO Hrs"*/};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -111,6 +111,16 @@ public class EmployeeTimeLogsPanel extends JPanel {
         });
         
         JScrollPane scrollPane = new JScrollPane(timeLogsTable);
+
+        // Clear form when clicking on scroll pane background
+        scrollPane.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                timeLogsTable.clearSelection();
+                clearForm();
+            }
+        });
+
         add(scrollPane, BorderLayout.CENTER);
 
         // Right Panel - Form
@@ -204,14 +214,14 @@ public class EmployeeTimeLogsPanel extends JPanel {
         formPanel.add(milesField, gbc);
         row++;
 
-        // PTO Hours
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("PTO Hours:"), gbc);
-        gbc.gridx = 1;
-        ptoHoursField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(ptoHoursField);
-        formPanel.add(ptoHoursField, gbc);
-        row++;
+        // PTO Hours - commented out
+        // gbc.gridx = 0; gbc.gridy = row;
+        // formPanel.add(new JLabel("PTO Hours:"), gbc);
+        // gbc.gridx = 1;
+        // ptoHoursField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        // ModernUIHelper.styleTextField(ptoHoursField);
+        // formPanel.add(ptoHoursField, gbc);
+        // row++;
 
         // Buttons
         gbc.gridx = 0; gbc.gridy = row;
@@ -241,6 +251,15 @@ public class EmployeeTimeLogsPanel extends JPanel {
         buttonPanel.add(clearButton);
 
         formPanel.add(buttonPanel, gbc);
+
+        // Clear selection when clicking on form panel background
+        formPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                timeLogsTable.clearSelection();
+                clearForm();
+            }
+        });
 
         JScrollPane formScrollPane = new JScrollPane(formPanel);
         formScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
@@ -342,10 +361,10 @@ public class EmployeeTimeLogsPanel extends JPanel {
                         selectedTimeLog.getTimeOutSecond().format(timeFormatter) : "");
                     totalHoursField.setText(selectedTimeLog.getTotalHours() != null ? 
                         selectedTimeLog.getTotalHours().toString() : "");
-                    milesField.setText(selectedTimeLog.getMiles() != null ? 
+                    milesField.setText(selectedTimeLog.getMiles() != null ?
                         selectedTimeLog.getMiles().toString() : "");
-                    ptoHoursField.setText(selectedTimeLog.getPtoHours() != null ? 
-                        selectedTimeLog.getPtoHours().toString() : "");
+                    // ptoHoursField.setText(selectedTimeLog.getPtoHours() != null ?
+                    //     selectedTimeLog.getPtoHours().toString() : "");
                     
                     updateButton.setEnabled(true);
                     deleteButton.setEnabled(true);
@@ -443,9 +462,9 @@ public class EmployeeTimeLogsPanel extends JPanel {
         if (!milesField.getText().trim().isEmpty()) {
             log.setMiles(new BigDecimal(milesField.getText().trim()));
         }
-        if (!ptoHoursField.getText().trim().isEmpty()) {
-            log.setPtoHours(new BigDecimal(ptoHoursField.getText().trim()));
-        }
+        // if (!ptoHoursField.getText().trim().isEmpty()) {
+        //     log.setPtoHours(new BigDecimal(ptoHoursField.getText().trim()));
+        // }
     }
 
     private void clearForm() {
@@ -460,7 +479,7 @@ public class EmployeeTimeLogsPanel extends JPanel {
         timeOutSecondField.setText("");
         totalHoursField.setText("");
         milesField.setText("");
-        ptoHoursField.setText("");
+        // ptoHoursField.setText("");
         selectedTimeLog = null;
         updateButton.setEnabled(false);
         deleteButton.setEnabled(false);
@@ -492,5 +511,10 @@ public class EmployeeTimeLogsPanel extends JPanel {
         }
 
         return true;
+    }
+
+    public void refreshData() {
+        loadEmployees();
+        loadTimeLogs();
     }
 }

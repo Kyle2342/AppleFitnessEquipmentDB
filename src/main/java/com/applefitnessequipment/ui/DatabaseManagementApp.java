@@ -27,9 +27,15 @@ public class DatabaseManagementApp extends JFrame {
 
     private void initializeUI() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1200, 800);  // Set initial size before maximizing
-        setExtendedState(JFrame.MAXIMIZED_BOTH); // Maximize to fill screen
         setLayout(new BorderLayout());
+
+        // Set to maximized state
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+
+        // Also set bounds to screen size as fallback
+        java.awt.GraphicsEnvironment ge = java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment();
+        java.awt.Rectangle bounds = ge.getMaximumWindowBounds();
+        setBounds(bounds);
 
         // Create header panel with Apple Fitness branding
         JPanel headerPanel = new JPanel();
@@ -171,22 +177,68 @@ public class DatabaseManagementApp extends JFrame {
 
         // Create Clients category with nested tabs
         JTabbedPane clientsTabs = createSubTabbedPane();
-        clientsTabs.addTab("Clients", new ClientsPanel());
-        clientsTabs.addTab("Client Locations", new ClientLocationsPanel());
+        ClientsPanel clientsPanel = new ClientsPanel();
+        ClientLocationsPanel clientLocationsPanel = new ClientLocationsPanel();
+        clientsTabs.addTab("Clients", clientsPanel);
+        clientsTabs.addTab("Client Locations", clientLocationsPanel);
         tabbedPane.addTab("Clients", clientsTabs);
 
         // Create Employees category with nested tabs
         JTabbedPane employeesTabs = createSubTabbedPane();
-        employeesTabs.addTab("Employees", new EmployeesPanel());
-        employeesTabs.addTab("Time Logs", new EmployeeTimeLogsPanel());
+        EmployeesPanel employeesPanel = new EmployeesPanel();
+        EmployeeTimeLogsPanel timeLogsPanel = new EmployeeTimeLogsPanel();
+        employeesTabs.addTab("Employees", employeesPanel);
+        employeesTabs.addTab("Time Logs", timeLogsPanel);
         tabbedPane.addTab("Employees", employeesTabs);
 
         // Create Sales & Service category with nested tabs
         JTabbedPane salesServiceTabs = createSubTabbedPane();
-        salesServiceTabs.addTab("Invoices", new InvoicesPanel());
-        salesServiceTabs.addTab("Equipment Quotes", new EquipmentQuotesPanel());
-        salesServiceTabs.addTab("Preventive Maintenance", new PreventiveMaintenancePanel());
+        InvoicesPanel invoicesPanel = new InvoicesPanel();
+        EquipmentQuotesPanel quotesPanel = new EquipmentQuotesPanel();
+        PreventiveMaintenancePanel pmPanel = new PreventiveMaintenancePanel();
+        salesServiceTabs.addTab("Invoices", invoicesPanel);
+        salesServiceTabs.addTab("Equipment Quotes", quotesPanel);
+        salesServiceTabs.addTab("Preventive Maintenance", pmPanel);
         tabbedPane.addTab("Sales & Service", salesServiceTabs);
+
+        // Add change listeners to refresh data when tabs are selected
+        clientsTabs.addChangeListener(e -> {
+            int index = clientsTabs.getSelectedIndex();
+            if (index == 0) clientsPanel.refreshData();
+            else if (index == 1) clientLocationsPanel.refreshData();
+        });
+
+        employeesTabs.addChangeListener(e -> {
+            int index = employeesTabs.getSelectedIndex();
+            if (index == 0) employeesPanel.refreshData();
+            else if (index == 1) timeLogsPanel.refreshData();
+        });
+
+        salesServiceTabs.addChangeListener(e -> {
+            int index = salesServiceTabs.getSelectedIndex();
+            if (index == 0) invoicesPanel.refreshData();
+            else if (index == 1) quotesPanel.refreshData();
+            else if (index == 2) pmPanel.refreshData();
+        });
+
+        // Refresh when main tab changes
+        tabbedPane.addChangeListener(e -> {
+            int index = tabbedPane.getSelectedIndex();
+            if (index == 1) { // Clients tab
+                int subIndex = clientsTabs.getSelectedIndex();
+                if (subIndex == 0) clientsPanel.refreshData();
+                else if (subIndex == 1) clientLocationsPanel.refreshData();
+            } else if (index == 2) { // Employees tab
+                int subIndex = employeesTabs.getSelectedIndex();
+                if (subIndex == 0) employeesPanel.refreshData();
+                else if (subIndex == 1) timeLogsPanel.refreshData();
+            } else if (index == 3) { // Sales & Service tab
+                int subIndex = salesServiceTabs.getSelectedIndex();
+                if (subIndex == 0) invoicesPanel.refreshData();
+                else if (subIndex == 1) quotesPanel.refreshData();
+                else if (subIndex == 2) pmPanel.refreshData();
+            }
+        });
 
         // Info tab
         JPanel infoPanel = createInfoPanel();
@@ -325,6 +377,8 @@ public class DatabaseManagementApp extends JFrame {
         SwingUtilities.invokeLater(() -> {
             DatabaseManagementApp app = new DatabaseManagementApp();
             app.setVisible(true);
+            // Maximize after visible to ensure it works on Windows
+            app.setExtendedState(JFrame.MAXIMIZED_BOTH);
         });
     }
 }
