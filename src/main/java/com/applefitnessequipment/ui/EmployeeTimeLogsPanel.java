@@ -40,7 +40,7 @@ public class EmployeeTimeLogsPanel extends JPanel {
     private JTextField logDateField, timeInFirstField, timeOutFirstField;
     private JTextField timeInSecondField, timeOutSecondField;
     private JTextField totalHoursField, milesField, ptoHoursField;
-    private JButton addButton, updateButton, deleteButton, clearButton, filterButton;
+    private JButton addButton, updateButton, deleteButton, clearButton;
     private EmployeeTimeLog selectedTimeLog;
     private DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
@@ -57,18 +57,14 @@ public class EmployeeTimeLogsPanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Top Panel - Filter
+        // Top Panel - Filter with auto-filter
         JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         filterPanel.add(new JLabel("Filter by Employee:"));
         filterEmployeeCombo = new JComboBox<>();
         filterEmployeeCombo.addItem(null);
+        filterEmployeeCombo.addActionListener(e -> filterTimeLogsByEmployee());  // Auto-filter on change
+        ModernUIHelper.styleComboBox(filterEmployeeCombo);
         filterPanel.add(filterEmployeeCombo);
-        filterButton = new JButton("Filter");
-        filterButton.addActionListener(e -> filterTimeLogsByEmployee());
-        filterPanel.add(filterButton);
-        JButton refreshButton = new JButton("Show All");
-        refreshButton.addActionListener(e -> loadTimeLogs());
-        filterPanel.add(refreshButton);
 
         add(filterPanel, BorderLayout.NORTH);
 

@@ -24,6 +24,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 
 import com.applefitnessequipment.dao.EmployeeDAO;
@@ -45,6 +47,7 @@ public class EmployeesPanel extends JPanel {
     private JCheckBox activeCheckBox;
     private JButton addButton, updateButton, deleteButton, clearButton;
     private Employee selectedEmployee;
+    private List<Employee> allEmployees;
     private DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     public EmployeesPanel() {
@@ -57,17 +60,22 @@ public class EmployeesPanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Top Panel - Search
+        // Top Panel - Search with auto-search
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         searchPanel.add(new JLabel("Search:"));
-        searchField = new JTextField(20);
+        searchField = new JTextField(35);
+        searchField.setFont(ModernUIHelper.NORMAL_FONT);
+        searchField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new java.awt.Color(180, 180, 180), 1),
+            BorderFactory.createEmptyBorder(8, 8, 8, 8)
+        ));
+        // Auto-search as user types
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            public void changedUpdate(DocumentEvent e) { filterEmployees(); }
+            public void removeUpdate(DocumentEvent e) { filterEmployees(); }
+            public void insertUpdate(DocumentEvent e) { filterEmployees(); }
+        });
         searchPanel.add(searchField);
-        JButton searchButton = new JButton("Search");
-        searchButton.addActionListener(e -> searchEmployees());
-        searchPanel.add(searchButton);
-        JButton refreshButton = new JButton("Refresh All");
-        refreshButton.addActionListener(e -> loadEmployees());
-        searchPanel.add(refreshButton);
 
         add(searchPanel, BorderLayout.NORTH);
 
@@ -358,36 +366,30 @@ public class EmployeesPanel extends JPanel {
 
     private void loadEmployees() {
         try {
-            List<Employee> employees = employeeDAO.getAllEmployees();
-            tableModel.setRowCount(0);
-            for (Employee emp : employees) {
-                tableModel.addRow(new Object[]{
-                    emp.getEmployeeId(),
-                    emp.getFirstName() + " " + emp.getLastName(),
-                    emp.getPositionTitle(),
-                    emp.getEmploymentType(),
-                    emp.getActiveStatus() ? "Yes" : "No",
-                    emp.getUsername(),
-                    emp.getHireDate()
-                });
-            }
+            allEmployees = employeeDAO.getAllEmployees();
+            filterEmployees();
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading employees: " + ex.getMessage(),
                 "Database Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void searchEmployees() {
-        String searchTerm = searchField.getText().trim();
-        if (searchTerm.isEmpty()) {
-            loadEmployees();
-            return;
-        }
+    private void filterEmployees() {
+        if (allEmployees == null) return;
 
-        try {
-            List<Employee> employees = employeeDAO.searchEmployees(searchTerm);
-            tableModel.setRowCount(0);
-            for (Employee emp : employees) {
+        String searchTerm = searchField.getText().trim().toLowerCase();
+
+        tableModel.setRowCount(0);
+        for (Employee emp : allEmployees) {
+            // Apply search filter
+            boolean searchMatches = searchTerm.isEmpty() ||
+                (emp.getFirstName() != null && emp.getFirstName().toLowerCase().contains(searchTerm)) ||
+                (emp.getLastName() != null && emp.getLastName().toLowerCase().contains(searchTerm)) ||
+                (emp.getPositionTitle() != null && emp.getPositionTitle().toLowerCase().contains(searchTerm)) ||
+                (emp.getUsername() != null && emp.getUsername().toLowerCase().contains(searchTerm)) ||
+                (emp.getWorkEmail() != null && emp.getWorkEmail().toLowerCase().contains(searchTerm));
+
+            if (searchMatches) {
                 tableModel.addRow(new Object[]{
                     emp.getEmployeeId(),
                     emp.getFirstName() + " " + emp.getLastName(),
@@ -398,9 +400,6 @@ public class EmployeesPanel extends JPanel {
                     emp.getHireDate()
                 });
             }
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error searching employees: " + ex.getMessage(),
-                "Database Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
