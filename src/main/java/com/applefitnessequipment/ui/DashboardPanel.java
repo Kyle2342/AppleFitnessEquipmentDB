@@ -664,6 +664,18 @@ public class DashboardPanel extends JPanel {
         return formatter.format(amount);
     }
 
+    public void refreshData() {
+        // Remove all components
+        removeAll();
+
+        // Reinitialize the UI to refresh all data
+        initUI();
+
+        // Revalidate and repaint to show updated data
+        revalidate();
+        repaint();
+    }
+
     // TODO: Backend queries needed for optimized dashboard metrics:
     // - getActiveClientCount() - COUNT query instead of fetching all clients
     // - getPendingInvoiceSummary() - SUM and COUNT with WHERE status = 'Pending'

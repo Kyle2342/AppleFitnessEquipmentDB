@@ -1,34 +1,34 @@
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\ui\PreventiveMaintenanceViewPanel.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\ui\InvoicesViewPanel.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\dao\PreventiveMaintenanceDAO.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\dao\ClientLocationDAO.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\dao\EquipmentQuoteDAO.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\db\DBConnection.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\ui\EmployeesPanel.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\ui\AppTheme.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\ui\DashboardPanel.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\Main.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\model\Employee.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\ui\InvoicesPanel.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\model\PreventiveMaintenanceAgreement.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\ui\EmployeeTimeLogsPanel.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\dao\EmployeeDAO.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\dao\EmployeeTimeLogDAO.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\model\PreventiveMaintenance.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\dao\InvoiceDAO.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\model\ClientLocation.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\model\Invoice.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\ui\EquipmentQuotesViewPanel.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\ui\ClientsPanel.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\ui\ModernUIHelper.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\dao\EquipmentQuoteCompleteDAO.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\dao\PMAgreementDAO.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\model\Client.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\model\EquipmentQuote.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\model\EmployeeTimeLog.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\ui\ClientLocationsPanel.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\ui\PreventiveMaintenancePanel.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\ui\EquipmentQuotesPanel.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\ui\DatabaseManagementApp.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\model\EquipmentQuoteComplete.java
-C:\Users\Justin Dill\Documents\College\Towson\2025\Fall-2025\Database-Management\DB-Project\AppleFitnessEquipmentDB\src\main\java\com\applefitnessequipment\dao\ClientDAO.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\dao\ClientDAO.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\dao\ClientLocationDAO.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\dao\EmployeeDAO.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\dao\EmployeeTimeLogDAO.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\dao\EquipmentQuoteCompleteDAO.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\dao\EquipmentQuoteDAO.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\dao\InvoiceDAO.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\dao\PMAgreementDAO.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\dao\PreventiveMaintenanceDAO.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\db\DBConnection.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\Main.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\model\Client.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\model\ClientLocation.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\model\Employee.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\model\EmployeeTimeLog.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\model\EquipmentQuote.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\model\EquipmentQuoteComplete.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\model\Invoice.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\model\PreventiveMaintenance.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\model\PreventiveMaintenanceAgreement.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\ui\AppTheme.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\ui\ClientLocationsPanel.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\ui\ClientsPanel.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\ui\DashboardPanel.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\ui\DatabaseManagementApp.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\ui\EmployeesPanel.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\ui\EmployeeTimeLogsPanel.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\ui\EquipmentQuotesPanel.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\ui\EquipmentQuotesViewPanel.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\ui\InvoicesPanel.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\ui\InvoicesViewPanel.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\ui\ModernUIHelper.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\ui\PreventiveMaintenancePanel.java
+C:\Users\krmat\Downloads\applefitnessequipment\src\main\java\com\applefitnessequipment\ui\PreventiveMaintenanceViewPanel.java

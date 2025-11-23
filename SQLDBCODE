@@ -235,9 +235,57 @@ CREATE TABLE PreventiveMaintenanceAgreements (
     PreventiveMaintenanceAgreementID           INT AUTO_INCREMENT PRIMARY KEY,
 
     -- Relationships
-    ClientID              INT NULL,						-- FK -> Client
-    BillingLocationID     INT NULL,             		-- FK -> ClientLocation (billing)
-    JobLocationID         INT NULL,              		-- FK -> ClientLocation (job/ship-to)
+    ClientID              INT NOT NULL,						-- FK -> Client
+    BillingLocationID     INT NOT NULL,             		-- FK -> ClientLocation (billing)
+    JobLocationID         INT NOT NULL,              		-- FK -> ClientLocation (job/ship-to)
+    
+	-- "FROM" - your business info as printed on the invoice
+    FromCompanyName      VARCHAR(100) NOT NULL DEFAULT 'Apple Fitness Equipment',
+	FromStreetAddress    VARCHAR(100) NOT NULL DEFAULT '1412 Majestic View Dr.',
+    FromCity             VARCHAR(50)  NOT NULL DEFAULT 'State College',
+    FromState            VARCHAR(50)  NOT NULL DEFAULT 'PA',
+    FromZIPCode          VARCHAR(20)  NOT NULL DEFAULT '16801',
+	FromPhone            VARCHAR(45)  NOT NULL DEFAULT '8148262922',
+	FromFax              VARCHAR(45)  NOT NULL DEFAULT '8148262933',
+    
+	-- Client snapshot information
+	ClientTypeSnapshot        ENUM('Business','Individual') NOT NULL,
+	ClientCompanyNameSnapshot VARCHAR(150) NULL,
+	ClientFirstNameSnapshot   VARCHAR(50)  NULL,
+	ClientLastNameSnapshot    VARCHAR(50)  NULL,
+    
+    	-- "BILL TO" snapshot
+    BillToCompanyName    VARCHAR(150) NULL,
+    BillToContactName    VARCHAR(150) NULL,
+	BillToStreetAddress  VARCHAR(150) NOT NULL,      -- e.g. "123 College Ave"
+	BillToBuildingName   VARCHAR(100) NULL,      -- e.g. "IM Building" or "Health Sciences Center"
+	BillToSuite   		 VARCHAR(50)  NULL,      -- e.g. "Suite 210" or "Floor 3"
+	BillToRoomNumber     VARCHAR(50)  NULL,      -- e.g. "Room 104"
+	BillToDepartment     VARCHAR(100) NULL,      -- e.g. "Athletics Department" or "Facilities"
+    BillToCounty		 VARCHAR(50)  NULL,
+    BillToCity   		 VARCHAR(50)  NOT NULL,
+    BillToState          VARCHAR(50)  NOT NULL DEFAULT 'PA',
+    BillToZIPCode        VARCHAR(20)  NOT NULL,
+    BillToCountry        VARCHAR(50)  NOT NULL DEFAULT 'USA',
+	BillToPhone          VARCHAR(45)  NULL,
+    BillToFax            VARCHAR(45)  NULL,
+	BillToPONumber       VARCHAR(45)  NULL,
+
+    -- "JOB AT"/"SHIP TO" snapshot
+    JobAtCompanyName    VARCHAR(150) NULL,
+	JobAtContactName    VARCHAR(150) NULL,
+	JobAtStreetAddress  VARCHAR(150) NOT NULL,      -- e.g. "123 College Ave"
+	JobAtBuildingName   VARCHAR(100) NULL,      -- e.g. "IM Building" or "Health Sciences Center"
+	JobAtSuite   		VARCHAR(50)  NULL,      -- e.g. "Suite 210" or "Floor 3"
+	JobAtRoomNumber     VARCHAR(50)  NULL,      -- e.g. "Room 104"
+	JobAtDepartment     VARCHAR(100) NULL,      -- e.g. "Athletics Department" or "Facilities"
+    JobAtCounty  		VARCHAR(50)  NULL,
+    JobAtCity   		VARCHAR(50)  NOT NULL,
+    JobAtState          VARCHAR(50)  NOT NULL DEFAULT 'PA',
+    JobAtZIPCode        VARCHAR(20)  NOT NULL,
+    JobAtCountry        VARCHAR(50)  NOT NULL DEFAULT 'USA',
+	JobAtEmail          VARCHAR(45)  NULL,
+	JobAtPONumber       VARCHAR(45)  NULL,
     
     -- Header snapshot
     PropertyName          VARCHAR(150) NULL,   	   -- "Property/Facility" text
@@ -286,18 +334,25 @@ CREATE TABLE PreventiveMaintenanceAgreements (
     CreatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
                                    ON UPDATE CURRENT_TIMESTAMP,
+                                   
+    CONSTRAINT chk_pma_client_name
+        CHECK (
+            ClientCompanyNameSnapshot IS NOT NULL
+            OR (ClientFirstNameSnapshot IS NOT NULL
+                AND ClientLastNameSnapshot IS NOT NULL)
+        ),
 
 	CONSTRAINT fk_pma_client FOREIGN KEY (ClientID)
 		REFERENCES Clients(ClientID)
-		ON DELETE SET NULL,
+        ON DELETE RESTRICT,
 
 	CONSTRAINT fk_pma_bill_location FOREIGN KEY (BillingLocationID)
 		REFERENCES ClientsLocations(ClientLocationID)
-		ON DELETE SET NULL,
+        ON DELETE RESTRICT,
 
 	CONSTRAINT fk_pma_job_location FOREIGN KEY (JobLocationID)
 		REFERENCES ClientsLocations(ClientLocationID)
-		ON DELETE SET NULL
+        ON DELETE RESTRICT
 );
 
 /* ============================================================
@@ -339,9 +394,24 @@ CREATE TABLE EquipmentQuotes (
     EquipmentQuoteID      INT AUTO_INCREMENT PRIMARY KEY,
 
     -- Relationships
-    ClientID            INT NULL,                -- e.g., Meridian (can become NULL if client deleted)
-    BillingLocationID   INT NULL,                -- SOLD TO address (can become NULL if location deleted)
-    JobAtLocationID     INT NULL,                -- JOB at address (can become NULL if location deleted)
+    ClientID            INT NOT NULL,                -- e.g., Meridian (can become NULL if client deleted)
+    BillingLocationID   INT NOT NULL,                -- SOLD TO address (can become NULL if location deleted)
+    JobAtLocationID     INT NOT NULL,                -- JOB at address (can become NULL if location deleted)
+    
+	-- "FROM" - your business info as printed on the invoice
+    FromCompanyName      VARCHAR(100) NOT NULL DEFAULT 'Apple Fitness Equipment',
+	FromStreetAddress    VARCHAR(100) NOT NULL DEFAULT '1412 Majestic View Dr.',
+    FromCity             VARCHAR(50)  NOT NULL DEFAULT 'State College',
+    FromState            VARCHAR(50)  NOT NULL DEFAULT 'PA',
+    FromZIPCode          VARCHAR(20)  NOT NULL DEFAULT '16801',
+	FromPhone            VARCHAR(45)  NOT NULL DEFAULT '8148262922',
+	FromFax              VARCHAR(45)  NOT NULL DEFAULT '8148262933',
+    
+	-- Client snapshot information
+	ClientTypeSnapshot        ENUM('Business','Individual') NOT NULL,
+	ClientCompanyNameSnapshot VARCHAR(150) NULL,
+	ClientFirstNameSnapshot   VARCHAR(50)  NULL,
+	ClientLastNameSnapshot    VARCHAR(50)  NULL,
     
 	-- "BILL TO" snapshot
     BillToCompanyName    VARCHAR(150) NULL,
@@ -368,7 +438,7 @@ CREATE TABLE EquipmentQuotes (
 	JobAtSuite   		VARCHAR(50)  NULL,      -- e.g. "Suite 210" or "Floor 3"
 	JobAtRoomNumber     VARCHAR(50)  NULL,      -- e.g. "Room 104"
 	JobAtDepartment     VARCHAR(100) NULL,      -- e.g. "Athletics Department" or "Facilities"
-    JobAtCounty  		VARCHAR(50)  NUll,
+    JobAtCounty  		VARCHAR(50)  NULL,
     JobAtCity   		VARCHAR(50)  NOT NULL,
     JobAtState          VARCHAR(50)  NOT NULL DEFAULT 'PA',
     JobAtZIPCode        VARCHAR(20)  NOT NULL,
@@ -377,7 +447,7 @@ CREATE TABLE EquipmentQuotes (
 	JobAtPONumber       VARCHAR(45)  NULL,
 
     -- Core quote info
-    QuoteNumber           VARCHAR(45) NOT NULL,   -- e.g. 24-09-501
+    QuoteNumber           VARCHAR(45) NOT NULL UNIQUE,   -- e.g. 24-09-501
     QuoteDate             DATE        NOT NULL,
     Status                ENUM('Draft', 'Sent', 'Expired', 'Accepted', 'Declined', 'Canceled', 'Completed') NOT NULL DEFAULT 'Draft',
 
@@ -408,20 +478,25 @@ CREATE TABLE EquipmentQuotes (
     CreatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
                                    ON UPDATE CURRENT_TIMESTAMP,
-                                        
-	UNIQUE (QuoteNumber),
+    
+    CONSTRAINT chk_equipmentquote_client_name
+        CHECK (
+            ClientCompanyNameSnapshot IS NOT NULL
+            OR (ClientFirstNameSnapshot IS NOT NULL
+                AND ClientLastNameSnapshot IS NOT NULL)
+        ),
 
     CONSTRAINT fk_equipmentquotes_client
         FOREIGN KEY (ClientID)       REFERENCES Clients(ClientID)
-        ON DELETE SET NULL,
+        ON DELETE RESTRICT,
         
     CONSTRAINT fk_equipmentquotes_bill_location
         FOREIGN KEY (BillingLocationID) REFERENCES ClientsLocations(ClientLocationID)
-		ON DELETE SET NULL,
+        ON DELETE RESTRICT,
 
     CONSTRAINT fk_equipmentquotes_job_location
         FOREIGN KEY (JobAtLocationID)   REFERENCES ClientsLocations(ClientLocationID)
-		ON DELETE SET NULL
+        ON DELETE RESTRICT
 );
 
 /* ============================================================
@@ -460,9 +535,9 @@ CREATE TABLE Invoices (
     InvoiceID            INT AUTO_INCREMENT PRIMARY KEY,
 
     -- Foreign keys for relationships / reporting
-    ClientID             INT NULL,             -- who is being billed
-    BillingLocationID    INT NULL,             -- FK -> ClientLocation (billing)
-    JobLocationID        INT NULL,             -- FK -> ClientLocation (job/ship-to)
+    ClientID             INT NOT NULL,             -- who is being billed 
+    BillingLocationID    INT NOT NULL,             -- FK -> ClientLocation (billing)
+    JobLocationID        INT NOT NULL,             -- FK -> ClientLocation (job/ship-to)
 
     -- Source of this invoice: either a PM agreement or an equipment quote
     PreventiveMaintenanceAgreementID        INT NULL,	-- FK -> PreventiveMaintenanceAgreement
@@ -501,6 +576,12 @@ CREATE TABLE Invoices (
     FromZIPCode          VARCHAR(20)  NOT NULL DEFAULT '16801',
 	FromPhone            VARCHAR(45)  NOT NULL DEFAULT '8148262922',
 	FromFax              VARCHAR(45)  NOT NULL DEFAULT '8148262933',
+    
+    -- Client snapshot information
+	ClientTypeSnapshot        ENUM('Business','Individual') NOT NULL,
+	ClientCompanyNameSnapshot VARCHAR(150) NULL,
+	ClientFirstNameSnapshot   VARCHAR(50)  NULL,
+	ClientLastNameSnapshot    VARCHAR(50)  NULL,
 
     -- "BILL TO" snapshot
     BillToCompanyName    VARCHAR(150) NULL,
@@ -538,27 +619,34 @@ CREATE TABLE Invoices (
     CreatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
                                    ON UPDATE CURRENT_TIMESTAMP,
+                                   
+    CONSTRAINT chk_invoice_client_name
+        CHECK (
+            ClientCompanyNameSnapshot IS NOT NULL
+            OR (ClientFirstNameSnapshot IS NOT NULL 
+                AND ClientLastNameSnapshot IS NOT NULL)
+        ),
 
     -- Foreign key constraints
     CONSTRAINT fk_invoice_pmagreement
         FOREIGN KEY (PreventiveMaintenanceAgreementID)  REFERENCES PreventiveMaintenanceAgreements(PreventiveMaintenanceAgreementID)
-		ON DELETE SET NULL,
+		ON DELETE RESTRICT,
 
 	CONSTRAINT fk_invoice_equipmentquote
         FOREIGN KEY (EquipmentQuoteID)  REFERENCES EquipmentQuotes(EquipmentQuoteID)
-		ON DELETE SET NULL,
+		ON DELETE RESTRICT,
 
     CONSTRAINT fk_invoice_client
         FOREIGN KEY (ClientID)  REFERENCES Clients(ClientID)
-		ON DELETE SET NULL,
+        ON DELETE RESTRICT,
 
     CONSTRAINT fk_invoice_bill_location
         FOREIGN KEY (BillingLocationID)  REFERENCES ClientsLocations(ClientLocationID)
-		ON DELETE SET NULL,
+        ON DELETE RESTRICT,
 
     CONSTRAINT fk_invoice_job_location
         FOREIGN KEY (JobLocationID)  REFERENCES ClientsLocations(ClientLocationID)
-		ON DELETE SET NULL
+        ON DELETE RESTRICT
 );
 
 /* ============================================================
@@ -587,4 +675,3 @@ CREATE TABLE InvoicesItems (
         FOREIGN KEY (InvoiceID) REFERENCES Invoices(InvoiceID)
 		ON DELETE CASCADE
 );
-

@@ -65,11 +65,26 @@ public class Client {
 
     @Override
     public String toString() {
-        if (clientType != null && clientType.equals("Business")) {
-            return companyName != null ? companyName : "Unnamed Business";
-        } else {
-            String name = (firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "");
-            return name.trim().isEmpty() ? "Unnamed Client" : name.trim();
+        StringBuilder display = new StringBuilder();
+
+        // Add company name if present
+        if (companyName != null && !companyName.trim().isEmpty()) {
+            display.append(companyName.trim());
         }
+
+        // Add first/last name if present
+        String fullName = (firstName != null ? firstName.trim() : "") + " " + (lastName != null ? lastName.trim() : "");
+        fullName = fullName.trim();
+
+        if (!fullName.isEmpty()) {
+            if (display.length() > 0) {
+                display.append(" - ").append(fullName);
+            } else {
+                display.append(fullName);
+            }
+        }
+
+        // Fallback if everything is empty
+        return display.length() > 0 ? display.toString() : "Unnamed Client";
     }
 }

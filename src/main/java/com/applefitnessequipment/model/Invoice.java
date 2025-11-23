@@ -35,6 +35,10 @@ public class Invoice {
     private String fromZIPCode;
     private String fromPhone;
     private String fromFax;
+    private String clientTypeSnapshot;
+    private String clientCompanyNameSnapshot;
+    private String clientFirstNameSnapshot;
+    private String clientLastNameSnapshot;
     private String billToCompanyName;
     private String billToContactName;
     private String billToStreetAddress;
@@ -42,7 +46,8 @@ public class Invoice {
     private String billToSuite;
     private String billToRoomNumber;
     private String billToDepartment;
-    private String billToCountyOrCity;
+    private String billToCity;
+    private String billToCounty;
     private String billToState;
     private String billToZIPCode;
     private String billToCountry;
@@ -55,7 +60,8 @@ public class Invoice {
     private String jobAtSuite;
     private String jobAtRoomNumber;
     private String jobAtDepartment;
-    private String jobAtCountyOrCity;
+    private String jobAtCity;
+    private String jobAtCounty;
     private String jobAtState;
     private String jobAtZIPCode;
     private String jobAtCountry;
@@ -308,6 +314,38 @@ public class Invoice {
         this.fromFax = fromFax;
     }
 
+    public String getClientTypeSnapshot() {
+        return clientTypeSnapshot;
+    }
+
+    public void setClientTypeSnapshot(String clientTypeSnapshot) {
+        this.clientTypeSnapshot = clientTypeSnapshot;
+    }
+
+    public String getClientCompanyNameSnapshot() {
+        return clientCompanyNameSnapshot;
+    }
+
+    public void setClientCompanyNameSnapshot(String clientCompanyNameSnapshot) {
+        this.clientCompanyNameSnapshot = clientCompanyNameSnapshot;
+    }
+
+    public String getClientFirstNameSnapshot() {
+        return clientFirstNameSnapshot;
+    }
+
+    public void setClientFirstNameSnapshot(String clientFirstNameSnapshot) {
+        this.clientFirstNameSnapshot = clientFirstNameSnapshot;
+    }
+
+    public String getClientLastNameSnapshot() {
+        return clientLastNameSnapshot;
+    }
+
+    public void setClientLastNameSnapshot(String clientLastNameSnapshot) {
+        this.clientLastNameSnapshot = clientLastNameSnapshot;
+    }
+
     public String getBillToCompanyName() {
         return billToCompanyName;
     }
@@ -364,12 +402,20 @@ public class Invoice {
         this.billToDepartment = billToDepartment;
     }
 
-    public String getBillToCountyOrCity() {
-        return billToCountyOrCity;
+    public String getBillToCity() {
+        return billToCity;
     }
 
-    public void setBillToCountyOrCity(String billToCountyOrCity) {
-        this.billToCountyOrCity = billToCountyOrCity;
+    public void setBillToCity(String billToCity) {
+        this.billToCity = billToCity;
+    }
+
+    public String getBillToCounty() {
+        return billToCounty;
+    }
+
+    public void setBillToCounty(String billToCounty) {
+        this.billToCounty = billToCounty;
     }
 
     public String getBillToState() {
@@ -468,12 +514,20 @@ public class Invoice {
         this.jobAtDepartment = jobAtDepartment;
     }
 
-    public String getJobAtCountyOrCity() {
-        return jobAtCountyOrCity;
+    public String getJobAtCity() {
+        return jobAtCity;
     }
 
-    public void setJobAtCountyOrCity(String jobAtCountyOrCity) {
-        this.jobAtCountyOrCity = jobAtCountyOrCity;
+    public void setJobAtCity(String jobAtCity) {
+        this.jobAtCity = jobAtCity;
+    }
+
+    public String getJobAtCounty() {
+        return jobAtCounty;
+    }
+
+    public void setJobAtCounty(String jobAtCounty) {
+        this.jobAtCounty = jobAtCounty;
     }
 
     public String getJobAtState() {

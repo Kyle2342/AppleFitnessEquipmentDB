@@ -173,7 +173,8 @@ public class DatabaseManagementApp extends JFrame {
         tabbedPane.setBorder(BorderFactory.createEmptyBorder(10, 15, 0, 15));
 
         // Add Dashboard as default first tab
-        tabbedPane.addTab("Dashboard", new DashboardPanel(tabbedPane));
+        DashboardPanel dashboardPanel = new DashboardPanel(tabbedPane);
+        tabbedPane.addTab("Dashboard", dashboardPanel);
 
         // Create Clients category with nested tabs
         JTabbedPane clientsTabs = createSubTabbedPane();
@@ -224,7 +225,9 @@ public class DatabaseManagementApp extends JFrame {
         // Refresh when main tab changes
         tabbedPane.addChangeListener(e -> {
             int index = tabbedPane.getSelectedIndex();
-            if (index == 1) { // Clients tab
+            if (index == 0) { // Dashboard tab
+                dashboardPanel.refreshData();
+            } else if (index == 1) { // Clients tab
                 int subIndex = clientsTabs.getSelectedIndex();
                 if (subIndex == 0) clientsPanel.refreshData();
                 else if (subIndex == 1) clientLocationsPanel.refreshData();
