@@ -5,6 +5,25 @@ CREATE DATABASE IF NOT EXISTS applefitnessequipmentdb;
 USE applefitnessequipmentdb;
 
 /* ============================================================
+   Clear tables if exist
+============================================================ */
+SET FOREIGN_KEY_CHECKS = 0;
+
+DROP TABLE IF EXISTS InvoicesItems;
+DROP TABLE IF EXISTS Invoices;
+DROP TABLE IF EXISTS EquipmentQuotesItems;
+DROP TABLE IF EXISTS EquipmentQuotes;
+DROP TABLE IF EXISTS PreventiveMaintenanceAgreementsEquipments;
+DROP TABLE IF EXISTS PreventiveMaintenanceAgreements;
+DROP TABLE IF EXISTS EmployeesTimeLogs;
+DROP TABLE IF EXISTS Employees;
+DROP TABLE IF EXISTS ClientsLocations;
+DROP TABLE IF EXISTS Clients;
+DROP TABLE IF EXISTS Company;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+/* ============================================================
    TABLE 1: Employees
    Stores employee personal, contact, login, and payroll data.
 ============================================================ */
@@ -556,10 +575,23 @@ CREATE TABLE Invoices (
     -- Money fields
     SubtotalAmount       DECIMAL(10,2)  NOT NULL,
     TaxRatePercent       DECIMAL(10,2)  NOT NULL DEFAULT 6.00,   -- e.g. 6.00 for 6%
-    TaxAmount            DECIMAL(10,2)  NOT NULL,
-    TotalAmount          DECIMAL(10,2)  NOT NULL,
+    TaxAmount        DECIMAL(10,2)
+        GENERATED ALWAYS AS (
+            ROUND(SubtotalAmount * (TaxRatePercent / 100), 2)
+        ) STORED,
+
+        TotalAmount      DECIMAL(10,2)
+        GENERATED ALWAYS AS (
+            SubtotalAmount + TaxAmount
+        ) STORED,
     PaymentsApplied      DECIMAL(10,2)  NOT NULL DEFAULT 0.00,
-    BalanceDue           DECIMAL(10,2)  GENERATED ALWAYS AS (TotalAmount - PaymentsApplied) STORED,
+    BalanceDue DECIMAL(10,2)
+    GENERATED ALWAYS AS (
+        CASE
+            WHEN Status IN ('Paid', 'Void') THEN 0.00
+            ELSE TotalAmount - PaymentsApplied
+        END
+    ) STORED,
     PaidDate             DATE NULL,
 
 	-- Payment and penalty terms snapshot

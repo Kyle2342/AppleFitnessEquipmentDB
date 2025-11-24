@@ -23,6 +23,7 @@ public class Invoice {
     private BigDecimal taxAmount;
     private BigDecimal totalAmount;
     private BigDecimal paymentsApplied;
+    private BigDecimal balanceDue;  // Generated column in database
     private LocalDate paidDate;
     private BigDecimal returnedCheckFee;
     private BigDecimal interestPercent;
@@ -216,6 +217,14 @@ public class Invoice {
 
     public void setPaymentsApplied(BigDecimal paymentsApplied) {
         this.paymentsApplied = paymentsApplied;
+    }
+
+    public BigDecimal getBalanceDue() {
+        return balanceDue;
+    }
+
+    public void setBalanceDue(BigDecimal balanceDue) {
+        this.balanceDue = balanceDue;
     }
 
     public LocalDate getPaidDate() {

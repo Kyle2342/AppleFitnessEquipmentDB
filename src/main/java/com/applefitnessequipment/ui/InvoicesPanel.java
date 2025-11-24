@@ -188,10 +188,8 @@ public class InvoicesPanel extends JPanel {
             boolean include = searchText.isEmpty() || clientName.toLowerCase().contains(searchText);
 
             if (include) {
-                // Calculate balance due - if paid, show 0
-                BigDecimal balance = "Paid".equals(inv.getStatus()) ?
-                    BigDecimal.ZERO :
-                    inv.getTotalAmount().subtract(inv.getPaymentsApplied());
+                // Use balance due from database (GENERATED column handles void/paid status)
+                BigDecimal balance = inv.getBalanceDue() != null ? inv.getBalanceDue() : BigDecimal.ZERO;
 
                 tableModel.addRow(new Object[]{
                     inv.getInvoiceId(),

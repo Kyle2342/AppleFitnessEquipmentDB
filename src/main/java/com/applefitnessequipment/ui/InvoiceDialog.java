@@ -13,7 +13,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import javax.swing.BorderFactory;
-import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
@@ -21,7 +20,6 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
@@ -30,15 +28,22 @@ import com.applefitnessequipment.dao.ClientDAO;
 import com.applefitnessequipment.dao.ClientLocationDAO;
 import com.applefitnessequipment.dao.EquipmentQuoteDAO;
 import com.applefitnessequipment.dao.InvoiceDAO;
+import com.applefitnessequipment.dao.InvoiceItemDAO;
 import com.applefitnessequipment.dao.PMAgreementDAO;
 import com.applefitnessequipment.model.Client;
 import com.applefitnessequipment.model.ClientLocation;
 import com.applefitnessequipment.model.EquipmentQuote;
 import com.applefitnessequipment.model.Invoice;
+import com.applefitnessequipment.model.InvoiceItem;
 import com.applefitnessequipment.model.PreventiveMaintenanceAgreement;
+
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableModel;
+import java.util.ArrayList;
 
 public class InvoiceDialog extends JDialog {
     private InvoiceDAO invoiceDAO;
+    private InvoiceItemDAO invoiceItemDAO;
     private ClientDAO clientDAO;
     private ClientLocationDAO locationDAO;
     private EquipmentQuoteDAO quoteDAO;
@@ -46,19 +51,23 @@ public class InvoiceDialog extends JDialog {
     private Invoice invoice;
     private boolean saved = false;
 
+    // Invoice items
+    private JTable invoiceItemsTable;
+    private DefaultTableModel itemsTableModel;
+    private List<InvoiceItem> invoiceItems;
+
     // Link to Quote/Agreement
-    private JRadioButton noneRadio, equipmentQuoteRadio, pmaRadio;
     private JComboBox<EquipmentQuote> equipmentQuoteCombo;
     private JComboBox<PreventiveMaintenanceAgreement> pmaCombo;
 
     // Core invoice fields
-    private JTextField invoiceNumberField, quoteNumberField, poNumberField;
+    private JTextField invoiceNumberField, poNumberField;
     private JTextField invoiceDateField, dueDateField, paidDateField;
     private JTextField termsField;
     private JComboBox<String> statusCombo;
 
     // Money fields
-    private JTextField taxRateField, taxAmountField;
+    private JTextField subtotalAmountField, taxRateField, taxAmountField;
     private JTextField totalAmountField, paymentsAppliedField, balanceDueField;
 
     // Fee and interest fields
@@ -71,15 +80,21 @@ public class InvoiceDialog extends JDialog {
 
     private DateTimeFormatter displayDateFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
     private List<Client> allClients;
+    private List<EquipmentQuote> allQuotes;
+    private List<PreventiveMaintenanceAgreement> allAgreements;
+    private List<ClientLocation> allBillLocations;
+    private List<ClientLocation> allJobLocations;
 
     public InvoiceDialog(JFrame parent, Invoice invoice) {
         super(parent, invoice == null ? "Create Invoice" : "Edit Invoice", true);
         this.invoice = invoice;
         this.invoiceDAO = new InvoiceDAO();
+        this.invoiceItemDAO = new InvoiceItemDAO();
         this.clientDAO = new ClientDAO();
         this.locationDAO = new ClientLocationDAO();
         this.quoteDAO = new EquipmentQuoteDAO();
         this.pmaDAO = new PMAgreementDAO();
+        this.invoiceItems = new ArrayList<>();
 
         initComponents();
         loadClients();
@@ -93,7 +108,7 @@ public class InvoiceDialog extends JDialog {
 
         pack();
         setLocationRelativeTo(parent);
-        setMinimumSize(new Dimension(700, 850));
+        setMinimumSize(new Dimension(900, 900));
     }
 
     private void initComponents() {
@@ -101,80 +116,11 @@ public class InvoiceDialog extends JDialog {
 
         // Form Panel
         JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        formPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = new Insets(8, 10, 8, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         int row = 0;
-
-        // ===== LINK TO QUOTE/AGREEMENT =====
-        addSectionLabel(formPanel, gbc, row++, "LINK TO EXISTING QUOTE/AGREEMENT (OPTIONAL)");
-
-        // Radio buttons for selection type
-        gbc.gridx = 0; gbc.gridy = row;
-        gbc.gridwidth = 2;
-        JPanel radioPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        noneRadio = new JRadioButton("None", true);
-        equipmentQuoteRadio = new JRadioButton("Equipment Quote");
-        pmaRadio = new JRadioButton("PM Agreement");
-
-        ButtonGroup radioGroup = new ButtonGroup();
-        radioGroup.add(noneRadio);
-        radioGroup.add(equipmentQuoteRadio);
-        radioGroup.add(pmaRadio);
-
-        radioPanel.add(noneRadio);
-        radioPanel.add(equipmentQuoteRadio);
-        radioPanel.add(pmaRadio);
-        formPanel.add(radioPanel, gbc);
-        gbc.gridwidth = 1;
-        row++;
-
-        // Equipment Quote combo
-        gbc.gridx = 0; gbc.gridy = row;
-        gbc.weightx = 0.3;
-        formPanel.add(new JLabel("Equipment Quote:"), gbc);
-        gbc.gridx = 1;
-        gbc.weightx = 0.7;
-        equipmentQuoteCombo = new JComboBox<>();
-        equipmentQuoteCombo.setEnabled(false);
-        equipmentQuoteCombo.addActionListener(e -> populateFromEquipmentQuote());
-        ModernUIHelper.styleComboBox(equipmentQuoteCombo);
-        formPanel.add(equipmentQuoteCombo, gbc);
-        row++;
-
-        // PMA combo
-        gbc.gridx = 0; gbc.gridy = row;
-        gbc.weightx = 0.3;
-        formPanel.add(new JLabel("PM Agreement:"), gbc);
-        gbc.gridx = 1;
-        gbc.weightx = 0.7;
-        pmaCombo = new JComboBox<>();
-        pmaCombo.setEnabled(false);
-        pmaCombo.addActionListener(e -> populateFromPMAgreement());
-        ModernUIHelper.styleComboBox(pmaCombo);
-        formPanel.add(pmaCombo, gbc);
-        row++;
-
-        // Radio button listeners to enable/disable combos
-        noneRadio.addActionListener(e -> {
-            equipmentQuoteCombo.setEnabled(false);
-            pmaCombo.setEnabled(false);
-        });
-        equipmentQuoteRadio.addActionListener(e -> {
-            equipmentQuoteCombo.setEnabled(true);
-            pmaCombo.setEnabled(false);
-            if (equipmentQuoteCombo.getSelectedItem() != null) {
-                populateFromEquipmentQuote();
-            }
-        });
-        pmaRadio.addActionListener(e -> {
-            equipmentQuoteCombo.setEnabled(false);
-            pmaCombo.setEnabled(true);
-            if (pmaCombo.getSelectedItem() != null) {
-                populateFromPMAgreement();
-            }
-        });
 
         // ===== CLIENT SELECTION =====
         addSectionLabel(formPanel, gbc, row++, "CLIENT INFORMATION");
@@ -182,7 +128,7 @@ public class InvoiceDialog extends JDialog {
         // Client
         gbc.gridx = 0; gbc.gridy = row;
         gbc.weightx = 0.3;
-        formPanel.add(new JLabel("Client:*"), gbc);
+        formPanel.add(createLabel("Client:*"), gbc);
         gbc.gridx = 1;
         gbc.weightx = 0.7;
         clientCombo = new JComboBox<>();
@@ -206,6 +152,7 @@ public class InvoiceDialog extends JDialog {
         clientCombo.addActionListener(e -> {
             if (e != null && clientCombo.getSelectedItem() instanceof Client) {
                 loadLocationsForClient();
+                filterQuotesAndAgreementsForClient();
             }
         });
 
@@ -216,10 +163,27 @@ public class InvoiceDialog extends JDialog {
         // Bill Location
         gbc.gridx = 0; gbc.gridy = row;
         gbc.weightx = 0.3;
-        formPanel.add(new JLabel("Bill To Location:*"), gbc);
+        formPanel.add(createLabel("Bill To Location:*"), gbc);
         gbc.gridx = 1;
         gbc.weightx = 0.7;
         billLocationCombo = new JComboBox<>();
+        billLocationCombo.setEditable(true);
+
+        JTextField billLocationTextField = (JTextField) billLocationCombo.getEditor().getEditorComponent();
+        billLocationTextField.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyReleased(java.awt.event.KeyEvent e) {
+                if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER ||
+                    e.getKeyCode() == java.awt.event.KeyEvent.VK_TAB) {
+                    return;
+                }
+                SwingUtilities.invokeLater(() -> {
+                    String text = billLocationTextField.getText();
+                    filterBillLocationCombo(text);
+                });
+            }
+        });
+
         ModernUIHelper.styleComboBox(billLocationCombo);
         formPanel.add(billLocationCombo, gbc);
         row++;
@@ -227,12 +191,67 @@ public class InvoiceDialog extends JDialog {
         // Job Location
         gbc.gridx = 0; gbc.gridy = row;
         gbc.weightx = 0.3;
-        formPanel.add(new JLabel("Job At Location:*"), gbc);
+        formPanel.add(createLabel("Job At Location:*"), gbc);
         gbc.gridx = 1;
         gbc.weightx = 0.7;
         jobLocationCombo = new JComboBox<>();
+        jobLocationCombo.setEditable(true);
+
+        JTextField jobLocationTextField = (JTextField) jobLocationCombo.getEditor().getEditorComponent();
+        jobLocationTextField.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyReleased(java.awt.event.KeyEvent e) {
+                if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ENTER ||
+                    e.getKeyCode() == java.awt.event.KeyEvent.VK_TAB) {
+                    return;
+                }
+                SwingUtilities.invokeLater(() -> {
+                    String text = jobLocationTextField.getText();
+                    filterJobLocationCombo(text);
+                });
+            }
+        });
+
         ModernUIHelper.styleComboBox(jobLocationCombo);
         formPanel.add(jobLocationCombo, gbc);
+        row++;
+
+        // Equipment Quote
+        gbc.gridx = 0; gbc.gridy = row;
+        gbc.weightx = 0.3;
+        formPanel.add(createLabel("Equipment Quote:"), gbc);
+        gbc.gridx = 1;
+        gbc.weightx = 0.7;
+        equipmentQuoteCombo = new JComboBox<>();
+        equipmentQuoteCombo.setEditable(true);
+        equipmentQuoteCombo.addActionListener(e -> {
+            // If equipment quote is selected, clear PMA (but allow both to be blank)
+            if (equipmentQuoteCombo.getSelectedItem() != null &&
+                equipmentQuoteCombo.getSelectedItem() instanceof EquipmentQuote) {
+                pmaCombo.setSelectedIndex(-1);
+            }
+        });
+        ModernUIHelper.styleComboBox(equipmentQuoteCombo);
+        formPanel.add(equipmentQuoteCombo, gbc);
+        row++;
+
+        // PMA
+        gbc.gridx = 0; gbc.gridy = row;
+        gbc.weightx = 0.3;
+        formPanel.add(createLabel("PM Agreement:"), gbc);
+        gbc.gridx = 1;
+        gbc.weightx = 0.7;
+        pmaCombo = new JComboBox<>();
+        pmaCombo.setEditable(true);
+        pmaCombo.addActionListener(e -> {
+            // If PMA is selected, clear Equipment Quote (but allow both to be blank)
+            if (pmaCombo.getSelectedItem() != null &&
+                pmaCombo.getSelectedItem() instanceof PreventiveMaintenanceAgreement) {
+                equipmentQuoteCombo.setSelectedIndex(-1);
+            }
+        });
+        ModernUIHelper.styleComboBox(pmaCombo);
+        formPanel.add(pmaCombo, gbc);
         row++;
 
         // ===== INVOICE DETAILS =====
@@ -240,12 +259,6 @@ public class InvoiceDialog extends JDialog {
 
         // Invoice Number
         row = addField(formPanel, gbc, row, "Invoice Number:*", invoiceNumberField = new JTextField(20));
-
-        // Quote Number (auto-populated from link)
-        quoteNumberField = new JTextField(20);
-        quoteNumberField.setEditable(false);
-        quoteNumberField.setBackground(java.awt.Color.LIGHT_GRAY);
-        row = addField(formPanel, gbc, row, "Quote Number (auto):", quoteNumberField);
 
         // PO Number
         row = addField(formPanel, gbc, row, "PO Number:", poNumberField = new JTextField(20));
@@ -262,11 +275,25 @@ public class InvoiceDialog extends JDialog {
         // Status
         gbc.gridx = 0; gbc.gridy = row;
         gbc.weightx = 0.3;
-        formPanel.add(new JLabel("Status:*"), gbc);
+        formPanel.add(createLabel("Status:*"), gbc);
         gbc.gridx = 1;
         gbc.weightx = 0.7;
         statusCombo = new JComboBox<>(new String[]{"Draft", "Open", "Paid", "Overdue", "Void"});
-        statusCombo.addActionListener(e -> updatePaidDate());
+        statusCombo.addActionListener(e -> {
+            updatePaidDate();
+            // Auto-fill payments applied when status is set to Paid
+            if ("Paid".equals(statusCombo.getSelectedItem())) {
+                String totalText = totalAmountField.getText().trim();
+                if (!totalText.isEmpty()) {
+                    try {
+                        paymentsAppliedField.setText(totalText);
+                    } catch (Exception ex) {
+                        // Ignore
+                    }
+                }
+            }
+            calculateBalanceDue();
+        });
         ModernUIHelper.styleComboBox(statusCombo);
         formPanel.add(statusCombo, gbc);
         row++;
@@ -277,26 +304,26 @@ public class InvoiceDialog extends JDialog {
         // ===== FINANCIAL DETAILS =====
         addSectionLabel(formPanel, gbc, row++, "FINANCIAL DETAILS");
 
-        // Tax Rate (not used for auto-calc until invoice items are implemented)
-        row = addField(formPanel, gbc, row, "Tax Rate %:*", taxRateField = new JTextField(20));
+        // Subtotal Amount (calculated from invoice items)
+        subtotalAmountField = new JTextField(20);
+        subtotalAmountField.setEditable(false);
+        subtotalAmountField.setBackground(java.awt.Color.WHITE);
+        row = addField(formPanel, gbc, row, "Subtotal Amount:", subtotalAmountField);
 
-        // Tax Amount (editable for now, will be auto-calc when items added)
+        // Tax Rate
+        row = addField(formPanel, gbc, row, "Tax Rate %:", taxRateField = new JTextField(20));
+
+        // Tax Amount (auto-calculated by database)
         taxAmountField = new JTextField(20);
-        taxAmountField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { calculateBalanceDue(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { calculateBalanceDue(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { calculateBalanceDue(); }
-        });
-        row = addField(formPanel, gbc, row, "Tax Amount:*", taxAmountField);
+        taxAmountField.setEditable(false);
+        taxAmountField.setBackground(java.awt.Color.WHITE);
+        row = addField(formPanel, gbc, row, "Tax Amount:", taxAmountField);
 
-        // Total Amount (editable for now, will be auto-calc when items added)
+        // Total Amount (auto-calculated by database)
         totalAmountField = new JTextField(20);
-        totalAmountField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) { calculateBalanceDue(); }
-            public void removeUpdate(javax.swing.event.DocumentEvent e) { calculateBalanceDue(); }
-            public void changedUpdate(javax.swing.event.DocumentEvent e) { calculateBalanceDue(); }
-        });
-        row = addField(formPanel, gbc, row, "Total Amount:*", totalAmountField);
+        totalAmountField.setEditable(false);
+        totalAmountField.setBackground(java.awt.Color.WHITE);
+        row = addField(formPanel, gbc, row, "Total Amount:", totalAmountField);
 
         // Payments Applied
         paymentsAppliedField = new JTextField(20);
@@ -305,13 +332,13 @@ public class InvoiceDialog extends JDialog {
             public void removeUpdate(javax.swing.event.DocumentEvent e) { calculateBalanceDue(); }
             public void changedUpdate(javax.swing.event.DocumentEvent e) { calculateBalanceDue(); }
         });
-        row = addField(formPanel, gbc, row, "Payments Applied:*", paymentsAppliedField);
+        row = addField(formPanel, gbc, row, "Payments Applied:", paymentsAppliedField);
 
-        // Balance Due (auto-calculated, read-only)
+        // Balance Due (calculated in UI)
         balanceDueField = new JTextField(20);
         balanceDueField.setEditable(false);
-        balanceDueField.setBackground(java.awt.Color.LIGHT_GRAY);
-        row = addField(formPanel, gbc, row, "Balance Due (auto):", balanceDueField);
+        balanceDueField.setBackground(java.awt.Color.WHITE);
+        row = addField(formPanel, gbc, row, "Balance Due:", balanceDueField);
 
         // ===== FEES AND INTEREST =====
         addSectionLabel(formPanel, gbc, row++, "FEES & INTEREST");
@@ -328,6 +355,61 @@ public class InvoiceDialog extends JDialog {
         // Interest Interval Days
         row = addField(formPanel, gbc, row, "Interest Interval Days:*", interestIntervalDaysField = new JTextField(20));
 
+        // ===== INVOICE ITEMS =====
+        addSectionLabel(formPanel, gbc, row++, "INVOICE ITEMS");
+
+        // Create table model for invoice items
+        itemsTableModel = new DefaultTableModel(new String[]{"Row#", "Description", "Qty", "Rate", "Total"}, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Table is read-only; use buttons to edit
+            }
+        };
+        invoiceItemsTable = new JTable(itemsTableModel);
+        invoiceItemsTable.getColumnModel().getColumn(0).setPreferredWidth(50);
+        invoiceItemsTable.getColumnModel().getColumn(1).setPreferredWidth(300);
+        invoiceItemsTable.getColumnModel().getColumn(2).setPreferredWidth(70);
+        invoiceItemsTable.getColumnModel().getColumn(3).setPreferredWidth(70);
+        invoiceItemsTable.getColumnModel().getColumn(4).setPreferredWidth(100);
+
+        JScrollPane itemsScrollPane = new JScrollPane(invoiceItemsTable);
+        itemsScrollPane.setPreferredSize(new Dimension(800, 200));
+        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weighty = 0.3;
+        gbc.insets = new Insets(10, 10, 10, 10);
+        formPanel.add(itemsScrollPane, gbc);
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weighty = 0;
+        gbc.insets = new Insets(8, 10, 8, 10);
+        row++;
+
+        // Buttons for managing items
+        JPanel itemButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton addItemButton = new JButton("Add Item");
+        JButton editItemButton = new JButton("Edit Item");
+        JButton deleteItemButton = new JButton("Delete Item");
+
+        addItemButton.addActionListener(e -> addInvoiceItem());
+        editItemButton.addActionListener(e -> editInvoiceItem());
+        deleteItemButton.addActionListener(e -> deleteInvoiceItem());
+
+        ModernUIHelper.styleButton(addItemButton, "success");
+        ModernUIHelper.styleButton(editItemButton, "primary");
+        ModernUIHelper.styleButton(deleteItemButton, "danger");
+
+        itemButtonPanel.add(addItemButton);
+        itemButtonPanel.add(editItemButton);
+        itemButtonPanel.add(deleteItemButton);
+
+        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridwidth = 2;
+        formPanel.add(itemButtonPanel, gbc);
+        gbc.gridwidth = 1;
+        row++;
+
         JScrollPane scrollPane = new JScrollPane(formPanel);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         add(scrollPane, BorderLayout.CENTER);
@@ -335,10 +417,15 @@ public class InvoiceDialog extends JDialog {
         // Button Panel
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
-        JButton saveButton = new JButton(invoice == null ? "Create" : "Save");
-        saveButton.addActionListener(e -> saveInvoice());
-        ModernUIHelper.styleButton(saveButton, "success");
-        buttonPanel.add(saveButton);
+        JButton saveOnlyButton = new JButton("Save");
+        saveOnlyButton.addActionListener(e -> saveInvoiceOnly());
+        ModernUIHelper.styleButton(saveOnlyButton, "primary");
+        buttonPanel.add(saveOnlyButton);
+
+        JButton saveCloseButton = new JButton(invoice == null ? "Create & Close" : "Save & Close");
+        saveCloseButton.addActionListener(e -> saveInvoice());
+        ModernUIHelper.styleButton(saveCloseButton, "success");
+        buttonPanel.add(saveCloseButton);
 
         JButton cancelButton = new JButton("Cancel");
         cancelButton.addActionListener(e -> dispose());
@@ -350,50 +437,71 @@ public class InvoiceDialog extends JDialog {
 
     private void loadQuotesAndAgreements() {
         try {
-            // Load equipment quotes
-            List<EquipmentQuote> quotes = quoteDAO.getAllQuotes();
-            for (EquipmentQuote quote : quotes) {
-                equipmentQuoteCombo.addItem(quote);
-            }
-
-            // Load PMA agreements
-            List<PreventiveMaintenanceAgreement> agreements = pmaDAO.getAllAgreements();
-            for (PreventiveMaintenanceAgreement pma : agreements) {
-                pmaCombo.addItem(pma);
-            }
+            // Load all equipment quotes and agreements into memory
+            allQuotes = quoteDAO.getAllQuotes();
+            allAgreements = pmaDAO.getAllAgreements();
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading quotes/agreements: " + ex.getMessage());
         }
     }
 
-    private void populateFromEquipmentQuote() {
-        EquipmentQuote selectedQuote = (EquipmentQuote) equipmentQuoteCombo.getSelectedItem();
-        if (selectedQuote != null) {
-            quoteNumberField.setText(selectedQuote.getQuoteNumber());
+    private void filterQuotesAndAgreementsForClient() {
+        Client selected = (Client) clientCombo.getSelectedItem();
+        if (selected == null) {
+            equipmentQuoteCombo.removeAllItems();
+            pmaCombo.removeAllItems();
+            return;
         }
+
+        // Filter equipment quotes for this client
+        equipmentQuoteCombo.removeAllItems();
+        if (allQuotes != null) {
+            for (EquipmentQuote quote : allQuotes) {
+                if (quote.getClientId() != null && quote.getClientId().equals(selected.getClientId())) {
+                    equipmentQuoteCombo.addItem(quote);
+                }
+            }
+        }
+        // Don't auto-select - leave it blank
+        equipmentQuoteCombo.setSelectedIndex(-1);
+
+        // Filter PMA agreements for this client
+        pmaCombo.removeAllItems();
+        if (allAgreements != null) {
+            for (PreventiveMaintenanceAgreement pma : allAgreements) {
+                if (pma.getClientId() != null && pma.getClientId().equals(selected.getClientId())) {
+                    pmaCombo.addItem(pma);
+                }
+            }
+        }
+        // Don't auto-select - leave it blank
+        pmaCombo.setSelectedIndex(-1);
     }
 
-    private void populateFromPMAgreement() {
-        PreventiveMaintenanceAgreement selectedPMA = (PreventiveMaintenanceAgreement) pmaCombo.getSelectedItem();
-        if (selectedPMA != null) {
-            quoteNumberField.setText(selectedPMA.getAgreementNumber());
-        }
-    }
 
     private void addSectionLabel(JPanel panel, GridBagConstraints gbc, int row, String text) {
         gbc.gridx = 0; gbc.gridy = row;
         gbc.gridwidth = 2;
         JLabel label = new JLabel(text);
-        label.setFont(label.getFont().deriveFont(java.awt.Font.BOLD, 14f));
-        label.setBorder(BorderFactory.createEmptyBorder(10, 0, 5, 0));
+        label.setFont(label.getFont().deriveFont(java.awt.Font.BOLD, 15f));
+        label.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 2, 0, new java.awt.Color(200, 200, 200)),
+            BorderFactory.createEmptyBorder(15, 0, 10, 0)
+        ));
         panel.add(label, gbc);
         gbc.gridwidth = 1;
+    }
+
+    private JLabel createLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(label.getFont().deriveFont(14f)); // Make label text bigger
+        return label;
     }
 
     private int addField(JPanel panel, GridBagConstraints gbc, int row, String labelText, JTextField field) {
         gbc.gridx = 0; gbc.gridy = row;
         gbc.weightx = 0.3;
-        panel.add(new JLabel(labelText), gbc);
+        panel.add(createLabel(labelText), gbc);
         gbc.gridx = 1;
         gbc.weightx = 0.7;
         ModernUIHelper.styleTextField(field);
@@ -404,7 +512,8 @@ public class InvoiceDialog extends JDialog {
     private void calculateBalanceDue() {
         try {
             // Calculate balance due = Total Amount - Payments Applied
-            // Total Amount stays constant - only balance changes
+            // Note: The database GENERATED column handles void status automatically,
+            // but we calculate it here for UI preview before saving
             String totalText = totalAmountField.getText().trim();
             String paymentsText = paymentsAppliedField.getText().trim();
 
@@ -412,7 +521,14 @@ public class InvoiceDialog extends JDialog {
                 BigDecimal total = new BigDecimal(totalText);
                 BigDecimal payments = new BigDecimal(paymentsText);
                 BigDecimal balance = total.subtract(payments);
-                balanceDueField.setText(balance.toString());
+
+                // Check void status for UI display (database will override this on save)
+                String status = (String) statusCombo.getSelectedItem();
+                if ("Void".equals(status)) {
+                    balanceDueField.setText("0.00");
+                } else {
+                    balanceDueField.setText(balance.toString());
+                }
             }
         } catch (Exception e) {
             // Invalid input, ignore
@@ -475,22 +591,90 @@ public class InvoiceDialog extends JDialog {
 
         try {
             List<ClientLocation> locations = locationDAO.getLocationsByClientId(selected.getClientId());
+
+            // Store locations in lists for filtering
+            allBillLocations = new ArrayList<>();
+            allJobLocations = new ArrayList<>();
+
             billLocationCombo.removeAllItems();
             jobLocationCombo.removeAllItems();
+
+            // Separate locations by type
             for (ClientLocation loc : locations) {
-                billLocationCombo.addItem(loc);
-                jobLocationCombo.addItem(loc);
+                if ("Billing".equals(loc.getLocationType())) {
+                    allBillLocations.add(loc);
+                    billLocationCombo.addItem(loc);
+                } else if ("Job".equals(loc.getLocationType())) {
+                    allJobLocations.add(loc);
+                    jobLocationCombo.addItem(loc);
+                }
             }
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading locations: " + ex.getMessage());
         }
     }
 
+    private void filterBillLocationCombo(String searchText) {
+        if (allBillLocations == null) return;
+
+        String search = searchText.toLowerCase().trim();
+
+        billLocationCombo.removeAllItems();
+
+        for (ClientLocation loc : allBillLocations) {
+            String locName = loc.toString();
+            if (search.isEmpty() || locName.toLowerCase().contains(search)) {
+                billLocationCombo.addItem(loc);
+            }
+        }
+
+        JTextField editor = (JTextField) billLocationCombo.getEditor().getEditorComponent();
+        editor.setText(searchText);
+
+        if (!search.isEmpty() && billLocationCombo.getItemCount() > 0) {
+            billLocationCombo.showPopup();
+        }
+    }
+
+    private void filterJobLocationCombo(String searchText) {
+        if (allJobLocations == null) return;
+
+        String search = searchText.toLowerCase().trim();
+
+        jobLocationCombo.removeAllItems();
+
+        for (ClientLocation loc : allJobLocations) {
+            String locName = loc.toString();
+            if (search.isEmpty() || locName.toLowerCase().contains(search)) {
+                jobLocationCombo.addItem(loc);
+            }
+        }
+
+        JTextField editor = (JTextField) jobLocationCombo.getEditor().getEditorComponent();
+        editor.setText(searchText);
+
+        if (!search.isEmpty() && jobLocationCombo.getItemCount() > 0) {
+            jobLocationCombo.showPopup();
+        }
+    }
+
     private void setDefaultValues() {
+        // Don't set default client - leave it empty
+        clientCombo.setSelectedIndex(-1);
+
+        // Clear location combos since no client is selected
+        billLocationCombo.removeAllItems();
+        jobLocationCombo.removeAllItems();
+
+        // Clear quote/agreement combos since no client is selected
+        equipmentQuoteCombo.removeAllItems();
+        pmaCombo.removeAllItems();
+
         invoiceDateField.setText(LocalDate.now().format(displayDateFormatter));
         dueDateField.setText(LocalDate.now().plusDays(30).format(displayDateFormatter));
         termsField.setText("Net 30");
         statusCombo.setSelectedItem("Draft");
+        subtotalAmountField.setText("0.00");
         taxRateField.setText("6.00");
         taxAmountField.setText("0.00");
         totalAmountField.setText("0.00");
@@ -504,10 +688,20 @@ public class InvoiceDialog extends JDialog {
 
     private void populateForm() {
         try {
-            // Check which type of quote/agreement is linked
+            // Select client first (this will trigger filtering of quotes/agreements)
+            boolean clientFound = false;
+            if (invoice.getClientId() != null) {
+                for (int i = 0; i < clientCombo.getItemCount(); i++) {
+                    if (clientCombo.getItemAt(i).getClientId().equals(invoice.getClientId())) {
+                        clientCombo.setSelectedIndex(i);
+                        clientFound = true;
+                        break;
+                    }
+                }
+            }
+
+            // After client is selected and combos are filtered, select quote/agreement
             if (invoice.getEquipmentQuoteId() != null) {
-                equipmentQuoteRadio.setSelected(true);
-                equipmentQuoteCombo.setEnabled(true);
                 // Try to select the linked quote
                 for (int i = 0; i < equipmentQuoteCombo.getItemCount(); i++) {
                     EquipmentQuote q = equipmentQuoteCombo.getItemAt(i);
@@ -517,25 +711,11 @@ public class InvoiceDialog extends JDialog {
                     }
                 }
             } else if (invoice.getPreventiveMaintenanceAgreementId() != null) {
-                pmaRadio.setSelected(true);
-                pmaCombo.setEnabled(true);
                 // Try to select the linked PMA
                 for (int i = 0; i < pmaCombo.getItemCount(); i++) {
                     PreventiveMaintenanceAgreement pma = pmaCombo.getItemAt(i);
                     if (pma.getPmaId() != null && pma.getPmaId().equals(invoice.getPreventiveMaintenanceAgreementId())) {
                         pmaCombo.setSelectedIndex(i);
-                        break;
-                    }
-                }
-            }
-
-            // Select client
-            boolean clientFound = false;
-            if (invoice.getClientId() != null) {
-                for (int i = 0; i < clientCombo.getItemCount(); i++) {
-                    if (clientCombo.getItemAt(i).getClientId().equals(invoice.getClientId())) {
-                        clientCombo.setSelectedIndex(i);
-                        clientFound = true;
                         break;
                     }
                 }
@@ -575,7 +755,6 @@ public class InvoiceDialog extends JDialog {
             }
 
             invoiceNumberField.setText(invoice.getInvoiceNumber());
-            quoteNumberField.setText(invoice.getQuoteNumber() != null ? invoice.getQuoteNumber() : "");
             poNumberField.setText(invoice.getPoNumber() != null ? invoice.getPoNumber() : "");
             invoiceDateField.setText(invoice.getInvoiceDate().format(displayDateFormatter));
             dueDateField.setText(invoice.getDueDate().format(displayDateFormatter));
@@ -583,21 +762,61 @@ public class InvoiceDialog extends JDialog {
             statusCombo.setSelectedItem(invoice.getStatus());
             paidDateField.setText(invoice.getPaidDate() != null ? invoice.getPaidDate().format(displayDateFormatter) : "");
 
+            subtotalAmountField.setText(invoice.getSubtotalAmount() != null ? invoice.getSubtotalAmount().toString() : "0.00");
             taxRateField.setText(invoice.getTaxRatePercent().toString());
             taxAmountField.setText(invoice.getTaxAmount().toString());
             totalAmountField.setText(invoice.getTotalAmount().toString());
             paymentsAppliedField.setText(invoice.getPaymentsApplied().toString());
 
-            BigDecimal balance = invoice.getTotalAmount().subtract(invoice.getPaymentsApplied());
-            balanceDueField.setText(balance.toString());
+            // Use the balance due from the database (GENERATED column handles void status)
+            balanceDueField.setText(invoice.getBalanceDue() != null ? invoice.getBalanceDue().toString() : "0.00");
 
             returnedCheckFeeField.setText(invoice.getReturnedCheckFee() != null ? invoice.getReturnedCheckFee().toString() : "40.00");
             interestPercentField.setText(invoice.getInterestPercent() != null ? invoice.getInterestPercent().toString() : "10.00");
             interestStartDaysField.setText(invoice.getInterestStartDays() != null ? invoice.getInterestStartDays().toString() : "90");
             interestIntervalDaysField.setText(invoice.getInterestIntervalDays() != null ? invoice.getInterestIntervalDays().toString() : "30");
 
+            // Load invoice items
+            loadInvoiceItems();
+
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error populating form: " + ex.getMessage());
+        }
+    }
+
+    private void saveInvoiceOnly() {
+        if (!validateForm()) return;
+
+        try {
+            if (invoice == null) {
+                invoice = new Invoice();
+            }
+
+            populateInvoiceFromForm();
+
+            if (invoice.getInvoiceId() == null) {
+                if (invoiceDAO.addInvoice(invoice)) {
+                    // Save invoice items after invoice is created (now has ID)
+                    saveInvoiceItems();
+                    saved = true;
+                    // Reload the invoice to get the GENERATED column values
+                    invoice = invoiceDAO.getInvoiceById(invoice.getInvoiceId());
+                    populateForm(); // Refresh the form with updated values
+                    JOptionPane.showMessageDialog(this, "Invoice created successfully!");
+                }
+            } else {
+                if (invoiceDAO.updateInvoice(invoice)) {
+                    // Save invoice items
+                    saveInvoiceItems();
+                    saved = true;
+                    // Reload the invoice to get the GENERATED column values
+                    invoice = invoiceDAO.getInvoiceById(invoice.getInvoiceId());
+                    populateForm(); // Refresh the form with updated values
+                    JOptionPane.showMessageDialog(this, "Invoice updated successfully!");
+                }
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error saving invoice: " + ex.getMessage());
         }
     }
 
@@ -613,12 +832,16 @@ public class InvoiceDialog extends JDialog {
 
             if (invoice.getInvoiceId() == null) {
                 if (invoiceDAO.addInvoice(invoice)) {
+                    // Save invoice items after invoice is created (now has ID)
+                    saveInvoiceItems();
                     saved = true;
                     JOptionPane.showMessageDialog(this, "Invoice created successfully!");
                     dispose();
                 }
             } else {
                 if (invoiceDAO.updateInvoice(invoice)) {
+                    // Save invoice items
+                    saveInvoiceItems();
                     saved = true;
                     JOptionPane.showMessageDialog(this, "Invoice updated successfully!");
                     dispose();
@@ -638,22 +861,29 @@ public class InvoiceDialog extends JDialog {
         invoice.setBillingLocationId(billLoc.getClientLocationId());
         invoice.setJobLocationId(jobLoc.getClientLocationId());
 
-        // Set quote/agreement FK based on radio selection
-        if (equipmentQuoteRadio.isSelected() && equipmentQuoteCombo.getSelectedItem() != null) {
+        // Set quote/agreement FK based on combo selection, and extract quote number
+        if (equipmentQuoteCombo.getSelectedItem() != null &&
+            equipmentQuoteCombo.getSelectedItem() instanceof EquipmentQuote) {
             EquipmentQuote quote = (EquipmentQuote) equipmentQuoteCombo.getSelectedItem();
             invoice.setEquipmentQuoteId(quote.getEquipmentQuoteId());
             invoice.setPreventiveMaintenanceAgreementId(null);
-        } else if (pmaRadio.isSelected() && pmaCombo.getSelectedItem() != null) {
+            // Store the quote number from the Equipment Quote
+            invoice.setQuoteNumber(quote.getQuoteNumber());
+        } else if (pmaCombo.getSelectedItem() != null &&
+                   pmaCombo.getSelectedItem() instanceof PreventiveMaintenanceAgreement) {
             PreventiveMaintenanceAgreement pma = (PreventiveMaintenanceAgreement) pmaCombo.getSelectedItem();
             invoice.setPreventiveMaintenanceAgreementId(pma.getPmaId());
             invoice.setEquipmentQuoteId(null);
+            // Store the agreement number from the PMA as quote number
+            invoice.setQuoteNumber(pma.getAgreementNumber());
         } else {
+            // Neither selected - both null
             invoice.setEquipmentQuoteId(null);
             invoice.setPreventiveMaintenanceAgreementId(null);
+            invoice.setQuoteNumber(null);
         }
 
         invoice.setInvoiceNumber(invoiceNumberField.getText().trim());
-        invoice.setQuoteNumber(quoteNumberField.getText().trim().isEmpty() ? null : quoteNumberField.getText().trim());
         invoice.setPoNumber(poNumberField.getText().trim().isEmpty() ? null : poNumberField.getText().trim());
 
         invoice.setInvoiceDate(LocalDate.parse(invoiceDateField.getText().trim(), displayDateFormatter));
@@ -665,11 +895,14 @@ public class InvoiceDialog extends JDialog {
         invoice.setTerms(termsField.getText().trim());
         invoice.setStatus((String) statusCombo.getSelectedItem());
 
-        // Subtotal will be 0 until invoice items are added
-        invoice.setSubtotalAmount(BigDecimal.ZERO);
+        // Calculate subtotal from invoice items
+        BigDecimal subtotal = BigDecimal.ZERO;
+        for (InvoiceItem item : invoiceItems) {
+            subtotal = subtotal.add(item.getTotalAmount());
+        }
+        invoice.setSubtotalAmount(subtotal);
         invoice.setTaxRatePercent(new BigDecimal(taxRateField.getText().trim()));
-        invoice.setTaxAmount(new BigDecimal(taxAmountField.getText().trim()));
-        invoice.setTotalAmount(new BigDecimal(totalAmountField.getText().trim()));
+        // Note: TaxAmount and TotalAmount are GENERATED columns - don't set them
         invoice.setPaymentsApplied(new BigDecimal(paymentsAppliedField.getText().trim()));
 
         invoice.setReturnedCheckFee(new BigDecimal(returnedCheckFeeField.getText().trim()));
@@ -760,6 +993,233 @@ public class InvoiceDialog extends JDialog {
             return false;
         }
         return true;
+    }
+
+    // ===== INVOICE ITEMS MANAGEMENT =====
+
+    private void addInvoiceItem() {
+        // Prompt for item details
+        JTextField descriptionField = new JTextField(30);
+        JTextField qtyField = new JTextField(10);
+        JTextField rateField = new JTextField(10);
+
+        // Set defaults
+        qtyField.setText("1.00");
+        rateField.setText("0.00");
+
+        JPanel itemPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.3;
+        itemPanel.add(createLabel("Description:*"), gbc);
+        gbc.gridx = 1; gbc.weightx = 0.7;
+        itemPanel.add(descriptionField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0.3;
+        itemPanel.add(createLabel("Quantity:*"), gbc);
+        gbc.gridx = 1; gbc.weightx = 0.7;
+        itemPanel.add(qtyField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0.3;
+        itemPanel.add(createLabel("Rate:*"), gbc);
+        gbc.gridx = 1; gbc.weightx = 0.7;
+        itemPanel.add(rateField, gbc);
+
+        int result = JOptionPane.showConfirmDialog(this, itemPanel, "Add Invoice Item", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                String description = descriptionField.getText().trim();
+                if (description.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Description is required.");
+                    return;
+                }
+
+                BigDecimal qty = new BigDecimal(qtyField.getText().trim());
+                BigDecimal rate = new BigDecimal(rateField.getText().trim());
+                BigDecimal total = qty.multiply(rate);
+
+                // Calculate next row number
+                int rowNumber = invoiceItems.size() + 1;
+
+                // Create new item
+                InvoiceItem item = new InvoiceItem();
+                item.setRowNumber(rowNumber);
+                item.setDescription(description);
+                item.setQty(qty);
+                item.setRate(rate);
+                item.setTotalAmount(total);
+
+                // Add to list
+                invoiceItems.add(item);
+
+                // Update table
+                refreshItemsTable();
+
+                // Recalculate totals
+                recalculateTotals();
+
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Invalid quantity or rate format.");
+            }
+        }
+    }
+
+    private void editInvoiceItem() {
+        int selectedRow = invoiceItemsTable.getSelectedRow();
+        if (selectedRow < 0) {
+            JOptionPane.showMessageDialog(this, "Please select an item to edit.");
+            return;
+        }
+
+        InvoiceItem item = invoiceItems.get(selectedRow);
+
+        // Populate fields with current values
+        JTextField descriptionField = new JTextField(30);
+        JTextField qtyField = new JTextField(10);
+        JTextField rateField = new JTextField(10);
+
+        descriptionField.setText(item.getDescription());
+        qtyField.setText(item.getQty().toString());
+        rateField.setText(item.getRate().toString());
+
+        JPanel itemPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.3;
+        itemPanel.add(createLabel("Description:*"), gbc);
+        gbc.gridx = 1; gbc.weightx = 0.7;
+        itemPanel.add(descriptionField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0.3;
+        itemPanel.add(createLabel("Quantity:*"), gbc);
+        gbc.gridx = 1; gbc.weightx = 0.7;
+        itemPanel.add(qtyField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0.3;
+        itemPanel.add(createLabel("Rate:*"), gbc);
+        gbc.gridx = 1; gbc.weightx = 0.7;
+        itemPanel.add(rateField, gbc);
+
+        int result = JOptionPane.showConfirmDialog(this, itemPanel, "Edit Invoice Item", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                String description = descriptionField.getText().trim();
+                if (description.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Description is required.");
+                    return;
+                }
+
+                BigDecimal qty = new BigDecimal(qtyField.getText().trim());
+                BigDecimal rate = new BigDecimal(rateField.getText().trim());
+                BigDecimal total = qty.multiply(rate);
+
+                // Update item
+                item.setDescription(description);
+                item.setQty(qty);
+                item.setRate(rate);
+                item.setTotalAmount(total);
+
+                // Update table
+                refreshItemsTable();
+
+                // Recalculate totals
+                recalculateTotals();
+
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Invalid quantity or rate format.");
+            }
+        }
+    }
+
+    private void deleteInvoiceItem() {
+        int selectedRow = invoiceItemsTable.getSelectedRow();
+        if (selectedRow < 0) {
+            JOptionPane.showMessageDialog(this, "Please select an item to delete.");
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+            "Are you sure you want to delete this item?",
+            "Confirm Delete",
+            JOptionPane.YES_NO_OPTION);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            invoiceItems.remove(selectedRow);
+
+            // Renumber remaining items
+            for (int i = 0; i < invoiceItems.size(); i++) {
+                invoiceItems.get(i).setRowNumber(i + 1);
+            }
+
+            // Update table
+            refreshItemsTable();
+
+            // Recalculate totals
+            recalculateTotals();
+        }
+    }
+
+    private void refreshItemsTable() {
+        // Clear table
+        itemsTableModel.setRowCount(0);
+
+        // Populate table with current items
+        for (InvoiceItem item : invoiceItems) {
+            itemsTableModel.addRow(new Object[]{
+                item.getRowNumber(),
+                item.getDescription(),
+                item.getQty(),
+                item.getRate(),
+                item.getTotalAmount()
+            });
+        }
+    }
+
+    private void recalculateTotals() {
+        // Calculate subtotal from items
+        BigDecimal subtotal = BigDecimal.ZERO;
+        for (InvoiceItem item : invoiceItems) {
+            subtotal = subtotal.add(item.getTotalAmount());
+        }
+
+        // Update subtotal field
+        subtotalAmountField.setText(subtotal.setScale(2, java.math.RoundingMode.HALF_UP).toString());
+
+        // Note: TaxAmount, TotalAmount, and BalanceDue are GENERATED columns calculated by the database
+        // after the invoice is saved, and will be refreshed when the invoice is reloaded
+    }
+
+    private void loadInvoiceItems() {
+        if (invoice == null || invoice.getInvoiceId() == null) {
+            return;
+        }
+
+        try {
+            invoiceItems.clear();
+            invoiceItems.addAll(invoiceItemDAO.getItemsByInvoiceId(invoice.getInvoiceId()));
+            refreshItemsTable();
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error loading invoice items: " + ex.getMessage());
+        }
+    }
+
+    private void saveInvoiceItems() throws SQLException {
+        if (invoice == null || invoice.getInvoiceId() == null) {
+            return;
+        }
+
+        // Delete all existing items for this invoice
+        invoiceItemDAO.deleteAllItemsByInvoiceId(invoice.getInvoiceId());
+
+        // Insert all current items
+        for (InvoiceItem item : invoiceItems) {
+            item.setInvoiceId(invoice.getInvoiceId());
+            invoiceItemDAO.addInvoiceItem(item);
+        }
     }
 
     public boolean isSaved() {

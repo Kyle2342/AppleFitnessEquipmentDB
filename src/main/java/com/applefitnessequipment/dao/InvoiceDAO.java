@@ -48,7 +48,7 @@ public class InvoiceDAO {
         String sql = "INSERT INTO invoices (ClientID, BillingLocationID, JobLocationID, " +
                     "PreventiveMaintenanceAgreementID, EquipmentQuoteID, InvoiceNumber, QuoteNumber, " +
                     "InvoiceDate, DueDate, PONumber, Terms, Status, " +
-                    "SubtotalAmount, TaxRatePercent, TaxAmount, TotalAmount, PaymentsApplied, PaidDate, " +
+                    "SubtotalAmount, TaxRatePercent, PaymentsApplied, PaidDate, " +
                     "ReturnedCheckFee, InterestPercent, InterestStartDays, InterestIntervalDays, " +
                     "FromCompanyName, FromStreetAddress, FromCity, FromState, FromZIPCode, FromPhone, FromFax, " +
                     "ClientTypeSnapshot, ClientCompanyNameSnapshot, ClientFirstNameSnapshot, ClientLastNameSnapshot, " +
@@ -58,9 +58,9 @@ public class InvoiceDAO {
                     "JobAtCompanyName, JobAtContactName, JobAtStreetAddress, JobAtBuildingName, " +
                     "JobAtSuite, JobAtRoomNumber, JobAtDepartment, JobAtCity, JobAtCounty, " +
                     "JobAtState, JobAtZIPCode, JobAtCountry, JobAtPhone, JobAtPONumber) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " +
-                    "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " +
-                    "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " +
+                    "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " +
+                    "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -91,8 +91,6 @@ public class InvoiceDAO {
             pstmt.setString(idx++, invoice.getStatus());
             pstmt.setBigDecimal(idx++, invoice.getSubtotalAmount());
             pstmt.setBigDecimal(idx++, invoice.getTaxRatePercent());
-            pstmt.setBigDecimal(idx++, invoice.getTaxAmount());
-            pstmt.setBigDecimal(idx++, invoice.getTotalAmount());
             pstmt.setBigDecimal(idx++, invoice.getPaymentsApplied());
 
             if (invoice.getPaidDate() != null) {
@@ -161,7 +159,7 @@ public class InvoiceDAO {
         String sql = "UPDATE invoices SET ClientID = ?, BillingLocationID = ?, JobLocationID = ?, " +
                     "PreventiveMaintenanceAgreementID = ?, EquipmentQuoteID = ?, InvoiceNumber = ?, QuoteNumber = ?, " +
                     "InvoiceDate = ?, DueDate = ?, PONumber = ?, Terms = ?, Status = ?, " +
-                    "SubtotalAmount = ?, TaxRatePercent = ?, TaxAmount = ?, TotalAmount = ?, " +
+                    "SubtotalAmount = ?, TaxRatePercent = ?, " +
                     "PaymentsApplied = ?, PaidDate = ?, " +
                     "ReturnedCheckFee = ?, InterestPercent = ?, InterestStartDays = ?, InterestIntervalDays = ?, " +
                     "FromCompanyName = ?, FromStreetAddress = ?, FromCity = ?, FromState = ?, FromZIPCode = ?, FromPhone = ?, FromFax = ?, " +
@@ -203,8 +201,6 @@ public class InvoiceDAO {
             pstmt.setString(idx++, invoice.getStatus());
             pstmt.setBigDecimal(idx++, invoice.getSubtotalAmount());
             pstmt.setBigDecimal(idx++, invoice.getTaxRatePercent());
-            pstmt.setBigDecimal(idx++, invoice.getTaxAmount());
-            pstmt.setBigDecimal(idx++, invoice.getTotalAmount());
             pstmt.setBigDecimal(idx++, invoice.getPaymentsApplied());
 
             if (invoice.getPaidDate() != null) {
@@ -320,6 +316,7 @@ public class InvoiceDAO {
         invoice.setTaxAmount(rs.getBigDecimal("TaxAmount"));
         invoice.setTotalAmount(rs.getBigDecimal("TotalAmount"));
         invoice.setPaymentsApplied(rs.getBigDecimal("PaymentsApplied"));
+        invoice.setBalanceDue(rs.getBigDecimal("BalanceDue"));  // Generated column from database
         invoice.setReturnedCheckFee(rs.getBigDecimal("ReturnedCheckFee"));
         invoice.setInterestPercent(rs.getBigDecimal("InterestPercent"));
         invoice.setInterestStartDays(rs.getInt("InterestStartDays"));
