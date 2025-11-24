@@ -89,6 +89,7 @@ public class PreventiveMaintenanceAgreement {
     private Integer cancelationNoticeDays;
     private Integer paymentDueAfterWorkDays;
     private BigDecimal lateFeePercentage;
+    private Boolean clientSignatureBoolean;
     private String facilityAgentSignature;
     private LocalDate signatureDate;
 

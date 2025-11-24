@@ -85,9 +85,10 @@ public class EquipmentQuotesPanel extends JPanel {
         };
         quotesTable = new JTable(tableModel);
         quotesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        
+
         // Apply modern styling
         ModernUIHelper.styleTable(quotesTable);
+        ModernUIHelper.addTableToggleBehavior(quotesTable, () -> clearForm());
         
         // Hide ID
         quotesTable.getColumnModel().getColumn(0).setMinWidth(0);
@@ -99,21 +100,17 @@ public class EquipmentQuotesPanel extends JPanel {
                 loadSelectedQuote();
             }
         });
-        
-        quotesTable.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mousePressed(java.awt.event.MouseEvent e) {
-                if (quotesTable.rowAtPoint(e.getPoint()) == -1) clearForm();
-            }
-        });
-        
+
         JScrollPane scrollPane = new JScrollPane(quotesTable);
 
-        // Clear form when clicking on scroll pane background
+        // Allow deselection by clicking on empty space in the scroll pane viewport (not on the table itself)
         scrollPane.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
             public void mousePressed(java.awt.event.MouseEvent e) {
-                quotesTable.clearSelection();
-                clearForm();
+                // Only deselect if clicking in the viewport area (the gray empty space around the table)
+                if (e.getComponent() == scrollPane && !quotesTable.getBounds().contains(e.getPoint())) {
+                    quotesTable.clearSelection();
+                    clearForm();
+                }
             }
         });
 
@@ -445,15 +442,6 @@ public class EquipmentQuotesPanel extends JPanel {
         buttonPanel.add(clearButton);
 
         formPanel.add(buttonPanel, gbc);
-
-        // Clear selection when clicking on form panel background
-        formPanel.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mousePressed(java.awt.event.MouseEvent e) {
-                quotesTable.clearSelection();
-                clearForm();
-            }
-        });
 
         JScrollPane formScrollPane = new JScrollPane(formPanel);
         formScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);

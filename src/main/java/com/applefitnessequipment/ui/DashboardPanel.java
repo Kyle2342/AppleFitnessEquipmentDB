@@ -169,8 +169,8 @@ public class DashboardPanel extends JPanel {
         int pmCount = getActivePMCount();
 
         // Create stat cards
-        panel.add(createStatCard("Active Clients", String.valueOf(clientCount), "With open/overdue invoices", new Color(59, 130, 246)));
-        panel.add(createStatCard("Open Invoices", "$" + formatCurrency((BigDecimal) invoiceData[1]), (int) invoiceData[0] + " pending", new Color(16, 185, 129)));
+        panel.add(createStatCard("Active Clients", String.valueOf(clientCount), "With active contracts", new Color(59, 130, 246)));
+        panel.add(createStatCard("Open Invoices", "$" + formatCurrency((BigDecimal) invoiceData[1]), (int) invoiceData[0] + " contracts outstanding", new Color(16, 185, 129)));
         panel.add(createStatCard("Equipment Quotes", String.valueOf(quoteCount), "Sent or accepted", new Color(245, 158, 11)));
         panel.add(createStatCard("Active PM", String.valueOf(pmCount), "Active agreements", PRIMARY_RED));
 
@@ -541,6 +541,7 @@ public class DashboardPanel extends JPanel {
 
     private JTable createStyledTable(DefaultTableModel model) {
         JTable table = new JTable(model);
+        ModernUIHelper.addTableToggleBehavior(table);
         table.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         table.setRowHeight(28);
         table.setGridColor(new Color(230, 230, 230));
@@ -564,10 +565,14 @@ public class DashboardPanel extends JPanel {
 
     private int getClientCount() {
         try {
-            // Count clients that have an Open or Overdue invoice
-            List<Invoice> invoices = invoiceDAO.getAllInvoices();
+            // Count clients that have:
+            // - An Open or Overdue invoice, OR
+            // - An Active PMA, OR
+            // - An Active (Sent/Accepted) Equipment Quote
             java.util.Set<Integer> activeClientIds = new java.util.HashSet<>();
 
+            // Check invoices
+            List<Invoice> invoices = invoiceDAO.getAllInvoices();
             for (Invoice inv : invoices) {
                 if (inv.getClientId() != null &&
                     ("Open".equalsIgnoreCase(inv.getStatus()) ||
@@ -575,6 +580,25 @@ public class DashboardPanel extends JPanel {
                     activeClientIds.add(inv.getClientId());
                 }
             }
+
+            // Check PM Agreements
+            List<PreventiveMaintenanceAgreement> pmas = pmDAO.getAllAgreements();
+            for (PreventiveMaintenanceAgreement pma : pmas) {
+                if (pma.getClientId() != null && "Active".equalsIgnoreCase(pma.getStatus())) {
+                    activeClientIds.add(pma.getClientId());
+                }
+            }
+
+            // Check Equipment Quotes
+            List<EquipmentQuoteComplete> quotes = quoteDAO.getAllQuotes();
+            for (EquipmentQuoteComplete quote : quotes) {
+                if (quote.getClientId() != null &&
+                    ("Sent".equalsIgnoreCase(quote.getStatus()) ||
+                     "Accepted".equalsIgnoreCase(quote.getStatus()))) {
+                    activeClientIds.add(quote.getClientId());
+                }
+            }
+
             return activeClientIds.size();
         } catch (SQLException e) {
             return 0;
@@ -582,25 +606,25 @@ public class DashboardPanel extends JPanel {
     }
 
     private Object[] getInvoiceData() {
-        // Returns [count, totalAmount]
+        // Returns [count, totalBalanceDue]
         try {
             List<Invoice> invoices = invoiceDAO.getAllInvoices();
             int pendingCount = 0;
-            BigDecimal totalDue = BigDecimal.ZERO;
+            BigDecimal totalBalanceDue = BigDecimal.ZERO;
 
             for (Invoice inv : invoices) {
-                // Count unpaid invoices: Draft, Open, or Overdue
-                if ("Draft".equalsIgnoreCase(inv.getStatus()) ||
-                    "Open".equalsIgnoreCase(inv.getStatus()) ||
+                // Count Open or Overdue invoices only (not Draft)
+                if ("Open".equalsIgnoreCase(inv.getStatus()) ||
                     "Overdue".equalsIgnoreCase(inv.getStatus())) {
                     pendingCount++;
-                    if (inv.getTotalAmount() != null) {
-                        totalDue = totalDue.add(inv.getTotalAmount());
+                    // Use BalanceDue column instead of TotalAmount
+                    if (inv.getBalanceDue() != null) {
+                        totalBalanceDue = totalBalanceDue.add(inv.getBalanceDue());
                     }
                 }
             }
 
-            return new Object[]{pendingCount, totalDue};
+            return new Object[]{pendingCount, totalBalanceDue};
         } catch (SQLException e) {
             return new Object[]{0, BigDecimal.ZERO};
         }

@@ -96,15 +96,16 @@ public class ClientsPanel extends JPanel {
         };
         clientsTable = new JTable(tableModel);
         clientsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        
+
         // Apply modern styling
         ModernUIHelper.styleTable(clientsTable);
+        ModernUIHelper.addTableToggleBehavior(clientsTable, () -> clearForm());
         
         // Hide the ID column
         clientsTable.getColumnModel().getColumn(0).setMinWidth(0);
         clientsTable.getColumnModel().getColumn(0).setMaxWidth(0);
         clientsTable.getColumnModel().getColumn(0).setWidth(0);
-        
+
         clientsTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 int selectedRow = clientsTable.getSelectedRow();
@@ -113,42 +114,16 @@ public class ClientsPanel extends JPanel {
                 }
             }
         });
-        
-        // Allow deselection by clicking on empty space
-        clientsTable.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mousePressed(java.awt.event.MouseEvent e) {
-                int row = clientsTable.rowAtPoint(e.getPoint());
-                if (row == -1) {
-                    clientsTable.clearSelection();
-                    // Only clear form if it was auto-populated from selection
-                    if (isFormAutoPopulated) {
-                        clearForm();
-                    } else {
-                        // Just deselect but keep manual data
-                        selectedClient = null;
-                        updateButton.setEnabled(false);
-                        deleteButton.setEnabled(false);
-                    }
-                }
-            }
-        });
 
         JScrollPane scrollPane = new JScrollPane(clientsTable);
 
-        // Clear form when clicking on scroll pane background
+        // Allow deselection by clicking on empty space in the scroll pane viewport (not on the table itself)
         scrollPane.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
             public void mousePressed(java.awt.event.MouseEvent e) {
-                clientsTable.clearSelection();
-                // Only clear form if it was auto-populated from selection
-                if (isFormAutoPopulated) {
+                // Only deselect if clicking in the viewport area (the gray empty space around the table)
+                if (e.getComponent() == scrollPane && !clientsTable.getBounds().contains(e.getPoint())) {
+                    clientsTable.clearSelection();
                     clearForm();
-                } else {
-                    // Just deselect but keep manual data
-                    selectedClient = null;
-                    updateButton.setEnabled(false);
-                    deleteButton.setEnabled(false);
                 }
             }
         });
@@ -274,23 +249,6 @@ public class ClientsPanel extends JPanel {
         buttonPanel.add(clearButton);
 
         formPanel.add(buttonPanel, gbc);
-
-        // Clear selection when clicking on form panel background
-        formPanel.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mousePressed(java.awt.event.MouseEvent e) {
-                clientsTable.clearSelection();
-                // Only clear form if it was auto-populated from selection
-                if (isFormAutoPopulated) {
-                    clearForm();
-                } else {
-                    // Just deselect but keep manual data
-                    selectedClient = null;
-                    updateButton.setEnabled(false);
-                    deleteButton.setEnabled(false);
-                }
-            }
-        });
 
         add(formPanel, BorderLayout.EAST);
     }

@@ -47,7 +47,8 @@ public class EquipmentQuotesViewPanel extends JPanel {
         };
         quotesTable = new JTable(tableModel);
         quotesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        
+        ModernUIHelper.addTableToggleBehavior(quotesTable);
+
         JScrollPane scrollPane = new JScrollPane(quotesTable);
         add(scrollPane, BorderLayout.CENTER);
 

@@ -92,7 +92,6 @@ public class ClientLocation {
     public String toString() {
         String address = streetAddress != null ? streetAddress : "";
         String cityState = (city != null ? city : "") + ", " + (state != null ? state : "");
-        String type = locationType != null ? locationType + ": " : "";
-        return type + address + (address.isEmpty() ? "" : ", ") + cityState.trim();
+        return address + (address.isEmpty() ? "" : ", ") + cityState.trim();
     }
 }

@@ -101,6 +101,7 @@ public class ModernUIHelper {
         table.setShowGrid(true);
         table.setIntercellSpacing(new java.awt.Dimension(1, 1));
         table.setBackground(WHITE);
+        table.setFocusable(false); // Disable focus to prevent focus border
 
         // Header styling - dark background with white text for maximum visibility
         JTableHeader header = table.getTableHeader();
@@ -214,5 +215,49 @@ public class ModernUIHelper {
      */
     public static void styleComboBox(JComboBox<?> comboBox) {
         comboBox.setFont(NORMAL_FONT);
+    }
+
+    /**
+     * Add toggle behavior to table - clicking an already selected row will deselect it
+     */
+    public static void addTableToggleBehavior(JTable table) {
+        addTableToggleBehavior(table, null);
+    }
+
+    /**
+     * Add toggle behavior to table with callback - clicking anywhere in the selected row will deselect it
+     * @param table The table to add toggle behavior to
+     * @param onDeselect Optional callback to run when a row is deselected (e.g., to clear a form)
+     */
+    public static void addTableToggleBehavior(JTable table, Runnable onDeselect) {
+        table.addMouseListener(new java.awt.event.MouseAdapter() {
+            private int lastClickedRow = -1;
+
+            @Override
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                int row = table.rowAtPoint(e.getPoint());
+                int col = table.columnAtPoint(e.getPoint());
+
+                // Only process if we clicked on a valid cell within the table bounds
+                if (row >= 0 && col >= 0) {
+                    // Check if clicking anywhere in the same row that's currently selected
+                    if (lastClickedRow == row && table.getSelectedRow() == row) {
+                        // Prevent the default selection behavior by consuming the event
+                        e.consume();
+                        // Deselect it
+                        table.clearSelection();
+                        table.repaint(); // Force repaint to clear any residual selection highlight
+                        lastClickedRow = -1;
+                        // Trigger the deselect callback if provided
+                        if (onDeselect != null) {
+                            onDeselect.run();
+                        }
+                    } else {
+                        // Update the last clicked row (will be processed by default table behavior)
+                        lastClickedRow = row;
+                    }
+                }
+            }
+        });
     }
 }

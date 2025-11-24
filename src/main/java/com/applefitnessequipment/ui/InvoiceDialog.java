@@ -85,6 +85,9 @@ public class InvoiceDialog extends JDialog {
     private List<ClientLocation> allBillLocations;
     private List<ClientLocation> allJobLocations;
 
+    // Track original payments applied value from database
+    private String originalPaymentsApplied = "0.00";
+
     public InvoiceDialog(JFrame parent, Invoice invoice) {
         super(parent, invoice == null ? "Create Invoice" : "Edit Invoice", true);
         this.invoice = invoice;
@@ -108,7 +111,9 @@ public class InvoiceDialog extends JDialog {
 
         pack();
         setLocationRelativeTo(parent);
-        setMinimumSize(new Dimension(900, 900));
+        setMinimumSize(new Dimension(900, 600));
+        // Limit dialog height to 90% of screen height to ensure buttons are visible
+        setSize(new Dimension(900, Math.min(getHeight(), (int)(java.awt.Toolkit.getDefaultToolkit().getScreenSize().height * 0.9))));
     }
 
     private void initComponents() {
@@ -281,16 +286,25 @@ public class InvoiceDialog extends JDialog {
         statusCombo = new JComboBox<>(new String[]{"Draft", "Open", "Paid", "Overdue", "Void"});
         statusCombo.addActionListener(e -> {
             updatePaidDate();
-            // Auto-fill payments applied when status is set to Paid
-            if ("Paid".equals(statusCombo.getSelectedItem())) {
+            String selectedStatus = (String) statusCombo.getSelectedItem();
+
+            // When status is Paid, force payments to equal total amount
+            if ("Paid".equals(selectedStatus)) {
+                // Lock payments applied field when status is Paid
+                paymentsAppliedField.setEditable(false);
+                paymentsAppliedField.setBackground(java.awt.Color.WHITE);
+
+                // Force payments applied to equal total amount (Paid = fully paid)
                 String totalText = totalAmountField.getText().trim();
                 if (!totalText.isEmpty()) {
-                    try {
-                        paymentsAppliedField.setText(totalText);
-                    } catch (Exception ex) {
-                        // Ignore
-                    }
+                    paymentsAppliedField.setText(totalText);
                 }
+            } else {
+                // Make payments applied field editable for other statuses
+                paymentsAppliedField.setEditable(true);
+
+                // Restore original payments applied value from database (don't keep the auto-filled value)
+                paymentsAppliedField.setText(originalPaymentsApplied);
             }
             calculateBalanceDue();
         });
@@ -366,6 +380,7 @@ public class InvoiceDialog extends JDialog {
             }
         };
         invoiceItemsTable = new JTable(itemsTableModel);
+        ModernUIHelper.addTableToggleBehavior(invoiceItemsTable);
         invoiceItemsTable.getColumnModel().getColumn(0).setPreferredWidth(50);
         invoiceItemsTable.getColumnModel().getColumn(1).setPreferredWidth(300);
         invoiceItemsTable.getColumnModel().getColumn(2).setPreferredWidth(70);
@@ -512,8 +527,6 @@ public class InvoiceDialog extends JDialog {
     private void calculateBalanceDue() {
         try {
             // Calculate balance due = Total Amount - Payments Applied
-            // Note: The database GENERATED column handles void status automatically,
-            // but we calculate it here for UI preview before saving
             String totalText = totalAmountField.getText().trim();
             String paymentsText = paymentsAppliedField.getText().trim();
 
@@ -522,12 +535,12 @@ public class InvoiceDialog extends JDialog {
                 BigDecimal payments = new BigDecimal(paymentsText);
                 BigDecimal balance = total.subtract(payments);
 
-                // Check void status for UI display (database will override this on save)
+                // Only Void status sets balance to 0
                 String status = (String) statusCombo.getSelectedItem();
                 if ("Void".equals(status)) {
                     balanceDueField.setText("0.00");
                 } else {
-                    balanceDueField.setText(balance.toString());
+                    balanceDueField.setText(balance.setScale(2, java.math.RoundingMode.HALF_UP).toString());
                 }
             }
         } catch (Exception e) {
@@ -766,7 +779,10 @@ public class InvoiceDialog extends JDialog {
             taxRateField.setText(invoice.getTaxRatePercent().toString());
             taxAmountField.setText(invoice.getTaxAmount().toString());
             totalAmountField.setText(invoice.getTotalAmount().toString());
-            paymentsAppliedField.setText(invoice.getPaymentsApplied().toString());
+
+            // Store and display original payments applied value from database
+            originalPaymentsApplied = invoice.getPaymentsApplied().toString();
+            paymentsAppliedField.setText(originalPaymentsApplied);
 
             // Use the balance due from the database (GENERATED column handles void status)
             balanceDueField.setText(invoice.getBalanceDue() != null ? invoice.getBalanceDue().toString() : "0.00");
@@ -778,6 +794,18 @@ public class InvoiceDialog extends JDialog {
 
             // Load invoice items
             loadInvoiceItems();
+
+            // Set field editability based on status after loading all data
+            String status = invoice.getStatus();
+            if ("Paid".equals(status)) {
+                paymentsAppliedField.setEditable(false);
+                paymentsAppliedField.setBackground(java.awt.Color.WHITE);
+            } else {
+                paymentsAppliedField.setEditable(true);
+            }
+
+            // Recalculate balance due in case values changed
+            calculateBalanceDue();
 
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error populating form: " + ex.getMessage());
@@ -1180,17 +1208,45 @@ public class InvoiceDialog extends JDialog {
     }
 
     private void recalculateTotals() {
-        // Calculate subtotal from items
-        BigDecimal subtotal = BigDecimal.ZERO;
-        for (InvoiceItem item : invoiceItems) {
-            subtotal = subtotal.add(item.getTotalAmount());
+        try {
+            // Calculate subtotal from items
+            BigDecimal subtotal = BigDecimal.ZERO;
+            for (InvoiceItem item : invoiceItems) {
+                subtotal = subtotal.add(item.getTotalAmount());
+            }
+
+            // Update subtotal field
+            subtotalAmountField.setText(subtotal.setScale(2, java.math.RoundingMode.HALF_UP).toString());
+
+            // Calculate tax amount
+            String taxRateText = taxRateField.getText().trim();
+            if (!taxRateText.isEmpty()) {
+                BigDecimal taxRate = new BigDecimal(taxRateText);
+                BigDecimal taxAmount = subtotal.multiply(taxRate).divide(new BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
+                taxAmountField.setText(taxAmount.toString());
+
+                // Calculate total amount
+                BigDecimal totalAmount = subtotal.add(taxAmount);
+                totalAmountField.setText(totalAmount.toString());
+
+                // Calculate balance due
+                String paymentsText = paymentsAppliedField.getText().trim();
+                if (!paymentsText.isEmpty()) {
+                    BigDecimal payments = new BigDecimal(paymentsText);
+                    BigDecimal balance = totalAmount.subtract(payments);
+
+                    // Check void status for UI display
+                    String status = (String) statusCombo.getSelectedItem();
+                    if ("Void".equals(status)) {
+                        balanceDueField.setText("0.00");
+                    } else {
+                        balanceDueField.setText(balance.setScale(2, java.math.RoundingMode.HALF_UP).toString());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Invalid input, ignore
         }
-
-        // Update subtotal field
-        subtotalAmountField.setText(subtotal.setScale(2, java.math.RoundingMode.HALF_UP).toString());
-
-        // Note: TaxAmount, TotalAmount, and BalanceDue are GENERATED columns calculated by the database
-        // after the invoice is saved, and will be refreshed when the invoice is reloaded
     }
 
     private void loadInvoiceItems() {

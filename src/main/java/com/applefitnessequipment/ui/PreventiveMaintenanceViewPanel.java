@@ -47,7 +47,8 @@ public class PreventiveMaintenanceViewPanel extends JPanel {
         };
         pmaTable = new JTable(tableModel);
         pmaTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        
+        ModernUIHelper.addTableToggleBehavior(pmaTable);
+
         JScrollPane scrollPane = new JScrollPane(pmaTable);
         add(scrollPane, BorderLayout.CENTER);
 

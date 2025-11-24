@@ -343,11 +343,10 @@ CREATE TABLE PreventiveMaintenanceAgreements (
     RequiresAdditionalInsurance BOOLEAN DEFAULT FALSE,
 
     -- Legal & Tracking
-    CancelationNoticeDays   INT DEFAULT 30,
-	PaymentDueAfterWorkDays INT DEFAULT 30,
-	LateFeePercentage       DECIMAL(5,2) DEFAULT 10.00,
-	FacilityAgentSignature  VARCHAR(150) NULL,
-    SignatureDate      		DATE NULL,
+    CancelationNoticeDays   				INT DEFAULT 30,
+	PaymentDueAfterWorkDays 				INT DEFAULT 30,
+	LateFeePercentage       				DECIMAL(5,2) DEFAULT 10.00,
+	ClientSignatureBoolean 					BOOLEAN NOT NULL DEFAULT 0,
 
     -- Record keeping
     CreatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -491,7 +490,7 @@ CREATE TABLE EquipmentQuotes (
     TermsAndConditions   TEXT NULL,
 	ExtraInfo            TEXT NULL,
 
-	SignatureBoolean BOOLEAN NOT NULL DEFAULT 0,
+	ClientSignatureBoolean BOOLEAN NOT NULL DEFAULT 0,
 
     -- Record keeping
     CreatedAt       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

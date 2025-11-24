@@ -89,9 +89,10 @@ public class EmployeesPanel extends JPanel {
         };
         employeesTable = new JTable(tableModel);
         employeesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        
+
         // Apply modern styling
         ModernUIHelper.styleTable(employeesTable);
+        ModernUIHelper.addTableToggleBehavior(employeesTable, () -> clearForm());
         
         // Hide the ID column from the user view
         employeesTable.getColumnModel().getColumn(0).setMinWidth(0);
@@ -106,26 +107,17 @@ public class EmployeesPanel extends JPanel {
                 }
             }
         });
-        
-        // Allow deselection by clicking on empty space
-        employeesTable.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mousePressed(java.awt.event.MouseEvent e) {
-                int row = employeesTable.rowAtPoint(e.getPoint());
-                if (row == -1) {
-                    clearForm();
-                }
-            }
-        });
-        
+
         JScrollPane scrollPane = new JScrollPane(employeesTable);
 
-        // Clear form when clicking on scroll pane background
+        // Allow deselection by clicking on empty space in the scroll pane viewport (not on the table itself)
         scrollPane.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
             public void mousePressed(java.awt.event.MouseEvent e) {
-                employeesTable.clearSelection();
-                clearForm();
+                // Only deselect if clicking in the viewport area (the gray empty space around the table)
+                if (e.getComponent() == scrollPane && !employeesTable.getBounds().contains(e.getPoint())) {
+                    employeesTable.clearSelection();
+                    clearForm();
+                }
             }
         });
 
@@ -368,15 +360,6 @@ public class EmployeesPanel extends JPanel {
         buttonPanel.add(clearButton);
 
         formPanel.add(buttonPanel, gbc);
-
-        // Clear selection when clicking on form panel background
-        formPanel.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override
-            public void mousePressed(java.awt.event.MouseEvent e) {
-                employeesTable.clearSelection();
-                clearForm();
-            }
-        });
 
         JScrollPane formScrollPane = new JScrollPane(formPanel);
         formScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);

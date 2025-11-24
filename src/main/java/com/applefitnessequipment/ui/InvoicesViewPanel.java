@@ -47,7 +47,8 @@ public class InvoicesViewPanel extends JPanel {
         };
         invoicesTable = new JTable(tableModel);
         invoicesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        
+        ModernUIHelper.addTableToggleBehavior(invoicesTable);
+
         JScrollPane scrollPane = new JScrollPane(invoicesTable);
         add(scrollPane, BorderLayout.CENTER);
 
