@@ -66,7 +66,7 @@ public class EquipmentQuoteComplete {
     private String notes;
     private String termsAndConditions;
     private String extraInfo;
-    private Boolean signatureBoolean;
+    private Boolean clientSignatureBoolean;
 
     public EquipmentQuoteComplete() {}
 
@@ -232,6 +232,6 @@ public class EquipmentQuoteComplete {
     public String getExtraInfo() { return extraInfo; }
     public void setExtraInfo(String extraInfo) { this.extraInfo = extraInfo; }
 
-    public Boolean getSignatureBoolean() { return signatureBoolean; }
-    public void setSignatureBoolean(Boolean signatureBoolean) { this.signatureBoolean = signatureBoolean; }
+    public Boolean getClientSignatureBoolean() { return clientSignatureBoolean; }
+    public void setClientSignatureBoolean(Boolean clientSignatureBoolean) { this.clientSignatureBoolean = clientSignatureBoolean; }
 }

@@ -644,6 +644,14 @@ public class PreventiveMaintenanceAgreement {
         this.lateFeePercentage = lateFeePercentage;
     }
 
+    public Boolean getClientSignatureBoolean() {
+        return clientSignatureBoolean;
+    }
+
+    public void setClientSignatureBoolean(Boolean clientSignatureBoolean) {
+        this.clientSignatureBoolean = clientSignatureBoolean;
+    }
+
     public String getFacilityAgentSignature() {
         return facilityAgentSignature;
     }

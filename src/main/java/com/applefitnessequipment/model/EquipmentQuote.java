@@ -84,7 +84,7 @@ public class EquipmentQuote {
     private String notes;
     private String termsAndConditions;
     private String extraInfo;
-    private Boolean signatureBoolean;
+    private Boolean clientSignatureBoolean;
 
     // Record keeping
     private LocalDateTime createdAt;
@@ -597,12 +597,12 @@ public class EquipmentQuote {
         this.extraInfo = extraInfo;
     }
 
-    public Boolean getSignatureBoolean() {
-        return signatureBoolean;
+    public Boolean getClientSignatureBoolean() {
+        return clientSignatureBoolean;
     }
 
-    public void setSignatureBoolean(Boolean signatureBoolean) {
-        this.signatureBoolean = signatureBoolean;
+    public void setClientSignatureBoolean(Boolean clientSignatureBoolean) {
+        this.clientSignatureBoolean = clientSignatureBoolean;
     }
 
     public LocalDateTime getCreatedAt() {

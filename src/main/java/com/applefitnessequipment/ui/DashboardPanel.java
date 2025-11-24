@@ -165,13 +165,13 @@ public class DashboardPanel extends JPanel {
         // Fetch data
         int clientCount = getClientCount();
         Object[] invoiceData = getInvoiceData();
-        int quoteCount = getOpenQuoteCount();
+        int activeContractCount = getActiveContractCount();
         int pmCount = getActivePMCount();
 
         // Create stat cards
         panel.add(createStatCard("Active Clients", String.valueOf(clientCount), "With active contracts", new Color(59, 130, 246)));
         panel.add(createStatCard("Open Invoices", "$" + formatCurrency((BigDecimal) invoiceData[1]), (int) invoiceData[0] + " contracts outstanding", new Color(16, 185, 129)));
-        panel.add(createStatCard("Equipment Quotes", String.valueOf(quoteCount), "Sent or accepted", new Color(245, 158, 11)));
+        panel.add(createStatCard("Active Contracts", String.valueOf(activeContractCount), "Signed & active", new Color(245, 158, 11)));
         panel.add(createStatCard("Active PM", String.valueOf(pmCount), "Active agreements", PRIMARY_RED));
 
         return panel;
@@ -630,18 +630,28 @@ public class DashboardPanel extends JPanel {
         }
     }
 
-    private int getOpenQuoteCount() {
+    private int getActiveContractCount() {
         try {
-            List<EquipmentQuoteComplete> quotes = quoteDAO.getAllQuotes();
             int count = 0;
-            for (EquipmentQuoteComplete quote : quotes) {
-                String status = quote.getStatus();
-                // Count quotes that are Sent or Accepted
-                if (status != null &&
-                    ("Sent".equalsIgnoreCase(status) || "Accepted".equalsIgnoreCase(status))) {
+
+            // Count PM Agreements with ClientSignatureBoolean = true AND Status = 'Active'
+            List<PreventiveMaintenanceAgreement> pmas = pmDAO.getAllAgreements();
+            for (PreventiveMaintenanceAgreement pma : pmas) {
+                if (Boolean.TRUE.equals(pma.getClientSignatureBoolean()) &&
+                    "Active".equalsIgnoreCase(pma.getStatus())) {
                     count++;
                 }
             }
+
+            // Count Equipment Quotes with ClientSignatureBoolean = true AND Status = 'Active'
+            List<EquipmentQuoteComplete> quotes = quoteDAO.getAllQuotes();
+            for (EquipmentQuoteComplete quote : quotes) {
+                if (Boolean.TRUE.equals(quote.getClientSignatureBoolean()) &&
+                    "Active".equalsIgnoreCase(quote.getStatus())) {
+                    count++;
+                }
+            }
+
             return count;
         } catch (SQLException e) {
             return 0;

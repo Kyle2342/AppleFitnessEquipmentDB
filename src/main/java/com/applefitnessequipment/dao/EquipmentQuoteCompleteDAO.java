@@ -51,7 +51,7 @@ public class EquipmentQuoteCompleteDAO {
                     "QuoteNumber, QuoteDate, Status, ContactName, SalespersonName, " +
                     "ShipVia, FreightTerms, PaymentTerms, FOBLocation, " +
                     "TotalDiscountAmount, SubtotalAmount, FreightAmount, ExtendedTotalAmount, " +
-                    "SalesTaxRatePercent, SalesTaxAmount, QuoteTotalAmount, SignatureBoolean) " +
+                    "SalesTaxRatePercent, SalesTaxAmount, QuoteTotalAmount, ClientSignatureBoolean) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         try (Connection conn = DBConnection.getConnection();
@@ -86,7 +86,7 @@ public class EquipmentQuoteCompleteDAO {
             pstmt.setBigDecimal(27, quote.getSalesTaxRatePercent());
             pstmt.setBigDecimal(28, quote.getSalesTaxAmount());
             pstmt.setBigDecimal(29, quote.getQuoteTotalAmount());
-            pstmt.setBoolean(30, quote.getSignatureBoolean() != null ? quote.getSignatureBoolean() : false);
+            pstmt.setBoolean(30, quote.getClientSignatureBoolean() != null ? quote.getClientSignatureBoolean() : false);
             
             return pstmt.executeUpdate() > 0;
         }
@@ -99,7 +99,7 @@ public class EquipmentQuoteCompleteDAO {
                     "QuoteNumber = ?, QuoteDate = ?, Status = ?, ContactName = ?, SalespersonName = ?, " +
                     "ShipVia = ?, FreightTerms = ?, PaymentTerms = ?, FOBLocation = ?, " +
                     "TotalDiscountAmount = ?, SubtotalAmount = ?, FreightAmount = ?, ExtendedTotalAmount = ?, " +
-                    "SalesTaxRatePercent = ?, SalesTaxAmount = ?, QuoteTotalAmount = ?, SignatureBoolean = ? " +
+                    "SalesTaxRatePercent = ?, SalesTaxAmount = ?, QuoteTotalAmount = ?, ClientSignatureBoolean = ? " +
                     "WHERE EquipmentQuoteID = ?";
         
         try (Connection conn = DBConnection.getConnection();
@@ -134,7 +134,7 @@ public class EquipmentQuoteCompleteDAO {
             pstmt.setBigDecimal(27, quote.getSalesTaxRatePercent());
             pstmt.setBigDecimal(28, quote.getSalesTaxAmount());
             pstmt.setBigDecimal(29, quote.getQuoteTotalAmount());
-            pstmt.setBoolean(30, quote.getSignatureBoolean() != null ? quote.getSignatureBoolean() : false);
+            pstmt.setBoolean(30, quote.getClientSignatureBoolean() != null ? quote.getClientSignatureBoolean() : false);
             pstmt.setInt(31, quote.getQuoteId());
             
             return pstmt.executeUpdate() > 0;
@@ -188,7 +188,7 @@ public class EquipmentQuoteCompleteDAO {
         quote.setSalesTaxRatePercent(rs.getBigDecimal("SalesTaxRatePercent"));
         quote.setSalesTaxAmount(rs.getBigDecimal("SalesTaxAmount"));
         quote.setQuoteTotalAmount(rs.getBigDecimal("QuoteTotalAmount"));
-        quote.setSignatureBoolean(rs.getBoolean("SignatureBoolean"));
+        quote.setClientSignatureBoolean(rs.getBoolean("ClientSignatureBoolean"));
         
         return quote;
     }

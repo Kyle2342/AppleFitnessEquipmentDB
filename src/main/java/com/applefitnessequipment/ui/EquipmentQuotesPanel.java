@@ -577,7 +577,7 @@ public class EquipmentQuotesPanel extends JPanel {
                 taxRateField.setText(selectedQuote.getSalesTaxRatePercent().toString());
                 taxAmountField.setText(selectedQuote.getSalesTaxAmount().toString());
                 quoteTotalField.setText(selectedQuote.getQuoteTotalAmount().toString());
-                signatureCheckbox.setSelected(selectedQuote.getSignatureBoolean() != null ? selectedQuote.getSignatureBoolean() : false);
+                signatureCheckbox.setSelected(selectedQuote.getClientSignatureBoolean() != null ? selectedQuote.getClientSignatureBoolean() : false);
                 
                 updateButton.setEnabled(true);
                 deleteButton.setEnabled(true);
@@ -675,7 +675,7 @@ public class EquipmentQuotesPanel extends JPanel {
         quote.setSalesTaxRatePercent(new BigDecimal(taxRateField.getText().trim()));
         quote.setSalesTaxAmount(new BigDecimal(taxAmountField.getText().trim()));
         quote.setQuoteTotalAmount(new BigDecimal(quoteTotalField.getText().trim()));
-        quote.setSignatureBoolean(signatureCheckbox.isSelected());
+        quote.setClientSignatureBoolean(signatureCheckbox.isSelected());
     }
 
     private void clearForm() {

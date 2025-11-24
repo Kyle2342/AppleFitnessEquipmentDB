@@ -58,10 +58,10 @@ public class PMAgreementDAO {
                     "PhoneNumber1, PhoneNumber2, AgreementNumber, AgreementTerms, StartDate, EndDate, " +
                     "VisitFrequency, Status, ChargePerMile, ChargePerHour, VisitPrice, TaxRatePercent, " +
                     "RequiresAdditionalInsurance, CancelationNoticeDays, PaymentDueAfterWorkDays, LateFeePercentage, " +
-                    "FacilityAgentSignature, SignatureDate) " +
+                    "ClientSignatureBoolean) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " +
                     "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " +
-                    "?, ?, ?, ?, ?, ?, ?)";
+                    "?, ?, ?, ?, ?)";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -149,13 +149,8 @@ public class PMAgreementDAO {
             pstmt.setInt(idx++, pma.getPaymentDueAfterWorkDays() != null ? pma.getPaymentDueAfterWorkDays() : 30);
             pstmt.setBigDecimal(idx++, pma.getLateFeePercentage());
 
-            // Signature
-            pstmt.setString(idx++, pma.getFacilityAgentSignature());
-            if (pma.getSignatureDate() != null) {
-                pstmt.setDate(idx++, java.sql.Date.valueOf(pma.getSignatureDate()));
-            } else {
-                pstmt.setNull(idx++, java.sql.Types.DATE);
-            }
+            // Client Signature
+            pstmt.setBoolean(idx++, pma.getClientSignatureBoolean() != null ? pma.getClientSignatureBoolean() : false);
 
             return pstmt.executeUpdate() > 0;
         }
@@ -175,7 +170,7 @@ public class PMAgreementDAO {
                     "PhoneNumber1 = ?, PhoneNumber2 = ?, AgreementNumber = ?, AgreementTerms = ?, StartDate = ?, EndDate = ?, " +
                     "VisitFrequency = ?, Status = ?, ChargePerMile = ?, ChargePerHour = ?, VisitPrice = ?, TaxRatePercent = ?, " +
                     "RequiresAdditionalInsurance = ?, CancelationNoticeDays = ?, PaymentDueAfterWorkDays = ?, LateFeePercentage = ?, " +
-                    "FacilityAgentSignature = ?, SignatureDate = ? " +
+                    "ClientSignatureBoolean = ? " +
                     "WHERE PreventiveMaintenanceAgreementID = ?";
 
         try (Connection conn = DBConnection.getConnection();
@@ -264,13 +259,8 @@ public class PMAgreementDAO {
             pstmt.setInt(idx++, pma.getPaymentDueAfterWorkDays() != null ? pma.getPaymentDueAfterWorkDays() : 30);
             pstmt.setBigDecimal(idx++, pma.getLateFeePercentage());
 
-            // Signature
-            pstmt.setString(idx++, pma.getFacilityAgentSignature());
-            if (pma.getSignatureDate() != null) {
-                pstmt.setDate(idx++, java.sql.Date.valueOf(pma.getSignatureDate()));
-            } else {
-                pstmt.setNull(idx++, java.sql.Types.DATE);
-            }
+            // Client Signature
+            pstmt.setBoolean(idx++, pma.getClientSignatureBoolean() != null ? pma.getClientSignatureBoolean() : false);
 
             pstmt.setInt(idx++, pma.getPmaId());
 
@@ -380,11 +370,8 @@ public class PMAgreementDAO {
         pma.setPaymentDueAfterWorkDays(rs.getInt("PaymentDueAfterWorkDays"));
         pma.setLateFeePercentage(rs.getBigDecimal("LateFeePercentage"));
 
-        // Signature
-        pma.setFacilityAgentSignature(rs.getString("FacilityAgentSignature"));
-        if (rs.getDate("SignatureDate") != null) {
-            pma.setSignatureDate(rs.getDate("SignatureDate").toLocalDate());
-        }
+        // Client Signature
+        pma.setClientSignatureBoolean(rs.getBoolean("ClientSignatureBoolean"));
 
         if (rs.getTimestamp("CreatedAt") != null) {
             pma.setCreatedAt(rs.getTimestamp("CreatedAt").toLocalDateTime());

@@ -56,7 +56,7 @@ public class EquipmentQuoteDAO {
                     "JobAtState, JobAtZIPCode, JobAtCountry, JobAtEmail, JobAtPONumber, " +
                     "QuoteNumber, QuoteDate, Status, ContactName, SalespersonName, ShipVia, FreightTerms, PaymentTerms, FOBLocation, " +
                     "SubtotalAmount, TotalDiscountAmount, FreightAmount, ExtendedTotalAmount, " +
-                    "SalesTaxRatePercent, SalesTaxAmount, QuoteTotalAmount, Notes, TermsAndConditions, ExtraInfo, SignatureBoolean) " +
+                    "SalesTaxRatePercent, SalesTaxAmount, QuoteTotalAmount, Notes, TermsAndConditions, ExtraInfo, ClientSignatureBoolean) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " +
                     "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -142,7 +142,7 @@ public class EquipmentQuoteDAO {
             pstmt.setString(idx++, quote.getNotes());
             pstmt.setString(idx++, quote.getTermsAndConditions());
             pstmt.setString(idx++, quote.getExtraInfo());
-            pstmt.setBoolean(idx++, quote.getSignatureBoolean() != null ? quote.getSignatureBoolean() : false);
+            pstmt.setBoolean(idx++, quote.getClientSignatureBoolean() != null ? quote.getClientSignatureBoolean() : false);
 
             return pstmt.executeUpdate() > 0;
         }
@@ -160,7 +160,7 @@ public class EquipmentQuoteDAO {
                     "JobAtState = ?, JobAtZIPCode = ?, JobAtCountry = ?, JobAtEmail = ?, JobAtPONumber = ?, " +
                     "QuoteNumber = ?, QuoteDate = ?, Status = ?, ContactName = ?, SalespersonName = ?, ShipVia = ?, FreightTerms = ?, PaymentTerms = ?, FOBLocation = ?, " +
                     "SubtotalAmount = ?, TotalDiscountAmount = ?, FreightAmount = ?, ExtendedTotalAmount = ?, " +
-                    "SalesTaxRatePercent = ?, SalesTaxAmount = ?, QuoteTotalAmount = ?, Notes = ?, TermsAndConditions = ?, ExtraInfo = ?, SignatureBoolean = ? " +
+                    "SalesTaxRatePercent = ?, SalesTaxAmount = ?, QuoteTotalAmount = ?, Notes = ?, TermsAndConditions = ?, ExtraInfo = ?, ClientSignatureBoolean = ? " +
                     "WHERE EquipmentQuoteID = ?";
 
         try (Connection conn = DBConnection.getConnection();
@@ -245,7 +245,7 @@ public class EquipmentQuoteDAO {
             pstmt.setString(idx++, quote.getNotes());
             pstmt.setString(idx++, quote.getTermsAndConditions());
             pstmt.setString(idx++, quote.getExtraInfo());
-            pstmt.setBoolean(idx++, quote.getSignatureBoolean() != null ? quote.getSignatureBoolean() : false);
+            pstmt.setBoolean(idx++, quote.getClientSignatureBoolean() != null ? quote.getClientSignatureBoolean() : false);
 
             pstmt.setInt(idx++, quote.getEquipmentQuoteId());
 
@@ -347,7 +347,7 @@ public class EquipmentQuoteDAO {
         quote.setNotes(rs.getString("Notes"));
         quote.setTermsAndConditions(rs.getString("TermsAndConditions"));
         quote.setExtraInfo(rs.getString("ExtraInfo"));
-        quote.setSignatureBoolean(rs.getBoolean("SignatureBoolean"));
+        quote.setClientSignatureBoolean(rs.getBoolean("ClientSignatureBoolean"));
 
         if (rs.getTimestamp("CreatedAt") != null) {
             quote.setCreatedAt(rs.getTimestamp("CreatedAt").toLocalDateTime());
