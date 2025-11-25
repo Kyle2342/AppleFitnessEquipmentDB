@@ -5,6 +5,8 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Color;
+import java.awt.Font;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -15,6 +17,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -124,12 +127,24 @@ public class EquipmentQuotesPanel extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         int row = 0;
 
+        // Establish a standard input size and background to keep combos aligned with text fields
+        JTextField sizingField = new JTextField(20);
+        ModernUIHelper.styleTextField(sizingField);
+        java.awt.Dimension standardInputSize = sizingField.getPreferredSize();
+        Color standardFieldBackground = sizingField.getBackground();
+
+        // ===== CLIENT INFORMATION =====
+        addSectionLabel(formPanel, gbc, row++, "CLIENT INFORMATION");
+
         // Client
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Client:*"), gbc);
         gbc.gridx = 1;
         clientCombo = new JComboBox<>();
+        clientCombo.setEditable(true);
         clientCombo.addActionListener(e -> loadLocationsForClient());
+        clientCombo.setPreferredSize(standardInputSize);
+        clientCombo.setBackground(standardFieldBackground);
         ModernUIHelper.styleComboBox(clientCombo);
         formPanel.add(clientCombo, gbc);
         row++;
@@ -139,6 +154,9 @@ public class EquipmentQuotesPanel extends JPanel {
         formPanel.add(new JLabel("Bill Location:*"), gbc);
         gbc.gridx = 1;
         billLocationCombo = new JComboBox<>();
+        billLocationCombo.setEditable(true);
+        billLocationCombo.setPreferredSize(standardInputSize);
+        billLocationCombo.setBackground(standardFieldBackground);
         ModernUIHelper.styleComboBox(billLocationCombo);
         formPanel.add(billLocationCombo, gbc);
         row++;
@@ -148,9 +166,15 @@ public class EquipmentQuotesPanel extends JPanel {
         formPanel.add(new JLabel("Job Location:*"), gbc);
         gbc.gridx = 1;
         jobLocationCombo = new JComboBox<>();
+        jobLocationCombo.setEditable(true);
+        jobLocationCombo.setPreferredSize(standardInputSize);
+        jobLocationCombo.setBackground(standardFieldBackground);
         ModernUIHelper.styleComboBox(jobLocationCombo);
         formPanel.add(jobLocationCombo, gbc);
         row++;
+
+        // ===== QUOTE DETAILS =====
+        addSectionLabel(formPanel, gbc, row++, "QUOTE DETAILS");
 
         // Quote Number
         gbc.gridx = 0; gbc.gridy = row;
@@ -176,6 +200,19 @@ public class EquipmentQuotesPanel extends JPanel {
         formPanel.add(new JLabel("Status:*"), gbc);
         gbc.gridx = 1;
         statusCombo = new JComboBox<>(new String[]{"Draft", "Sent", "Expired", "Active", "Declined", "Canceled", "Completed"});
+        statusCombo.setPreferredSize(standardInputSize);
+        statusCombo.setBackground(standardFieldBackground);
+        statusCombo.setOpaque(true);
+        statusCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public java.awt.Component getListCellRendererComponent(javax.swing.JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                java.awt.Component comp = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (!isSelected) {
+                    comp.setBackground(Color.WHITE);
+                }
+                return comp;
+            }
+        });
         ModernUIHelper.styleComboBox(statusCombo);
         formPanel.add(statusCombo, gbc);
         row++;
@@ -199,11 +236,8 @@ public class EquipmentQuotesPanel extends JPanel {
         formPanel.add(salespersonField, gbc);
         row++;
 
-        // === Bill To Address Section ===
-        gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2;
-        formPanel.add(new JLabel("=== Bill To Address ==="), gbc);
-        gbc.gridwidth = 1;
-        row++;
+        // ===== BILL TO ADDRESS =====
+        addSectionLabel(formPanel, gbc, row++, "BILL TO ADDRESS");
 
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("City:*"), gbc);
@@ -247,11 +281,8 @@ public class EquipmentQuotesPanel extends JPanel {
         formPanel.add(billCountryField, gbc);
         row++;
 
-        // === Job At Address Section ===
-        gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2;
-        formPanel.add(new JLabel("=== Job At Address ==="), gbc);
-        gbc.gridwidth = 1;
-        row++;
+        // ===== JOB AT ADDRESS =====
+        addSectionLabel(formPanel, gbc, row++, "JOB AT ADDRESS");
 
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("City:*"), gbc);
@@ -295,11 +326,8 @@ public class EquipmentQuotesPanel extends JPanel {
         formPanel.add(jobCountryField, gbc);
         row++;
 
-        // === Shipping & Payment Section ===
-        gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2;
-        formPanel.add(new JLabel("=== Shipping & Payment ==="), gbc);
-        gbc.gridwidth = 1;
-        row++;
+        // ===== SHIPPING & PAYMENT =====
+        addSectionLabel(formPanel, gbc, row++, "SHIPPING & PAYMENT");
 
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Ship Via:*"), gbc);
@@ -337,11 +365,8 @@ public class EquipmentQuotesPanel extends JPanel {
         formPanel.add(fobField, gbc);
         row++;
 
-        // === Amounts Section ===
-        gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2;
-        formPanel.add(new JLabel("=== Amounts ==="), gbc);
-        gbc.gridwidth = 1;
-        row++;
+        // ===== AMOUNTS =====
+        addSectionLabel(formPanel, gbc, row++, "AMOUNTS");
 
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Discount:"), gbc);
@@ -463,15 +488,22 @@ public class EquipmentQuotesPanel extends JPanel {
 
     private void loadLocationsForClient() {
         Client selected = (Client) clientCombo.getSelectedItem();
-        if (selected == null) return;
+        if (selected == null) {
+            billLocationCombo.removeAllItems();
+            jobLocationCombo.removeAllItems();
+            return;
+        }
 
         try {
             List<ClientLocation> locations = locationDAO.getLocationsByClientId(selected.getClientId());
             billLocationCombo.removeAllItems();
             jobLocationCombo.removeAllItems();
             for (ClientLocation loc : locations) {
-                billLocationCombo.addItem(loc);
-                jobLocationCombo.addItem(loc);
+                if ("Billing".equalsIgnoreCase(loc.getLocationType())) {
+                    billLocationCombo.addItem(loc);
+                } else if ("Job".equalsIgnoreCase(loc.getLocationType())) {
+                    jobLocationCombo.addItem(loc);
+                }
             }
             billLocationCombo.setSelectedIndex(-1);
             jobLocationCombo.setSelectedIndex(-1);
@@ -648,23 +680,46 @@ public class EquipmentQuotesPanel extends JPanel {
         quote.setClientId(client.getClientId());
         quote.setBillingLocationId(billLoc.getClientLocationId());
         quote.setJobLocationId(jobLoc.getClientLocationId());
+        quote.setClientTypeSnapshot(client.getClientType());
+        quote.setClientCompanyNameSnapshot(client.getCompanyName());
+        quote.setClientFirstNameSnapshot(client.getFirstName());
+        quote.setClientLastNameSnapshot(client.getLastName());
         quote.setQuoteNumber(quoteNumberField.getText().trim());
         quote.setQuoteDate(LocalDate.parse(quoteDateField.getText().trim(), dateFormatter));
         quote.setStatus((String) statusCombo.getSelectedItem());
         quote.setContactName(contactNameField.getText().trim());
         quote.setSalespersonName(salespersonField.getText().trim());
         
-        quote.setBillToCity(billCityField.getText().trim());
+        quote.setBillToCompanyName(billLoc.getCompanyName());
+        quote.setBillToContactName(billLoc.getContactName());
+        quote.setBillToStreetAddress(billLoc.getStreetAddress());
+        quote.setBillToBuildingName(billLoc.getBuildingName());
+        quote.setBillToSuite(billLoc.getSuite());
+        quote.setBillToRoomNumber(billLoc.getRoomNumber());
+        quote.setBillToDepartment(billLoc.getDepartment());
         quote.setBillToCounty(billCountyField.getText().trim());
+        quote.setBillToCity(billCityField.getText().trim());
         quote.setBillToState(billStateField.getText().trim());
         quote.setBillToZipCode(billZipField.getText().trim());
         quote.setBillToCountry(billCountryField.getText().trim());
+        quote.setBillToPhone(billLoc.getPhone());
+        quote.setBillToFax(billLoc.getFax());
+        quote.setBillToPONumber(null);
         
-        quote.setJobAtCity(jobCityField.getText().trim());
+        quote.setJobAtCompanyName(jobLoc.getCompanyName());
+        quote.setJobAtContactName(jobLoc.getContactName());
+        quote.setJobAtStreetAddress(jobLoc.getStreetAddress());
+        quote.setJobAtBuildingName(jobLoc.getBuildingName());
+        quote.setJobAtSuite(jobLoc.getSuite());
+        quote.setJobAtRoomNumber(jobLoc.getRoomNumber());
+        quote.setJobAtDepartment(jobLoc.getDepartment());
         quote.setJobAtCounty(jobCountyField.getText().trim());
+        quote.setJobAtCity(jobCityField.getText().trim());
         quote.setJobAtState(jobStateField.getText().trim());
         quote.setJobAtZipCode(jobZipField.getText().trim());
         quote.setJobAtCountry(jobCountryField.getText().trim());
+        quote.setJobAtEmail(jobLoc.getEmail());
+        quote.setJobAtPONumber(null);
         
         quote.setShipVia(shipViaField.getText().trim());
         quote.setFreightTerms(freightTermsField.getText().trim());
@@ -683,6 +738,8 @@ public class EquipmentQuotesPanel extends JPanel {
 
     private void clearForm() {
         clientCombo.setSelectedIndex(-1);
+        billLocationCombo.removeAllItems();
+        jobLocationCombo.removeAllItems();
         quoteNumberField.setText("");
         quoteDateField.setText(LocalDate.now().format(dateFormatter));
         statusCombo.setSelectedIndex(0);
@@ -748,5 +805,18 @@ public class EquipmentQuotesPanel extends JPanel {
     public void refreshData() {
         loadClients();
         loadQuotes();
+    }
+
+    private void addSectionLabel(JPanel panel, GridBagConstraints gbc, int row, String text) {
+        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridwidth = 2;
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        label.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(200, 200, 200)),
+            BorderFactory.createEmptyBorder(10, 0, 5, 0)
+        ));
+        panel.add(label, gbc);
+        gbc.gridwidth = 1;
     }
 }

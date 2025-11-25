@@ -37,7 +37,7 @@ public class PreventiveMaintenanceViewPanel extends JPanel {
         add(topPanel, BorderLayout.NORTH);
 
         // Center Panel - Table
-        String[] columns = {"Agreement #", "Client ID", "Property", "Start Date", "End Date", 
+        String[] columns = {"Agreement #", "Client ID", "Start Date", "End Date",
                           "Visit Frequency", "Status", "Visit Price", "Price/Year"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
@@ -64,7 +64,7 @@ public class PreventiveMaintenanceViewPanel extends JPanel {
     }
 
     private void loadAgreements() {
-        String sql = "SELECT AgreementNumber, ClientID, PropertyName, StartDate, EndDate, " +
+        String sql = "SELECT AgreementNumber, ClientID, StartDate, EndDate, " +
                     "VisitFrequency, Status, VisitPrice, PricePerYear " +
                     "FROM preventivemaintenanceagreements ORDER BY StartDate DESC";
         
@@ -78,7 +78,6 @@ public class PreventiveMaintenanceViewPanel extends JPanel {
                 tableModel.addRow(new Object[]{
                     rs.getString("AgreementNumber"),
                     rs.getInt("ClientID"),
-                    rs.getString("PropertyName"),
                     rs.getDate("StartDate"),
                     rs.getDate("EndDate"),
                     rs.getString("VisitFrequency"),

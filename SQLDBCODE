@@ -273,7 +273,7 @@ CREATE TABLE PreventiveMaintenanceAgreements (
 	ClientFirstNameSnapshot   VARCHAR(50)  NULL,
 	ClientLastNameSnapshot    VARCHAR(50)  NULL,
     
-    	-- "BILL TO" snapshot
+	-- "BILL TO" snapshot
     BillToCompanyName    VARCHAR(150) NULL,
     BillToContactName    VARCHAR(150) NULL,
 	BillToStreetAddress  VARCHAR(150) NOT NULL,      -- e.g. "123 College Ave"
@@ -305,18 +305,6 @@ CREATE TABLE PreventiveMaintenanceAgreements (
     JobAtCountry        VARCHAR(50)  NOT NULL DEFAULT 'USA',
 	JobAtEmail          VARCHAR(45)  NULL,
 	JobAtPONumber       VARCHAR(45)  NULL,
-    
-    -- Header snapshot
-    PropertyName          VARCHAR(150) NULL,   	   -- "Property/Facility" text
-    FacilityName          VARCHAR(150) NULL,       -- optional separate facility label
-    AddressLine           VARCHAR(150) NOT NULL,   -- street address
-    City                  VARCHAR(100) NOT NULL,
-    State                 VARCHAR(50)  NOT NULL DEFAULT 'PA',
-    ZIPCode               VARCHAR(20)  NOT NULL,
-    ContactName           VARCHAR(150) NOT NULL,
-    ContactEmail          VARCHAR(150) NULL,
-    PhoneNumber1          VARCHAR(45)  NULL,
-    PhoneNumber2          VARCHAR(45)  NULL,
     
     -- Agreement Details
     AgreementNumber       VARCHAR(50) NOT NULL UNIQUE,

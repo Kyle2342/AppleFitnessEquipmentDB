@@ -54,14 +54,12 @@ public class PMAgreementDAO {
                     "JobAtCompanyName, JobAtContactName, JobAtStreetAddress, JobAtBuildingName, " +
                     "JobAtSuite, JobAtRoomNumber, JobAtDepartment, JobAtCounty, JobAtCity, " +
                     "JobAtState, JobAtZIPCode, JobAtCountry, JobAtEmail, JobAtPONumber, " +
-                    "PropertyName, FacilityName, AddressLine, City, State, ZIPCode, ContactName, ContactEmail, " +
-                    "PhoneNumber1, PhoneNumber2, AgreementNumber, AgreementTerms, StartDate, EndDate, " +
+                    "AgreementNumber, AgreementTerms, StartDate, EndDate, " +
                     "VisitFrequency, Status, ChargePerMile, ChargePerHour, VisitPrice, TaxRatePercent, " +
                     "RequiresAdditionalInsurance, CancelationNoticeDays, PaymentDueAfterWorkDays, LateFeePercentage, " +
                     "ClientSignatureBoolean) " +
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " +
-                    "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " +
-                    "?, ?, ?, ?, ?)";
+                    "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -119,18 +117,6 @@ public class PMAgreementDAO {
             pstmt.setString(idx++, pma.getJobAtEmail());
             pstmt.setString(idx++, pma.getJobAtPONumber());
 
-            // Header snapshot fields
-            pstmt.setString(idx++, pma.getPropertyName());
-            pstmt.setString(idx++, pma.getFacilityName());
-            pstmt.setString(idx++, pma.getAddressLine());
-            pstmt.setString(idx++, pma.getCity());
-            pstmt.setString(idx++, pma.getState());
-            pstmt.setString(idx++, pma.getZipCode());
-            pstmt.setString(idx++, pma.getContactName());
-            pstmt.setString(idx++, pma.getContactEmail());
-            pstmt.setString(idx++, pma.getPhoneNumber1());
-            pstmt.setString(idx++, pma.getPhoneNumber2());
-
             // Agreement details
             pstmt.setString(idx++, pma.getAgreementNumber());
             pstmt.setString(idx++, pma.getAgreementTerms());
@@ -166,8 +152,7 @@ public class PMAgreementDAO {
                     "JobAtCompanyName = ?, JobAtContactName = ?, JobAtStreetAddress = ?, JobAtBuildingName = ?, " +
                     "JobAtSuite = ?, JobAtRoomNumber = ?, JobAtDepartment = ?, JobAtCounty = ?, JobAtCity = ?, " +
                     "JobAtState = ?, JobAtZIPCode = ?, JobAtCountry = ?, JobAtEmail = ?, JobAtPONumber = ?, " +
-                    "PropertyName = ?, FacilityName = ?, AddressLine = ?, City = ?, State = ?, ZIPCode = ?, ContactName = ?, ContactEmail = ?, " +
-                    "PhoneNumber1 = ?, PhoneNumber2 = ?, AgreementNumber = ?, AgreementTerms = ?, StartDate = ?, EndDate = ?, " +
+                    "AgreementNumber = ?, AgreementTerms = ?, StartDate = ?, EndDate = ?, " +
                     "VisitFrequency = ?, Status = ?, ChargePerMile = ?, ChargePerHour = ?, VisitPrice = ?, TaxRatePercent = ?, " +
                     "RequiresAdditionalInsurance = ?, CancelationNoticeDays = ?, PaymentDueAfterWorkDays = ?, LateFeePercentage = ?, " +
                     "ClientSignatureBoolean = ? " +
@@ -228,18 +213,6 @@ public class PMAgreementDAO {
             pstmt.setString(idx++, pma.getJobAtCountry());
             pstmt.setString(idx++, pma.getJobAtEmail());
             pstmt.setString(idx++, pma.getJobAtPONumber());
-
-            // Header snapshot fields
-            pstmt.setString(idx++, pma.getPropertyName());
-            pstmt.setString(idx++, pma.getFacilityName());
-            pstmt.setString(idx++, pma.getAddressLine());
-            pstmt.setString(idx++, pma.getCity());
-            pstmt.setString(idx++, pma.getState());
-            pstmt.setString(idx++, pma.getZipCode());
-            pstmt.setString(idx++, pma.getContactName());
-            pstmt.setString(idx++, pma.getContactEmail());
-            pstmt.setString(idx++, pma.getPhoneNumber1());
-            pstmt.setString(idx++, pma.getPhoneNumber2());
 
             // Agreement details
             pstmt.setString(idx++, pma.getAgreementNumber());
@@ -333,18 +306,6 @@ public class PMAgreementDAO {
         pma.setJobAtCountry(rs.getString("JobAtCountry"));
         pma.setJobAtEmail(rs.getString("JobAtEmail"));
         pma.setJobAtPONumber(rs.getString("JobAtPONumber"));
-
-        // Header snapshot fields
-        pma.setPropertyName(rs.getString("PropertyName"));
-        pma.setFacilityName(rs.getString("FacilityName"));
-        pma.setAddressLine(rs.getString("AddressLine"));
-        pma.setCity(rs.getString("City"));
-        pma.setState(rs.getString("State"));
-        pma.setZipCode(rs.getString("ZIPCode"));
-        pma.setContactName(rs.getString("ContactName"));
-        pma.setContactEmail(rs.getString("ContactEmail"));
-        pma.setPhoneNumber1(rs.getString("PhoneNumber1"));
-        pma.setPhoneNumber2(rs.getString("PhoneNumber2"));
 
         // Agreement details
         pma.setAgreementNumber(rs.getString("AgreementNumber"));

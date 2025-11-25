@@ -6,6 +6,7 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Color;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -191,9 +192,15 @@ public class InvoicesPanel extends JPanel {
         });
 
         clientCombo.addActionListener(e -> {
-            if (e != null && clientCombo.getSelectedItem() instanceof Client) {
+            Object selected = clientCombo.getSelectedItem();
+            if (selected instanceof Client) {
                 loadLocationsForClient();
                 filterQuotesAndAgreementsForClient();
+            } else {
+                billLocationCombo.removeAllItems();
+                jobLocationCombo.removeAllItems();
+                equipmentQuoteCombo.removeAllItems();
+                pmaCombo.removeAllItems();
             }
         });
 
@@ -289,14 +296,17 @@ public class InvoicesPanel extends JPanel {
             calculateBalanceDue();
         });
         statusCombo.setPreferredSize(standardInputSize);
-        statusCombo.setBackground(java.awt.Color.WHITE);
+        statusCombo.setBackground(Color.WHITE);
         statusCombo.setOpaque(true);
         statusCombo.setRenderer(new DefaultListCellRenderer() {
             @Override
             public java.awt.Component getListCellRendererComponent(javax.swing.JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 java.awt.Component comp = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (!isSelected) {
-                    comp.setBackground(java.awt.Color.WHITE);
+                if (comp instanceof javax.swing.JComponent) {
+                    ((javax.swing.JComponent) comp).setOpaque(true);
+                    if (!isSelected) {
+                        comp.setBackground(Color.WHITE);
+                    }
                 }
                 return comp;
             }
@@ -534,7 +544,11 @@ public class InvoicesPanel extends JPanel {
 
     private void loadLocationsForClient() {
         Client selected = (Client) clientCombo.getSelectedItem();
-        if (selected == null) return;
+        if (selected == null) {
+            billLocationCombo.removeAllItems();
+            jobLocationCombo.removeAllItems();
+            return;
+        }
 
         try {
             List<ClientLocation> locations = locationDAO.getLocationsByClientId(selected.getClientId());

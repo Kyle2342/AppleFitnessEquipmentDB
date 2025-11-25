@@ -45,48 +45,77 @@ public class EquipmentQuoteCompleteDAO {
     }
     
     public boolean addQuote(EquipmentQuoteComplete quote) throws SQLException {
-        String sql = "INSERT INTO equipmentquotes (ClientID, BillingLocationID, JobAtLocationID, " +
-                    "BillToCounty, BillToCity, BillToState, BillToZIPCode, BillToCountry, " +
-                    "JobAtCounty, JobAtCity, JobAtState, JobAtZIPCode, JobAtCountry, " +
+        String sql = "INSERT INTO equipmentquotes (" +
+                    "ClientID, BillingLocationID, JobAtLocationID, " +
+                    "ClientTypeSnapshot, ClientCompanyNameSnapshot, ClientFirstNameSnapshot, ClientLastNameSnapshot, " +
+                    "BillToCompanyName, BillToContactName, BillToStreetAddress, BillToBuildingName, BillToSuite, BillToRoomNumber, BillToDepartment, BillToCounty, BillToCity, BillToState, BillToZIPCode, BillToCountry, BillToPhone, BillToFax, BillToPONumber, " +
+                    "JobAtCompanyName, JobAtContactName, JobAtStreetAddress, JobAtBuildingName, JobAtSuite, JobAtRoomNumber, JobAtDepartment, JobAtCounty, JobAtCity, JobAtState, JobAtZIPCode, JobAtCountry, JobAtEmail, JobAtPONumber, " +
                     "QuoteNumber, QuoteDate, Status, ContactName, SalespersonName, " +
                     "ShipVia, FreightTerms, PaymentTerms, FOBLocation, " +
                     "TotalDiscountAmount, SubtotalAmount, FreightAmount, ExtendedTotalAmount, " +
-                    "SalesTaxRatePercent, SalesTaxAmount, QuoteTotalAmount, ClientSignatureBoolean) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    "SalesTaxRatePercent, SalesTaxAmount, QuoteTotalAmount, Notes, TermsAndConditions, ExtraInfo, ClientSignatureBoolean) " +
+                    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
-            pstmt.setInt(1, quote.getClientId());
-            pstmt.setInt(2, quote.getBillingLocationId());
-            pstmt.setInt(3, quote.getJobLocationId());
-            pstmt.setString(4, quote.getBillToCounty());
-            pstmt.setString(5, quote.getBillToCity());
-            pstmt.setString(6, quote.getBillToState());
-            pstmt.setString(7, quote.getBillToZipCode());
-            pstmt.setString(8, quote.getBillToCountry());
-            pstmt.setString(9, quote.getJobAtCounty());
-            pstmt.setString(10, quote.getJobAtCity());
-            pstmt.setString(11, quote.getJobAtState());
-            pstmt.setString(12, quote.getJobAtZipCode());
-            pstmt.setString(13, quote.getJobAtCountry());
-            pstmt.setString(14, quote.getQuoteNumber());
-            pstmt.setDate(15, java.sql.Date.valueOf(quote.getQuoteDate()));
-            pstmt.setString(16, quote.getStatus());
-            pstmt.setString(17, quote.getContactName());
-            pstmt.setString(18, quote.getSalespersonName());
-            pstmt.setString(19, quote.getShipVia());
-            pstmt.setString(20, quote.getFreightTerms());
-            pstmt.setString(21, quote.getPaymentTerms());
-            pstmt.setString(22, quote.getFobLocation());
-            pstmt.setBigDecimal(23, quote.getTotalDiscountAmount());
-            pstmt.setBigDecimal(24, quote.getSubtotalAmount());
-            pstmt.setBigDecimal(25, quote.getFreightAmount());
-            pstmt.setBigDecimal(26, quote.getExtendedTotalAmount());
-            pstmt.setBigDecimal(27, quote.getSalesTaxRatePercent());
-            pstmt.setBigDecimal(28, quote.getSalesTaxAmount());
-            pstmt.setBigDecimal(29, quote.getQuoteTotalAmount());
-            pstmt.setBoolean(30, quote.getClientSignatureBoolean() != null ? quote.getClientSignatureBoolean() : false);
+            int idx = 1;
+            pstmt.setInt(idx++, quote.getClientId());
+            pstmt.setInt(idx++, quote.getBillingLocationId());
+            pstmt.setInt(idx++, quote.getJobLocationId());
+            pstmt.setString(idx++, quote.getClientTypeSnapshot());
+            pstmt.setString(idx++, quote.getClientCompanyNameSnapshot());
+            pstmt.setString(idx++, quote.getClientFirstNameSnapshot());
+            pstmt.setString(idx++, quote.getClientLastNameSnapshot());
+            pstmt.setString(idx++, quote.getBillToCompanyName());
+            pstmt.setString(idx++, quote.getBillToContactName());
+            pstmt.setString(idx++, quote.getBillToStreetAddress());
+            pstmt.setString(idx++, quote.getBillToBuildingName());
+            pstmt.setString(idx++, quote.getBillToSuite());
+            pstmt.setString(idx++, quote.getBillToRoomNumber());
+            pstmt.setString(idx++, quote.getBillToDepartment());
+            pstmt.setString(idx++, quote.getBillToCounty());
+            pstmt.setString(idx++, quote.getBillToCity());
+            pstmt.setString(idx++, quote.getBillToState());
+            pstmt.setString(idx++, quote.getBillToZipCode());
+            pstmt.setString(idx++, quote.getBillToCountry());
+            pstmt.setString(idx++, quote.getBillToPhone());
+            pstmt.setString(idx++, quote.getBillToFax());
+            pstmt.setString(idx++, quote.getBillToPONumber());
+            pstmt.setString(idx++, quote.getJobAtCompanyName());
+            pstmt.setString(idx++, quote.getJobAtContactName());
+            pstmt.setString(idx++, quote.getJobAtStreetAddress());
+            pstmt.setString(idx++, quote.getJobAtBuildingName());
+            pstmt.setString(idx++, quote.getJobAtSuite());
+            pstmt.setString(idx++, quote.getJobAtRoomNumber());
+            pstmt.setString(idx++, quote.getJobAtDepartment());
+            pstmt.setString(idx++, quote.getJobAtCounty());
+            pstmt.setString(idx++, quote.getJobAtCity());
+            pstmt.setString(idx++, quote.getJobAtState());
+            pstmt.setString(idx++, quote.getJobAtZipCode());
+            pstmt.setString(idx++, quote.getJobAtCountry());
+            pstmt.setString(idx++, quote.getJobAtEmail());
+            pstmt.setString(idx++, quote.getJobAtPONumber());
+            pstmt.setString(idx++, quote.getQuoteNumber());
+            pstmt.setDate(idx++, java.sql.Date.valueOf(quote.getQuoteDate()));
+            pstmt.setString(idx++, quote.getStatus());
+            pstmt.setString(idx++, quote.getContactName());
+            pstmt.setString(idx++, quote.getSalespersonName());
+            pstmt.setString(idx++, quote.getShipVia());
+            pstmt.setString(idx++, quote.getFreightTerms());
+            pstmt.setString(idx++, quote.getPaymentTerms());
+            pstmt.setString(idx++, quote.getFobLocation());
+            pstmt.setBigDecimal(idx++, quote.getTotalDiscountAmount());
+            pstmt.setBigDecimal(idx++, quote.getSubtotalAmount());
+            pstmt.setBigDecimal(idx++, quote.getFreightAmount());
+            pstmt.setBigDecimal(idx++, quote.getExtendedTotalAmount());
+            pstmt.setBigDecimal(idx++, quote.getSalesTaxRatePercent());
+            pstmt.setBigDecimal(idx++, quote.getSalesTaxAmount());
+            pstmt.setBigDecimal(idx++, quote.getQuoteTotalAmount());
+            pstmt.setString(idx++, quote.getNotes());
+            pstmt.setString(idx++, quote.getTermsAndConditions());
+            pstmt.setString(idx++, quote.getExtraInfo());
+            pstmt.setBoolean(idx++, quote.getClientSignatureBoolean() != null ? quote.getClientSignatureBoolean() : false);
             
             return pstmt.executeUpdate() > 0;
         }
@@ -94,48 +123,76 @@ public class EquipmentQuoteCompleteDAO {
     
     public boolean updateQuote(EquipmentQuoteComplete quote) throws SQLException {
         String sql = "UPDATE equipmentquotes SET ClientID = ?, BillingLocationID = ?, JobAtLocationID = ?, " +
-                    "BillToCounty = ?, BillToCity = ?, BillToState = ?, BillToZIPCode = ?, BillToCountry = ?, " +
-                    "JobAtCounty = ?, JobAtCity = ?, JobAtState = ?, JobAtZIPCode = ?, JobAtCountry = ?, " +
+                    "ClientTypeSnapshot = ?, ClientCompanyNameSnapshot = ?, ClientFirstNameSnapshot = ?, ClientLastNameSnapshot = ?, " +
+                    "BillToCompanyName = ?, BillToContactName = ?, BillToStreetAddress = ?, BillToBuildingName = ?, BillToSuite = ?, BillToRoomNumber = ?, BillToDepartment = ?, BillToCounty = ?, BillToCity = ?, BillToState = ?, BillToZIPCode = ?, BillToCountry = ?, BillToPhone = ?, BillToFax = ?, BillToPONumber = ?, " +
+                    "JobAtCompanyName = ?, JobAtContactName = ?, JobAtStreetAddress = ?, JobAtBuildingName = ?, JobAtSuite = ?, JobAtRoomNumber = ?, JobAtDepartment = ?, JobAtCounty = ?, JobAtCity = ?, JobAtState = ?, JobAtZIPCode = ?, JobAtCountry = ?, JobAtEmail = ?, JobAtPONumber = ?, " +
                     "QuoteNumber = ?, QuoteDate = ?, Status = ?, ContactName = ?, SalespersonName = ?, " +
                     "ShipVia = ?, FreightTerms = ?, PaymentTerms = ?, FOBLocation = ?, " +
                     "TotalDiscountAmount = ?, SubtotalAmount = ?, FreightAmount = ?, ExtendedTotalAmount = ?, " +
-                    "SalesTaxRatePercent = ?, SalesTaxAmount = ?, QuoteTotalAmount = ?, ClientSignatureBoolean = ? " +
+                    "SalesTaxRatePercent = ?, SalesTaxAmount = ?, QuoteTotalAmount = ?, Notes = ?, TermsAndConditions = ?, ExtraInfo = ?, ClientSignatureBoolean = ? " +
                     "WHERE EquipmentQuoteID = ?";
         
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
-            pstmt.setInt(1, quote.getClientId());
-            pstmt.setInt(2, quote.getBillingLocationId());
-            pstmt.setInt(3, quote.getJobLocationId());
-            pstmt.setString(4, quote.getBillToCounty());
-            pstmt.setString(5, quote.getBillToCity());
-            pstmt.setString(6, quote.getBillToState());
-            pstmt.setString(7, quote.getBillToZipCode());
-            pstmt.setString(8, quote.getBillToCountry());
-            pstmt.setString(9, quote.getJobAtCounty());
-            pstmt.setString(10, quote.getJobAtCity());
-            pstmt.setString(11, quote.getJobAtState());
-            pstmt.setString(12, quote.getJobAtZipCode());
-            pstmt.setString(13, quote.getJobAtCountry());
-            pstmt.setString(14, quote.getQuoteNumber());
-            pstmt.setDate(15, java.sql.Date.valueOf(quote.getQuoteDate()));
-            pstmt.setString(16, quote.getStatus());
-            pstmt.setString(17, quote.getContactName());
-            pstmt.setString(18, quote.getSalespersonName());
-            pstmt.setString(19, quote.getShipVia());
-            pstmt.setString(20, quote.getFreightTerms());
-            pstmt.setString(21, quote.getPaymentTerms());
-            pstmt.setString(22, quote.getFobLocation());
-            pstmt.setBigDecimal(23, quote.getTotalDiscountAmount());
-            pstmt.setBigDecimal(24, quote.getSubtotalAmount());
-            pstmt.setBigDecimal(25, quote.getFreightAmount());
-            pstmt.setBigDecimal(26, quote.getExtendedTotalAmount());
-            pstmt.setBigDecimal(27, quote.getSalesTaxRatePercent());
-            pstmt.setBigDecimal(28, quote.getSalesTaxAmount());
-            pstmt.setBigDecimal(29, quote.getQuoteTotalAmount());
-            pstmt.setBoolean(30, quote.getClientSignatureBoolean() != null ? quote.getClientSignatureBoolean() : false);
-            pstmt.setInt(31, quote.getQuoteId());
+            int idx = 1;
+            pstmt.setInt(idx++, quote.getClientId());
+            pstmt.setInt(idx++, quote.getBillingLocationId());
+            pstmt.setInt(idx++, quote.getJobLocationId());
+            pstmt.setString(idx++, quote.getClientTypeSnapshot());
+            pstmt.setString(idx++, quote.getClientCompanyNameSnapshot());
+            pstmt.setString(idx++, quote.getClientFirstNameSnapshot());
+            pstmt.setString(idx++, quote.getClientLastNameSnapshot());
+            pstmt.setString(idx++, quote.getBillToCompanyName());
+            pstmt.setString(idx++, quote.getBillToContactName());
+            pstmt.setString(idx++, quote.getBillToStreetAddress());
+            pstmt.setString(idx++, quote.getBillToBuildingName());
+            pstmt.setString(idx++, quote.getBillToSuite());
+            pstmt.setString(idx++, quote.getBillToRoomNumber());
+            pstmt.setString(idx++, quote.getBillToDepartment());
+            pstmt.setString(idx++, quote.getBillToCounty());
+            pstmt.setString(idx++, quote.getBillToCity());
+            pstmt.setString(idx++, quote.getBillToState());
+            pstmt.setString(idx++, quote.getBillToZipCode());
+            pstmt.setString(idx++, quote.getBillToCountry());
+            pstmt.setString(idx++, quote.getBillToPhone());
+            pstmt.setString(idx++, quote.getBillToFax());
+            pstmt.setString(idx++, quote.getBillToPONumber());
+            pstmt.setString(idx++, quote.getJobAtCompanyName());
+            pstmt.setString(idx++, quote.getJobAtContactName());
+            pstmt.setString(idx++, quote.getJobAtStreetAddress());
+            pstmt.setString(idx++, quote.getJobAtBuildingName());
+            pstmt.setString(idx++, quote.getJobAtSuite());
+            pstmt.setString(idx++, quote.getJobAtRoomNumber());
+            pstmt.setString(idx++, quote.getJobAtDepartment());
+            pstmt.setString(idx++, quote.getJobAtCounty());
+            pstmt.setString(idx++, quote.getJobAtCity());
+            pstmt.setString(idx++, quote.getJobAtState());
+            pstmt.setString(idx++, quote.getJobAtZipCode());
+            pstmt.setString(idx++, quote.getJobAtCountry());
+            pstmt.setString(idx++, quote.getJobAtEmail());
+            pstmt.setString(idx++, quote.getJobAtPONumber());
+            pstmt.setString(idx++, quote.getQuoteNumber());
+            pstmt.setDate(idx++, java.sql.Date.valueOf(quote.getQuoteDate()));
+            pstmt.setString(idx++, quote.getStatus());
+            pstmt.setString(idx++, quote.getContactName());
+            pstmt.setString(idx++, quote.getSalespersonName());
+            pstmt.setString(idx++, quote.getShipVia());
+            pstmt.setString(idx++, quote.getFreightTerms());
+            pstmt.setString(idx++, quote.getPaymentTerms());
+            pstmt.setString(idx++, quote.getFobLocation());
+            pstmt.setBigDecimal(idx++, quote.getTotalDiscountAmount());
+            pstmt.setBigDecimal(idx++, quote.getSubtotalAmount());
+            pstmt.setBigDecimal(idx++, quote.getFreightAmount());
+            pstmt.setBigDecimal(idx++, quote.getExtendedTotalAmount());
+            pstmt.setBigDecimal(idx++, quote.getSalesTaxRatePercent());
+            pstmt.setBigDecimal(idx++, quote.getSalesTaxAmount());
+            pstmt.setBigDecimal(idx++, quote.getQuoteTotalAmount());
+            pstmt.setString(idx++, quote.getNotes());
+            pstmt.setString(idx++, quote.getTermsAndConditions());
+            pstmt.setString(idx++, quote.getExtraInfo());
+            pstmt.setBoolean(idx++, quote.getClientSignatureBoolean() != null ? quote.getClientSignatureBoolean() : false);
+            pstmt.setInt(idx++, quote.getQuoteId());
             
             return pstmt.executeUpdate() > 0;
         }
@@ -158,16 +215,39 @@ public class EquipmentQuoteCompleteDAO {
         quote.setClientId(rs.getInt("ClientID"));
         quote.setBillingLocationId(rs.getInt("BillingLocationID"));
         quote.setJobLocationId(rs.getInt("JobAtLocationID"));
+        quote.setClientTypeSnapshot(rs.getString("ClientTypeSnapshot"));
+        quote.setClientCompanyNameSnapshot(rs.getString("ClientCompanyNameSnapshot"));
+        quote.setClientFirstNameSnapshot(rs.getString("ClientFirstNameSnapshot"));
+        quote.setClientLastNameSnapshot(rs.getString("ClientLastNameSnapshot"));
+        quote.setBillToCompanyName(rs.getString("BillToCompanyName"));
+        quote.setBillToContactName(rs.getString("BillToContactName"));
+        quote.setBillToStreetAddress(rs.getString("BillToStreetAddress"));
+        quote.setBillToBuildingName(rs.getString("BillToBuildingName"));
+        quote.setBillToSuite(rs.getString("BillToSuite"));
+        quote.setBillToRoomNumber(rs.getString("BillToRoomNumber"));
+        quote.setBillToDepartment(rs.getString("BillToDepartment"));
         quote.setBillToCounty(rs.getString("BillToCounty"));
         quote.setBillToCity(rs.getString("BillToCity"));
         quote.setBillToState(rs.getString("BillToState"));
         quote.setBillToZipCode(rs.getString("BillToZIPCode"));
         quote.setBillToCountry(rs.getString("BillToCountry"));
+        quote.setBillToPhone(rs.getString("BillToPhone"));
+        quote.setBillToFax(rs.getString("BillToFax"));
+        quote.setBillToPONumber(rs.getString("BillToPONumber"));
+        quote.setJobAtCompanyName(rs.getString("JobAtCompanyName"));
+        quote.setJobAtContactName(rs.getString("JobAtContactName"));
+        quote.setJobAtStreetAddress(rs.getString("JobAtStreetAddress"));
+        quote.setJobAtBuildingName(rs.getString("JobAtBuildingName"));
+        quote.setJobAtSuite(rs.getString("JobAtSuite"));
+        quote.setJobAtRoomNumber(rs.getString("JobAtRoomNumber"));
+        quote.setJobAtDepartment(rs.getString("JobAtDepartment"));
         quote.setJobAtCounty(rs.getString("JobAtCounty"));
         quote.setJobAtCity(rs.getString("JobAtCity"));
         quote.setJobAtState(rs.getString("JobAtState"));
         quote.setJobAtZipCode(rs.getString("JobAtZIPCode"));
         quote.setJobAtCountry(rs.getString("JobAtCountry"));
+        quote.setJobAtEmail(rs.getString("JobAtEmail"));
+        quote.setJobAtPONumber(rs.getString("JobAtPONumber"));
         quote.setQuoteNumber(rs.getString("QuoteNumber"));
         
         if (rs.getDate("QuoteDate") != null) {
@@ -188,6 +268,9 @@ public class EquipmentQuoteCompleteDAO {
         quote.setSalesTaxRatePercent(rs.getBigDecimal("SalesTaxRatePercent"));
         quote.setSalesTaxAmount(rs.getBigDecimal("SalesTaxAmount"));
         quote.setQuoteTotalAmount(rs.getBigDecimal("QuoteTotalAmount"));
+        quote.setNotes(rs.getString("Notes"));
+        quote.setTermsAndConditions(rs.getString("TermsAndConditions"));
+        quote.setExtraInfo(rs.getString("ExtraInfo"));
         quote.setClientSignatureBoolean(rs.getBoolean("ClientSignatureBoolean"));
         
         return quote;

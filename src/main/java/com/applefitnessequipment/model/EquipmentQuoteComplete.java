@@ -8,6 +8,10 @@ public class EquipmentQuoteComplete {
     private Integer clientId;
     private Integer billingLocationId;
     private Integer jobLocationId;
+    private String clientTypeSnapshot;
+    private String clientCompanyNameSnapshot;
+    private String clientFirstNameSnapshot;
+    private String clientLastNameSnapshot;
     
     // Billing Address
     private String billToCompanyName;
@@ -82,6 +86,18 @@ public class EquipmentQuoteComplete {
 
     public Integer getJobLocationId() { return jobLocationId; }
     public void setJobLocationId(Integer jobLocationId) { this.jobLocationId = jobLocationId; }
+
+    public String getClientTypeSnapshot() { return clientTypeSnapshot; }
+    public void setClientTypeSnapshot(String clientTypeSnapshot) { this.clientTypeSnapshot = clientTypeSnapshot; }
+
+    public String getClientCompanyNameSnapshot() { return clientCompanyNameSnapshot; }
+    public void setClientCompanyNameSnapshot(String clientCompanyNameSnapshot) { this.clientCompanyNameSnapshot = clientCompanyNameSnapshot; }
+
+    public String getClientFirstNameSnapshot() { return clientFirstNameSnapshot; }
+    public void setClientFirstNameSnapshot(String clientFirstNameSnapshot) { this.clientFirstNameSnapshot = clientFirstNameSnapshot; }
+
+    public String getClientLastNameSnapshot() { return clientLastNameSnapshot; }
+    public void setClientLastNameSnapshot(String clientLastNameSnapshot) { this.clientLastNameSnapshot = clientLastNameSnapshot; }
 
     // Billing Address Getters/Setters
     public String getBillToCompanyName() { return billToCompanyName; }
