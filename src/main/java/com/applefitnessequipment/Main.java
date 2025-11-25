@@ -33,7 +33,7 @@ public class Main {
                 DatabaseManagementApp app = new DatabaseManagementApp();
                 app.setVisible(true);
                 app.setLocationRelativeTo(null); 
-                app.setSize(2560, 1440);
+                app.setSize(1920, 1080);
                 System.out.println("Apple Fitness Equipment Database Management System started successfully!");
                 System.out.println("Database: applefitnessequipmentdb");
                 System.out.println("User: root");

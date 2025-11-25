@@ -16,6 +16,7 @@ import java.util.List;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -157,6 +158,12 @@ public class InvoicesPanel extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         int row = 0;
 
+        // Use a styled text field to establish a consistent input size across combos and fields
+        JTextField sizingField = new JTextField(20);
+        ModernUIHelper.styleTextField(sizingField);
+        Dimension standardInputSize = sizingField.getPreferredSize();
+        java.awt.Color standardFieldBackground = sizingField.getBackground();
+
         // ===== CLIENT INFORMATION =====
         addSectionLabel(formPanel, gbc, row++, "CLIENT INFORMATION");
 
@@ -166,6 +173,7 @@ public class InvoicesPanel extends JPanel {
         gbc.gridx = 1;
         clientCombo = new JComboBox<>();
         clientCombo.setEditable(true);
+        clientCombo.setPreferredSize(standardInputSize);
 
         JTextField clientTextField = (JTextField) clientCombo.getEditor().getEditorComponent();
         clientTextField.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -199,6 +207,7 @@ public class InvoicesPanel extends JPanel {
         gbc.gridx = 1;
         billLocationCombo = new JComboBox<>();
         billLocationCombo.setEditable(true);
+        billLocationCombo.setPreferredSize(standardInputSize);
         ModernUIHelper.styleComboBox(billLocationCombo);
         formPanel.add(billLocationCombo, gbc);
         row++;
@@ -209,6 +218,7 @@ public class InvoicesPanel extends JPanel {
         gbc.gridx = 1;
         jobLocationCombo = new JComboBox<>();
         jobLocationCombo.setEditable(true);
+        jobLocationCombo.setPreferredSize(standardInputSize);
         ModernUIHelper.styleComboBox(jobLocationCombo);
         formPanel.add(jobLocationCombo, gbc);
         row++;
@@ -219,6 +229,7 @@ public class InvoicesPanel extends JPanel {
         gbc.gridx = 1;
         equipmentQuoteCombo = new JComboBox<>();
         equipmentQuoteCombo.setEditable(true);
+        equipmentQuoteCombo.setPreferredSize(standardInputSize);
         equipmentQuoteCombo.addActionListener(e -> {
             if (equipmentQuoteCombo.getSelectedItem() != null &&
                 equipmentQuoteCombo.getSelectedItem() instanceof EquipmentQuote) {
@@ -235,6 +246,7 @@ public class InvoicesPanel extends JPanel {
         gbc.gridx = 1;
         pmaCombo = new JComboBox<>();
         pmaCombo.setEditable(true);
+        pmaCombo.setPreferredSize(standardInputSize);
         pmaCombo.addActionListener(e -> {
             if (pmaCombo.getSelectedItem() != null &&
                 pmaCombo.getSelectedItem() instanceof PreventiveMaintenanceAgreement) {
@@ -275,6 +287,19 @@ public class InvoicesPanel extends JPanel {
                 paymentsAppliedField.setText(originalPaymentsApplied);
             }
             calculateBalanceDue();
+        });
+        statusCombo.setPreferredSize(standardInputSize);
+        statusCombo.setBackground(java.awt.Color.WHITE);
+        statusCombo.setOpaque(true);
+        statusCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public java.awt.Component getListCellRendererComponent(javax.swing.JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                java.awt.Component comp = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (!isSelected) {
+                    comp.setBackground(java.awt.Color.WHITE);
+                }
+                return comp;
+            }
         });
         ModernUIHelper.styleComboBox(statusCombo);
         formPanel.add(statusCombo, gbc);
