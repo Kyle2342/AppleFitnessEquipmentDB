@@ -175,7 +175,7 @@ public class EquipmentQuotesPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Status:*"), gbc);
         gbc.gridx = 1;
-        statusCombo = new JComboBox<>(new String[]{"Draft", "Sent", "Expired", "Accepted", "Declined", "Canceled", "Completed"});
+        statusCombo = new JComboBox<>(new String[]{"Draft", "Sent", "Expired", "Active", "Declined", "Canceled", "Completed"});
         ModernUIHelper.styleComboBox(statusCombo);
         formPanel.add(statusCombo, gbc);
         row++;
@@ -455,6 +455,7 @@ public class EquipmentQuotesPanel extends JPanel {
             for (Client client : clients) {
                 clientCombo.addItem(client);
             }
+            clientCombo.setSelectedIndex(-1);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading clients: " + ex.getMessage());
         }
@@ -463,7 +464,7 @@ public class EquipmentQuotesPanel extends JPanel {
     private void loadLocationsForClient() {
         Client selected = (Client) clientCombo.getSelectedItem();
         if (selected == null) return;
-        
+
         try {
             List<ClientLocation> locations = locationDAO.getLocationsByClientId(selected.getClientId());
             billLocationCombo.removeAllItems();
@@ -472,6 +473,8 @@ public class EquipmentQuotesPanel extends JPanel {
                 billLocationCombo.addItem(loc);
                 jobLocationCombo.addItem(loc);
             }
+            billLocationCombo.setSelectedIndex(-1);
+            jobLocationCombo.setSelectedIndex(-1);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading locations: " + ex.getMessage());
         }
@@ -679,7 +682,7 @@ public class EquipmentQuotesPanel extends JPanel {
     }
 
     private void clearForm() {
-        if (clientCombo.getItemCount() > 0) clientCombo.setSelectedIndex(0);
+        clientCombo.setSelectedIndex(-1);
         quoteNumberField.setText("");
         quoteDateField.setText(LocalDate.now().format(dateFormatter));
         statusCombo.setSelectedIndex(0);

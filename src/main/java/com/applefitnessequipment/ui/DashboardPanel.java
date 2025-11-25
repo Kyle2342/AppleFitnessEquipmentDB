@@ -166,13 +166,13 @@ public class DashboardPanel extends JPanel {
         int clientCount = getClientCount();
         Object[] invoiceData = getInvoiceData();
         int activeContractCount = getActiveContractCount();
-        int pmCount = getActivePMCount();
+        int pendingResponseCount = getPendingCustomerResponseCount();
 
         // Create stat cards
-        panel.add(createStatCard("Active Clients", String.valueOf(clientCount), "With active contracts", new Color(59, 130, 246)));
-        panel.add(createStatCard("Open Invoices", "$" + formatCurrency((BigDecimal) invoiceData[1]), (int) invoiceData[0] + " contracts outstanding", new Color(16, 185, 129)));
-        panel.add(createStatCard("Active Contracts", String.valueOf(activeContractCount), "Signed & active", new Color(245, 158, 11)));
-        panel.add(createStatCard("Active PM", String.valueOf(pmCount), "Active agreements", PRIMARY_RED));
+        panel.add(createStatCard("Active Clients", String.valueOf(clientCount), "With Active Contracts or Invoices", new Color(59, 130, 246)));
+        panel.add(createStatCard("Open Invoices", "$" + formatCurrency((BigDecimal) invoiceData[1]), (int) invoiceData[0] + " Invoices Outstanding", new Color(16, 185, 129)));
+        panel.add(createStatCard("Active Contracts", String.valueOf(activeContractCount), "Signed & Active", new Color(245, 158, 11)));
+        panel.add(createStatCard("Pending Customer Response", String.valueOf(pendingResponseCount), "Sent Quotes", PRIMARY_RED));
 
         return panel;
     }
@@ -567,8 +567,8 @@ public class DashboardPanel extends JPanel {
         try {
             // Count clients that have:
             // - An Open or Overdue invoice, OR
-            // - An Active PMA, OR
-            // - An Active (Sent/Accepted) Equipment Quote
+            // - An Active PMA with signature, OR
+            // - An Active Equipment Quote with signature
             java.util.Set<Integer> activeClientIds = new java.util.HashSet<>();
 
             // Check invoices
@@ -581,20 +581,22 @@ public class DashboardPanel extends JPanel {
                 }
             }
 
-            // Check PM Agreements
+            // Check PM Agreements - must be Active with ClientSignatureBoolean = true
             List<PreventiveMaintenanceAgreement> pmas = pmDAO.getAllAgreements();
             for (PreventiveMaintenanceAgreement pma : pmas) {
-                if (pma.getClientId() != null && "Active".equalsIgnoreCase(pma.getStatus())) {
+                if (pma.getClientId() != null &&
+                    "Active".equalsIgnoreCase(pma.getStatus()) &&
+                    Boolean.TRUE.equals(pma.getClientSignatureBoolean())) {
                     activeClientIds.add(pma.getClientId());
                 }
             }
 
-            // Check Equipment Quotes
+            // Check Equipment Quotes - must be Active with ClientSignatureBoolean = true
             List<EquipmentQuoteComplete> quotes = quoteDAO.getAllQuotes();
             for (EquipmentQuoteComplete quote : quotes) {
                 if (quote.getClientId() != null &&
-                    ("Sent".equalsIgnoreCase(quote.getStatus()) ||
-                     "Accepted".equalsIgnoreCase(quote.getStatus()))) {
+                    "Active".equalsIgnoreCase(quote.getStatus()) &&
+                    Boolean.TRUE.equals(quote.getClientSignatureBoolean())) {
                     activeClientIds.add(quote.getClientId());
                 }
             }
@@ -658,17 +660,26 @@ public class DashboardPanel extends JPanel {
         }
     }
 
-    private int getActivePMCount() {
+    private int getPendingCustomerResponseCount() {
         try {
-            List<PreventiveMaintenanceAgreement> agreements = pmDAO.getAllAgreements();
             int count = 0;
 
-            for (PreventiveMaintenanceAgreement pm : agreements) {
-                // Count PM agreements with status "Active"
-                if ("Active".equalsIgnoreCase(pm.getStatus())) {
+            // Count PM Agreements with Status = 'Sent'
+            List<PreventiveMaintenanceAgreement> pmas = pmDAO.getAllAgreements();
+            for (PreventiveMaintenanceAgreement pma : pmas) {
+                if ("Sent".equalsIgnoreCase(pma.getStatus())) {
                     count++;
                 }
             }
+
+            // Count Equipment Quotes with Status = 'Sent'
+            List<EquipmentQuoteComplete> quotes = quoteDAO.getAllQuotes();
+            for (EquipmentQuoteComplete quote : quotes) {
+                if ("Sent".equalsIgnoreCase(quote.getStatus())) {
+                    count++;
+                }
+            }
+
             return count;
         } catch (SQLException e) {
             return 0;

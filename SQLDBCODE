@@ -467,7 +467,7 @@ CREATE TABLE EquipmentQuotes (
     -- Core quote info
     QuoteNumber           VARCHAR(45) NOT NULL UNIQUE,   -- e.g. 24-09-501
     QuoteDate             DATE        NOT NULL,
-    Status                ENUM('Draft', 'Sent', 'Expired', 'Accepted', 'Declined', 'Canceled', 'Completed') NOT NULL DEFAULT 'Draft',
+    Status                ENUM('Draft', 'Sent', 'Expired', 'Active', 'Declined', 'Canceled', 'Completed') NOT NULL DEFAULT 'Draft',
 
     -- Sales / logistics fields (from the PDF layout)
 	ContactName      	  VARCHAR(150) NOT NULL,      -- e.g. Greg Bartram

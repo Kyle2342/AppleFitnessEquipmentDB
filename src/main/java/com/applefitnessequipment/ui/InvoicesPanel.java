@@ -470,6 +470,7 @@ public class InvoicesPanel extends JPanel {
             for (Client client : allClients) {
                 clientCombo.addItem(client);
             }
+            clientCombo.setSelectedIndex(-1);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading clients: " + ex.getMessage());
         }
@@ -528,6 +529,9 @@ public class InvoicesPanel extends JPanel {
                     jobLocationCombo.addItem(loc);
                 }
             }
+
+            billLocationCombo.setSelectedIndex(-1);
+            jobLocationCombo.setSelectedIndex(-1);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading locations: " + ex.getMessage());
         }
@@ -1096,7 +1100,7 @@ public class InvoicesPanel extends JPanel {
     }
 
     private void clearForm() {
-        if (clientCombo.getItemCount() > 0) clientCombo.setSelectedIndex(0);
+        clientCombo.setSelectedIndex(-1);
         billLocationCombo.removeAllItems();
         jobLocationCombo.removeAllItems();
         equipmentQuoteCombo.removeAllItems();

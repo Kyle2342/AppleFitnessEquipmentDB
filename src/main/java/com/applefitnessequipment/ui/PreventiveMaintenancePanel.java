@@ -417,6 +417,7 @@ public class PreventiveMaintenancePanel extends JPanel {
             for (Client client : clients) {
                 clientCombo.addItem(client);
             }
+            clientCombo.setSelectedIndex(-1);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading clients: " + ex.getMessage());
         }
@@ -425,7 +426,7 @@ public class PreventiveMaintenancePanel extends JPanel {
     private void loadLocationsForClient() {
         Client selected = (Client) clientCombo.getSelectedItem();
         if (selected == null) return;
-        
+
         try {
             List<ClientLocation> locations = locationDAO.getLocationsByClientId(selected.getClientId());
             billLocationCombo.removeAllItems();
@@ -434,6 +435,8 @@ public class PreventiveMaintenancePanel extends JPanel {
                 billLocationCombo.addItem(loc);
                 jobLocationCombo.addItem(loc);
             }
+            billLocationCombo.setSelectedIndex(-1);
+            jobLocationCombo.setSelectedIndex(-1);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading locations: " + ex.getMessage());
         }
@@ -611,7 +614,7 @@ public class PreventiveMaintenancePanel extends JPanel {
     }
 
     private void clearForm() {
-        if (clientCombo.getItemCount() > 0) clientCombo.setSelectedIndex(0);
+        clientCombo.setSelectedIndex(-1);
         agreementNumberField.setText("");
         propertyNameField.setText("");
         facilityNameField.setText("");

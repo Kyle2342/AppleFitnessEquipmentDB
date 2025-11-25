@@ -81,6 +81,7 @@ public class ClientsPanel extends JPanel {
         topPanel.add(new JLabel("Filter by Type:"));
         filterTypeCombo = new JComboBox<>(new String[]{"Show All", "Individual", "Business"});
         filterTypeCombo.setFont(ModernUIHelper.NORMAL_FONT);
+        filterTypeCombo.setPreferredSize(new java.awt.Dimension(120, 38));  // Make it bigger
         filterTypeCombo.addActionListener(e -> filterAndSearch());
         topPanel.add(filterTypeCombo);
 

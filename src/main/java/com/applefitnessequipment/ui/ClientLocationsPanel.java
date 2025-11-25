@@ -31,7 +31,7 @@ public class ClientLocationsPanel extends JPanel {
     private ClientDAO clientDAO;
     private JTable locationsTable;
     private DefaultTableModel tableModel;
-    private JComboBox<Object> clientFilterCombo;  // For filtering - holds String "Show All" and Client objects
+    private JTextField clientSearchField;  // For searching clients by name
     private JComboBox<String> locationTypeFilterCombo;  // For filtering by type
     private JComboBox<Client> formClientCombo;  // For form
     private JComboBox<String> locationTypeCombo;
@@ -65,23 +65,26 @@ public class ClientLocationsPanel extends JPanel {
 
         // Top Panel - Filters (bigger and cleaner like ClientsPanel)
         JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
-        
-        filterPanel.add(new JLabel("Filter by Client:"));
-        clientFilterCombo = new JComboBox<>();
-        clientFilterCombo.setFont(ModernUIHelper.NORMAL_FONT);
-        clientFilterCombo.setBorder(BorderFactory.createCompoundBorder(
+
+        filterPanel.add(new JLabel("Search:"));
+        clientSearchField = new JTextField(35);  // Match ClientsPanel size
+        clientSearchField.setFont(ModernUIHelper.NORMAL_FONT);
+        clientSearchField.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new java.awt.Color(180, 180, 180), 1),
-            BorderFactory.createEmptyBorder(5, 5, 5, 5)
+            BorderFactory.createEmptyBorder(8, 8, 8, 8)
         ));
-        // Make it wider like in ClientsPanel
-        clientFilterCombo.setPrototypeDisplayValue("A Very Long Client Name For Sizing");
-        clientFilterCombo.addActionListener(e -> filterLocations());  // Auto-filter on change
-        filterPanel.add(clientFilterCombo);
-        
+        clientSearchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { filterLocations(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { filterLocations(); }
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { filterLocations(); }
+        });
+        filterPanel.add(clientSearchField);
+
         filterPanel.add(Box.createHorizontalStrut(20));
         filterPanel.add(new JLabel("Filter by Type:"));
         locationTypeFilterCombo = new JComboBox<>(new String[]{"Show All", "Billing", "Job"});
         locationTypeFilterCombo.setFont(ModernUIHelper.NORMAL_FONT);
+        locationTypeFilterCombo.setPreferredSize(new java.awt.Dimension(120, 38));  // Make it bigger
         locationTypeFilterCombo.addActionListener(e -> filterLocations());  // Auto-filter on change
         filterPanel.add(locationTypeFilterCombo);
 
@@ -335,19 +338,13 @@ public class ClientLocationsPanel extends JPanel {
     private void loadClients() {
         try {
             List<Client> clients = clientDAO.getAllClients();
-            
-            // Populate filter combo
-            clientFilterCombo.removeAllItems();
-            clientFilterCombo.addItem("Show All");  // String as first item
-            for (Client client : clients) {
-                clientFilterCombo.addItem(client);  // Client objects after
-            }
-            
+
             // Populate form combo
             formClientCombo.removeAllItems();
             for (Client client : clients) {
                 formClientCombo.addItem(client);
             }
+            formClientCombo.setSelectedIndex(-1);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading clients: " + ex.getMessage(),
                 "Database Error", JOptionPane.ERROR_MESSAGE);
@@ -366,22 +363,33 @@ public class ClientLocationsPanel extends JPanel {
 
     private void filterLocations() {
         if (allLocations == null) return;
-        
-        Object clientFilter = clientFilterCombo.getSelectedItem();
+
+        String searchText = clientSearchField.getText().toLowerCase().trim();
         String typeFilter = (String) locationTypeFilterCombo.getSelectedItem();
-        
+
         tableModel.setRowCount(0);
         for (ClientLocation loc : allLocations) {
-            // Apply client filter
-            boolean clientMatches = clientFilter == null || 
-                                   "Show All".equals(clientFilter) ||
-                                   (clientFilter instanceof Client && 
-                                    ((Client)clientFilter).getClientId().equals(loc.getClientId()));
-            
+            // Apply client search filter
+            boolean clientMatches = searchText.isEmpty();
+            if (!clientMatches) {
+                // Search in client name and company name
+                try {
+                    Client client = clientDAO.getClientById(loc.getClientId());
+                    if (client != null) {
+                        String clientName = (client.getCompanyName() != null ? client.getCompanyName() :
+                                           client.getFirstName() + " " + client.getLastName()).toLowerCase();
+                        String companyName = (loc.getCompanyName() != null ? loc.getCompanyName() : "").toLowerCase();
+                        clientMatches = clientName.contains(searchText) || companyName.contains(searchText);
+                    }
+                } catch (SQLException e) {
+                    // Skip this location if error
+                }
+            }
+
             // Apply type filter
             boolean typeMatches = "Show All".equals(typeFilter) ||
                                  typeFilter.equals(loc.getLocationType());
-            
+
             if (clientMatches && typeMatches) {
                 tableModel.addRow(new Object[]{
                     loc.getClientLocationId(),
@@ -528,9 +536,7 @@ public class ClientLocationsPanel extends JPanel {
     }
 
     private void clearForm() {
-        if (formClientCombo.getItemCount() > 0) {
-            formClientCombo.setSelectedIndex(0);
-        }
+        formClientCombo.setSelectedIndex(-1);
         locationTypeCombo.setSelectedIndex(0);
         companyNameField.setText("");
         contactNameField.setText("");

@@ -255,11 +255,13 @@ public class EmployeeTimeLogsPanel extends JPanel {
             employeeCombo.removeAllItems();
             filterEmployeeCombo.removeAllItems();
             filterEmployeeCombo.addItem(null);
-            
+
             for (Employee emp : employees) {
                 employeeCombo.addItem(emp);
                 filterEmployeeCombo.addItem(emp);
             }
+
+            employeeCombo.setSelectedIndex(-1);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading employees: " + ex.getMessage(),
                 "Database Error", JOptionPane.ERROR_MESSAGE);
