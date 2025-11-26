@@ -36,7 +36,7 @@ public class InvoiceDAO {
         String sql = "SELECT * FROM Invoices WHERE InvoiceID = ?";
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             pstmt.setInt(1, invoiceId);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -91,7 +91,16 @@ public class InvoiceDAO {
                 pstmt.setNull(15, java.sql.Types.DATE);
             }
 
-            return pstmt.executeUpdate() > 0;
+            int affected = pstmt.executeUpdate();
+            if (affected > 0) {
+                try (ResultSet keys = pstmt.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        invoice.setInvoiceId(keys.getInt(1));
+                    }
+                }
+                return true;
+            }
+            return false;
         }
     }
 

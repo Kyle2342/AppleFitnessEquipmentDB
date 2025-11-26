@@ -36,7 +36,7 @@ public class EquipmentQuoteDAO {
         String sql = "SELECT * FROM EquipmentQuotes WHERE EquipmentQuoteID = ?";
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             pstmt.setInt(1, quoteId);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -78,7 +78,16 @@ public class EquipmentQuoteDAO {
             pstmt.setBigDecimal(16, quote.getSalesTaxRatePercent());
             pstmt.setBoolean(17, quote.getClientSignatureBoolean());
 
-            return pstmt.executeUpdate() > 0;
+            int affected = pstmt.executeUpdate();
+            if (affected > 0) {
+                try (ResultSet keys = pstmt.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        quote.setEquipmentQuoteId(keys.getInt(1));
+                    }
+                }
+                return true;
+            }
+            return false;
         }
     }
 

@@ -36,7 +36,7 @@ public class PreventiveMaintenanceDAO {
         String sql = "SELECT * FROM PreventiveMaintenanceAgreements WHERE PreventiveMaintenanceAgreementID = ?";
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             pstmt.setInt(1, pmaId);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -70,7 +70,16 @@ public class PreventiveMaintenanceDAO {
             pstmt.setBigDecimal(10, pma.getTaxRatePercent());
             pstmt.setBoolean(11, pma.getClientSignatureBoolean());
 
-            return pstmt.executeUpdate() > 0;
+            int affected = pstmt.executeUpdate();
+            if (affected > 0) {
+                try (ResultSet keys = pstmt.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        pma.setPreventiveMaintenanceAgreementId(keys.getInt(1));
+                    }
+                }
+                return true;
+            }
+            return false;
         }
     }
 

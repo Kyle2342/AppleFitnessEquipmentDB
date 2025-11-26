@@ -222,6 +222,11 @@ public class EquipmentQuote {
         this.clientSignatureBoolean = clientSignatureBoolean;
     }
 
+    @Override
+    public String toString() {
+        return quoteNumber != null ? quoteNumber : "Equipment Quote";
+    }
+
     // Backward compatibility getters (deprecated - use new names)
     @Deprecated
     public Integer getBillingLocationId() {

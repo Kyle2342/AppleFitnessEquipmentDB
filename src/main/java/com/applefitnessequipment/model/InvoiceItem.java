@@ -1,7 +1,6 @@
 package com.applefitnessequipment.model;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 public class InvoiceItem {
     private Integer invoiceItemId;
@@ -11,8 +10,6 @@ public class InvoiceItem {
     private BigDecimal qty;
     private BigDecimal rate;
     private BigDecimal totalAmount;  // Generated column (Qty * Rate)
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 
     public InvoiceItem() {}
 
@@ -37,10 +34,4 @@ public class InvoiceItem {
 
     public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

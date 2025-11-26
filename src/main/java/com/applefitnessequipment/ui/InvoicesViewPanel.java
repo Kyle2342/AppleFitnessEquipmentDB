@@ -66,7 +66,7 @@ public class InvoicesViewPanel extends JPanel {
     private void loadInvoices() {
         String sql = "SELECT InvoiceNumber, ClientID, InvoiceDate, DueDate, Status, " +
                     "SubtotalAmount, TaxAmount, TotalAmount, BalanceDue " +
-                    "FROM invoices ORDER BY InvoiceDate DESC";
+                    "FROM Invoices ORDER BY InvoiceDate DESC";
         
         tableModel.setRowCount(0);
         

@@ -66,7 +66,7 @@ public class EquipmentQuotesViewPanel extends JPanel {
     private void loadQuotes() {
         String sql = "SELECT QuoteNumber, ClientID, QuoteDate, ContactName, SalespersonName, " +
                     "Status, SubtotalAmount, FreightAmount, SalesTaxAmount, QuoteTotalAmount " +
-                    "FROM equipmentquotes ORDER BY QuoteDate DESC";
+                    "FROM EquipmentQuotes ORDER BY QuoteDate DESC";
         
         tableModel.setRowCount(0);
         

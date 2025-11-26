@@ -109,8 +109,6 @@ public class InvoiceItemDAO {
         item.setQty(rs.getBigDecimal("Qty"));
         item.setRate(rs.getBigDecimal("Rate"));
         item.setTotalAmount(rs.getBigDecimal("TotalAmount"));  // Generated column
-        item.setCreatedAt(rs.getTimestamp("CreatedAt") != null ? rs.getTimestamp("CreatedAt").toLocalDateTime() : null);
-        item.setUpdatedAt(rs.getTimestamp("UpdatedAt") != null ? rs.getTimestamp("UpdatedAt").toLocalDateTime() : null);
         return item;
     }
 }

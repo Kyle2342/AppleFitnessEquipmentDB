@@ -66,7 +66,7 @@ public class PreventiveMaintenanceViewPanel extends JPanel {
     private void loadAgreements() {
         String sql = "SELECT AgreementNumber, ClientID, StartDate, EndDate, " +
                     "VisitFrequency, Status, VisitPrice, PricePerYear " +
-                    "FROM preventivemaintenanceagreements ORDER BY StartDate DESC";
+                    "FROM PreventiveMaintenanceAgreements ORDER BY StartDate DESC";
         
         tableModel.setRowCount(0);
         

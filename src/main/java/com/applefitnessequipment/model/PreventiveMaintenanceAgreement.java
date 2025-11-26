@@ -152,6 +152,11 @@ public class PreventiveMaintenanceAgreement {
         this.clientSignatureBoolean = clientSignatureBoolean;
     }
 
+    @Override
+    public String toString() {
+        return agreementNumber != null ? agreementNumber : "PMA";
+    }
+
     // Backward compatibility getters (deprecated - use new names)
     @Deprecated
     public Integer getPmaId() {

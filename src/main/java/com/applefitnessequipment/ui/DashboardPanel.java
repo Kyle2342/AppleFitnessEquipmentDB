@@ -35,11 +35,11 @@ import javax.swing.table.DefaultTableModel;
 
 import com.applefitnessequipment.dao.ClientDAO;
 import com.applefitnessequipment.dao.EmployeeTimeLogDAO;
-import com.applefitnessequipment.dao.EquipmentQuoteCompleteDAO;
+import com.applefitnessequipment.dao.EquipmentQuoteDAO;
 import com.applefitnessequipment.dao.InvoiceDAO;
 import com.applefitnessequipment.dao.PMAgreementDAO;
 import com.applefitnessequipment.model.Client;
-import com.applefitnessequipment.model.EquipmentQuoteComplete;
+import com.applefitnessequipment.model.EquipmentQuote;
 import com.applefitnessequipment.model.Invoice;
 import com.applefitnessequipment.model.PreventiveMaintenanceAgreement;
 
@@ -56,7 +56,7 @@ public class DashboardPanel extends JPanel {
     // DAOs
     private ClientDAO clientDAO;
     private InvoiceDAO invoiceDAO;
-    private EquipmentQuoteCompleteDAO quoteDAO;
+    private EquipmentQuoteDAO quoteDAO;
     private PMAgreementDAO pmDAO;
     private EmployeeTimeLogDAO timeLogDAO;
 
@@ -72,7 +72,7 @@ public class DashboardPanel extends JPanel {
     private void initDAOs() {
         clientDAO = new ClientDAO();
         invoiceDAO = new InvoiceDAO();
-        quoteDAO = new EquipmentQuoteCompleteDAO();
+        quoteDAO = new EquipmentQuoteDAO();
         pmDAO = new PMAgreementDAO();
         timeLogDAO = new EmployeeTimeLogDAO();
     }
@@ -436,9 +436,9 @@ public class DashboardPanel extends JPanel {
         };
 
         try {
-            List<EquipmentQuoteComplete> quotes = quoteDAO.getAllQuotes();
+            List<EquipmentQuote> quotes = quoteDAO.getAllQuotes();
             int count = 0;
-            for (EquipmentQuoteComplete quote : quotes) {
+            for (EquipmentQuote quote : quotes) {
                 if (count >= 5) break;
 
                 model.addRow(new Object[]{
@@ -592,8 +592,8 @@ public class DashboardPanel extends JPanel {
             }
 
             // Check Equipment Quotes - must be Active with ClientSignatureBoolean = true
-            List<EquipmentQuoteComplete> quotes = quoteDAO.getAllQuotes();
-            for (EquipmentQuoteComplete quote : quotes) {
+            List<EquipmentQuote> quotes = quoteDAO.getAllQuotes();
+            for (EquipmentQuote quote : quotes) {
                 if (quote.getClientId() != null &&
                     "Active".equalsIgnoreCase(quote.getStatus()) &&
                     Boolean.TRUE.equals(quote.getClientSignatureBoolean())) {
@@ -646,8 +646,8 @@ public class DashboardPanel extends JPanel {
             }
 
             // Count Equipment Quotes with ClientSignatureBoolean = true AND Status = 'Active'
-            List<EquipmentQuoteComplete> quotes = quoteDAO.getAllQuotes();
-            for (EquipmentQuoteComplete quote : quotes) {
+            List<EquipmentQuote> quotes = quoteDAO.getAllQuotes();
+            for (EquipmentQuote quote : quotes) {
                 if (Boolean.TRUE.equals(quote.getClientSignatureBoolean()) &&
                     "Active".equalsIgnoreCase(quote.getStatus())) {
                     count++;
@@ -673,8 +673,8 @@ public class DashboardPanel extends JPanel {
             }
 
             // Count Equipment Quotes with Status = 'Sent'
-            List<EquipmentQuoteComplete> quotes = quoteDAO.getAllQuotes();
-            for (EquipmentQuoteComplete quote : quotes) {
+            List<EquipmentQuote> quotes = quoteDAO.getAllQuotes();
+            for (EquipmentQuote quote : quotes) {
                 if ("Sent".equalsIgnoreCase(quote.getStatus())) {
                     count++;
                 }

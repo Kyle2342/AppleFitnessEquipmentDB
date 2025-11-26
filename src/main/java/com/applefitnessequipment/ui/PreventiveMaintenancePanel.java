@@ -6,6 +6,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -20,9 +21,10 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-// import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 
 import com.applefitnessequipment.dao.ClientDAO;
@@ -32,33 +34,40 @@ import com.applefitnessequipment.model.Client;
 import com.applefitnessequipment.model.ClientLocation;
 import com.applefitnessequipment.model.PreventiveMaintenanceAgreement;
 
+/**
+ * UI for PreventiveMaintenanceAgreements aligned to applefitnessequipmentdb_schema.sql.
+ */
 public class PreventiveMaintenancePanel extends JPanel {
-    private PMAgreementDAO pmaDAO;
-    private ClientDAO clientDAO;
-    private ClientLocationDAO locationDAO;
+    private final PMAgreementDAO pmaDAO;
+    private final ClientDAO clientDAO;
+    private final ClientLocationDAO locationDAO;
+
+    private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
+
     private JTable pmaTable;
     private DefaultTableModel tableModel;
-    private DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    
-    // Form fields
+
     private JComboBox<Client> clientCombo;
-    private JComboBox<ClientLocation> billLocationCombo, jobLocationCombo;
-    private JTextField agreementNumberField, propertyNameField, facilityNameField;
-    private JTextField addressLineField, cityField, stateField, zipCodeField;
-    private JTextField contactNameField, contactEmailField, phone1Field, phone2Field;
-    // private JTextArea coverageTextArea;
-    private JTextField startDateField, endDateField;
-    private JComboBox<String> visitFrequencyCombo, statusCombo;
-    private JTextField chargePerMileField, chargePerHourField, visitPriceField, taxRateField;
-    private JCheckBox insuranceCheckbox;
-    private JTextField cancelationDaysField, paymentDaysField, lateFeeField;
-    private JButton addButton, updateButton, deleteButton, clearButton;
+    private JComboBox<ClientLocation> billLocationCombo;
+    private JComboBox<ClientLocation> jobLocationCombo;
+    private JTextField agreementNumberField;
+    private JTextField startDateField;
+    private JTextField endDateField;
+    private JComboBox<String> visitFrequencyCombo;
+    private JComboBox<String> statusCombo;
+    private JTextField visitPriceField;
+    private JTextField taxRateField;
+    private JTextField taxAmountField;
+    private JTextField pricePerYearField;
+    private JCheckBox signatureCheckbox;
+
     private PreventiveMaintenanceAgreement selectedPMA;
 
     public PreventiveMaintenancePanel() {
-        pmaDAO = new PMAgreementDAO();
-        clientDAO = new ClientDAO();
-        locationDAO = new ClientLocationDAO();
+        this.pmaDAO = new PMAgreementDAO();
+        this.clientDAO = new ClientDAO();
+        this.locationDAO = new ClientLocationDAO();
+
         initComponents();
         loadClients();
         loadAgreements();
@@ -68,28 +77,28 @@ public class PreventiveMaintenancePanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Top Panel - removed refresh button, data loads automatically
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         add(topPanel, BorderLayout.NORTH);
 
-        // Center Panel - Table
-        String[] columns = {"ID", "Agreement #", "Client", "Property", "Start", "End", "Frequency", "Status", "Price"};
+        // Table
+        String[] columns = {"ID", "Agreement #", "Client", "Start", "End", "Status", "Visit Price", "Price/Year"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
-            public boolean isCellEditable(int row, int column) { return false; }
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
         };
+
         pmaTable = new JTable(tableModel);
         pmaTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
-        // Apply modern styling
         ModernUIHelper.styleTable(pmaTable);
-        ModernUIHelper.addTableToggleBehavior(pmaTable, () -> clearForm());
-        
+        ModernUIHelper.addTableToggleBehavior(pmaTable, this::clearForm);
+
         // Hide ID
         pmaTable.getColumnModel().getColumn(0).setMinWidth(0);
         pmaTable.getColumnModel().getColumn(0).setMaxWidth(0);
         pmaTable.getColumnModel().getColumn(0).setWidth(0);
-        
+
         pmaTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && pmaTable.getSelectedRow() >= 0) {
                 loadSelectedAgreement();
@@ -97,21 +106,9 @@ public class PreventiveMaintenancePanel extends JPanel {
         });
 
         JScrollPane scrollPane = new JScrollPane(pmaTable);
-
-        // Allow deselection by clicking on empty space in the scroll pane viewport (not on the table itself)
-        scrollPane.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mousePressed(java.awt.event.MouseEvent e) {
-                // Only deselect if clicking in the viewport area (the gray empty space around the table)
-                if (e.getComponent() == scrollPane && !pmaTable.getBounds().contains(e.getPoint())) {
-                    pmaTable.clearSelection();
-                    clearForm();
-                }
-            }
-        });
-
         add(scrollPane, BorderLayout.CENTER);
 
-        // Right Panel - Scrollable Form
+        // Form
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBorder(ModernUIHelper.createModernBorder("Agreement Details"));
         GridBagConstraints gbc = new GridBagConstraints();
@@ -129,16 +126,16 @@ public class PreventiveMaintenancePanel extends JPanel {
         formPanel.add(clientCombo, gbc);
         row++;
 
-        // Billing Location
+        // Billing location
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Bill Location:*"), gbc);
+        formPanel.add(new JLabel("Billing Location:*"), gbc);
         gbc.gridx = 1;
         billLocationCombo = new JComboBox<>();
         ModernUIHelper.styleComboBox(billLocationCombo);
         formPanel.add(billLocationCombo, gbc);
         row++;
 
-        // Job Location
+        // Job location
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Job Location:*"), gbc);
         gbc.gridx = 1;
@@ -147,149 +144,42 @@ public class PreventiveMaintenancePanel extends JPanel {
         formPanel.add(jobLocationCombo, gbc);
         row++;
 
-        // Agreement Number
+        // Agreement #
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Agreement #:*"), gbc);
         gbc.gridx = 1;
-        agreementNumberField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        agreementNumberField = new JTextField(20);
         ModernUIHelper.styleTextField(agreementNumberField);
         formPanel.add(agreementNumberField, gbc);
         row++;
 
-        // Property Name
+        // Dates
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Property Name:"), gbc);
+        formPanel.add(new JLabel("Start Date (MM/dd/yyyy):*"), gbc);
         gbc.gridx = 1;
-        propertyNameField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(propertyNameField);
-        formPanel.add(propertyNameField, gbc);
-        row++;
-
-        // Facility Name
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Facility Name:"), gbc);
-        gbc.gridx = 1;
-        facilityNameField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(facilityNameField);
-        formPanel.add(facilityNameField, gbc);
-        row++;
-
-        // Address Line
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Address:*"), gbc);
-        gbc.gridx = 1;
-        addressLineField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(addressLineField);
-        formPanel.add(addressLineField, gbc);
-        row++;
-
-        // City
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("City:*"), gbc);
-        gbc.gridx = 1;
-        cityField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(cityField);
-        formPanel.add(cityField, gbc);
-        row++;
-
-        // State
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("State:*"), gbc);
-        gbc.gridx = 1;
-        stateField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        stateField.setText("PA");
-        ModernUIHelper.styleTextField(stateField);
-        formPanel.add(stateField, gbc);
-        row++;
-
-        // ZIP
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("ZIP:*"), gbc);
-        gbc.gridx = 1;
-        zipCodeField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(zipCodeField);
-        formPanel.add(zipCodeField, gbc);
-        row++;
-
-        // Contact Name
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Contact:*"), gbc);
-        gbc.gridx = 1;
-        contactNameField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(contactNameField);
-        formPanel.add(contactNameField, gbc);
-        row++;
-
-        // Contact Email
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Email:"), gbc);
-        gbc.gridx = 1;
-        contactEmailField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(contactEmailField);
-        formPanel.add(contactEmailField, gbc);
-        row++;
-
-        // Phone 1
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Phone 1:"), gbc);
-        gbc.gridx = 1;
-        phone1Field = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(phone1Field);
-        formPanel.add(phone1Field, gbc);
-        row++;
-
-        // Phone 2
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Phone 2:"), gbc);
-        gbc.gridx = 1;
-        phone2Field = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(phone2Field);
-        formPanel.add(phone2Field, gbc);
-        row++;
-
-        // Coverage Text - commented out
-        // gbc.gridx = 0; gbc.gridy = row;
-        // gbc.anchor = GridBagConstraints.NORTH;
-        // formPanel.add(new JLabel("Coverage:*"), gbc);
-        // gbc.gridx = 1;
-        // gbc.fill = GridBagConstraints.BOTH;
-        // coverageTextArea = new JTextArea(3, 15);
-        // coverageTextArea.setLineWrap(true);
-        // formPanel.add(new JScrollPane(coverageTextArea), gbc);
-        // gbc.fill = GridBagConstraints.HORIZONTAL;
-        // gbc.anchor = GridBagConstraints.CENTER;
-        // row++;
-
-        // Start Date
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Start Date:*"), gbc);
-        gbc.gridx = 1;
-        startDateField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        startDateField.setText(LocalDate.now().format(dateFormatter));
+        startDateField = new JTextField(20);
         ModernUIHelper.styleTextField(startDateField);
         formPanel.add(startDateField, gbc);
         row++;
 
-        // End Date
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("End Date:*"), gbc);
+        formPanel.add(new JLabel("End Date (MM/dd/yyyy):*"), gbc);
         gbc.gridx = 1;
-        endDateField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        endDateField.setText(LocalDate.now().plusYears(1).format(dateFormatter));
+        endDateField = new JTextField(20);
         ModernUIHelper.styleTextField(endDateField);
         formPanel.add(endDateField, gbc);
         row++;
 
-        // Visit Frequency
+        // Frequency & Status
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Frequency:*"), gbc);
+        formPanel.add(new JLabel("Visit Frequency:*"), gbc);
         gbc.gridx = 1;
         visitFrequencyCombo = new JComboBox<>(new String[]{"Monthly", "Quarterly", "Semi-Annual", "Annual"});
+        visitFrequencyCombo.addActionListener(e -> updateDerivedFields());
         ModernUIHelper.styleComboBox(visitFrequencyCombo);
         formPanel.add(visitFrequencyCombo, gbc);
         row++;
 
-        // Status
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Status:*"), gbc);
         gbc.gridx = 1;
@@ -298,116 +188,92 @@ public class PreventiveMaintenancePanel extends JPanel {
         formPanel.add(statusCombo, gbc);
         row++;
 
-        // Charge Per Mile
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("$/Mile:*"), gbc);
-        gbc.gridx = 1;
-        chargePerMileField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        chargePerMileField.setText("0.75");
-        ModernUIHelper.styleTextField(chargePerMileField);
-        formPanel.add(chargePerMileField, gbc);
-        row++;
-
-        // Charge Per Hour
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("$/Hour:*"), gbc);
-        gbc.gridx = 1;
-        chargePerHourField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        chargePerHourField.setText("80.00");
-        ModernUIHelper.styleTextField(chargePerHourField);
-        formPanel.add(chargePerHourField, gbc);
-        row++;
-
-        // Visit Price
+        // Money
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Visit Price:*"), gbc);
         gbc.gridx = 1;
-        visitPriceField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        visitPriceField.setText("0.00");
+        visitPriceField = new JTextField(20);
         ModernUIHelper.styleTextField(visitPriceField);
         formPanel.add(visitPriceField, gbc);
         row++;
 
-        // Tax Rate
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Tax %:*"), gbc);
+        formPanel.add(new JLabel("Tax Rate %:*"), gbc);
         gbc.gridx = 1;
-        taxRateField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        taxRateField.setText("6.00");
+        taxRateField = new JTextField(20);
         ModernUIHelper.styleTextField(taxRateField);
         formPanel.add(taxRateField, gbc);
         row++;
 
-        // Insurance Required
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Extra Insurance:"), gbc);
+        formPanel.add(new JLabel("Tax Amount (calc):"), gbc);
         gbc.gridx = 1;
-        insuranceCheckbox = new JCheckBox();
-        formPanel.add(insuranceCheckbox, gbc);
+        taxAmountField = new JTextField(20);
+        taxAmountField.setEditable(false);
+        taxAmountField.setBackground(java.awt.Color.WHITE);
+        ModernUIHelper.styleTextField(taxAmountField);
+        formPanel.add(taxAmountField, gbc);
         row++;
 
-        // Cancelation Days
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Cancel Days:"), gbc);
+        formPanel.add(new JLabel("Price Per Year (calc):"), gbc);
         gbc.gridx = 1;
-        cancelationDaysField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        cancelationDaysField.setText("30");
-        ModernUIHelper.styleTextField(cancelationDaysField);
-        formPanel.add(cancelationDaysField, gbc);
+        pricePerYearField = new JTextField(20);
+        pricePerYearField.setEditable(false);
+        pricePerYearField.setBackground(java.awt.Color.WHITE);
+        ModernUIHelper.styleTextField(pricePerYearField);
+        formPanel.add(pricePerYearField, gbc);
         row++;
 
-        // Payment Days
+        // Signature
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Payment Days:"), gbc);
+        formPanel.add(new JLabel("Client Signed:"), gbc);
         gbc.gridx = 1;
-        paymentDaysField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        paymentDaysField.setText("30");
-        ModernUIHelper.styleTextField(paymentDaysField);
-        formPanel.add(paymentDaysField, gbc);
-        row++;
-
-        // Late Fee
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Late Fee %:"), gbc);
-        gbc.gridx = 1;
-        lateFeeField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        lateFeeField.setText("10.00");
-        ModernUIHelper.styleTextField(lateFeeField);
-        formPanel.add(lateFeeField, gbc);
+        signatureCheckbox = new JCheckBox();
+        formPanel.add(signatureCheckbox, gbc);
         row++;
 
         // Buttons
         gbc.gridx = 0; gbc.gridy = row;
         gbc.gridwidth = 2;
         JPanel buttonPanel = new JPanel(new FlowLayout());
-        
-        addButton = new JButton("Add");
+
+        JButton addButton = new JButton("Add");
         addButton.addActionListener(e -> addAgreement());
         ModernUIHelper.styleButton(addButton, "success");
         buttonPanel.add(addButton);
 
-        updateButton = new JButton("Update");
+        JButton updateButton = new JButton("Update");
         updateButton.addActionListener(e -> updateAgreement());
-        updateButton.setEnabled(false);
         ModernUIHelper.styleButton(updateButton, "warning");
         buttonPanel.add(updateButton);
 
-        deleteButton = new JButton("Delete");
+        JButton deleteButton = new JButton("Delete");
         deleteButton.addActionListener(e -> deleteAgreement());
-        deleteButton.setEnabled(false);
         ModernUIHelper.styleButton(deleteButton, "danger");
         buttonPanel.add(deleteButton);
 
-        clearButton = new JButton("Clear");
+        JButton clearButton = new JButton("Clear");
         clearButton.addActionListener(e -> clearForm());
         ModernUIHelper.styleButton(clearButton, "secondary");
         buttonPanel.add(clearButton);
 
         formPanel.add(buttonPanel, gbc);
 
-        JScrollPane formScrollPane = new JScrollPane(formPanel);
-        formScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        add(formScrollPane, BorderLayout.EAST);
+        JScrollPane formScroll = new JScrollPane(formPanel);
+        formScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        add(formScroll, BorderLayout.EAST);
+
+        // Recalculate derived fields when price or tax changes
+        DocumentListener derivedListener = new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { updateDerivedFields(); }
+            public void removeUpdate(DocumentEvent e) { updateDerivedFields(); }
+            public void changedUpdate(DocumentEvent e) { updateDerivedFields(); }
+        };
+        visitPriceField.getDocument().addDocumentListener(derivedListener);
+        taxRateField.getDocument().addDocumentListener(derivedListener);
+
+        clearForm();
     }
 
     private void loadClients() {
@@ -425,18 +291,23 @@ public class PreventiveMaintenancePanel extends JPanel {
 
     private void loadLocationsForClient() {
         Client selected = (Client) clientCombo.getSelectedItem();
-        if (selected == null) return;
+        billLocationCombo.removeAllItems();
+        jobLocationCombo.removeAllItems();
+
+        if (selected == null) {
+            return;
+        }
 
         try {
             List<ClientLocation> locations = locationDAO.getLocationsByClientId(selected.getClientId());
-            billLocationCombo.removeAllItems();
-            jobLocationCombo.removeAllItems();
             for (ClientLocation loc : locations) {
-                billLocationCombo.addItem(loc);
-                jobLocationCombo.addItem(loc);
+                if ("Billing".equalsIgnoreCase(loc.getLocationType())) {
+                    billLocationCombo.addItem(loc);
+                }
+                if ("Job".equalsIgnoreCase(loc.getLocationType())) {
+                    jobLocationCombo.addItem(loc);
+                }
             }
-            billLocationCombo.setSelectedIndex(-1);
-            jobLocationCombo.setSelectedIndex(-1);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading locations: " + ex.getMessage());
         }
@@ -448,15 +319,14 @@ public class PreventiveMaintenancePanel extends JPanel {
             tableModel.setRowCount(0);
             for (PreventiveMaintenanceAgreement pma : agreements) {
                 tableModel.addRow(new Object[]{
-                    pma.getPmaId(),
+                    pma.getPreventiveMaintenanceAgreementId(),
                     pma.getAgreementNumber(),
-                    pma.getClientId(),
-                    pma.getPropertyName(),
-                    pma.getStartDate(),
-                    pma.getEndDate(),
-                    pma.getVisitFrequency(),
+                    getClientName(pma.getClientId()),
+                    formatDate(pma.getStartDate()),
+                    formatDate(pma.getEndDate()),
                     pma.getStatus(),
-                    pma.getVisitPrice()
+                    pma.getVisitPrice(),
+                    pma.getPricePerYear()
                 });
             }
         } catch (SQLException ex) {
@@ -467,63 +337,30 @@ public class PreventiveMaintenancePanel extends JPanel {
     private void loadSelectedAgreement() {
         int row = pmaTable.getSelectedRow();
         if (row < 0) return;
-        
-        int pmaId = (Integer) tableModel.getValueAt(row, 0);
+
+        Integer id = (Integer) tableModel.getValueAt(row, 0);
         try {
-            selectedPMA = pmaDAO.getAgreementById(pmaId);
-            if (selectedPMA != null) {
-                // Select client and load locations
-                for (int i = 0; i < clientCombo.getItemCount(); i++) {
-                    if (clientCombo.getItemAt(i).getClientId().equals(selectedPMA.getClientId())) {
-                        clientCombo.setSelectedIndex(i);
-                        break;
-                    }
-                }
-                
-                loadLocationsForClient();
-                
-                // Select locations
-                for (int i = 0; i < billLocationCombo.getItemCount(); i++) {
-                    if (billLocationCombo.getItemAt(i).getClientLocationId().equals(selectedPMA.getBillingLocationId())) {
-                        billLocationCombo.setSelectedIndex(i);
-                        break;
-                    }
-                }
-                for (int i = 0; i < jobLocationCombo.getItemCount(); i++) {
-                    if (jobLocationCombo.getItemAt(i).getClientLocationId().equals(selectedPMA.getJobLocationId())) {
-                        jobLocationCombo.setSelectedIndex(i);
-                        break;
-                    }
-                }
-                
-                agreementNumberField.setText(selectedPMA.getAgreementNumber());
-                propertyNameField.setText(selectedPMA.getPropertyName());
-                facilityNameField.setText(selectedPMA.getFacilityName());
-                addressLineField.setText(selectedPMA.getAddressLine());
-                cityField.setText(selectedPMA.getCity());
-                stateField.setText(selectedPMA.getState());
-                zipCodeField.setText(selectedPMA.getZipCode());
-                contactNameField.setText(selectedPMA.getContactName());
-                contactEmailField.setText(selectedPMA.getContactEmail());
-                phone1Field.setText(selectedPMA.getPhoneNumber1());
-                phone2Field.setText(selectedPMA.getPhoneNumber2());
-                // coverageTextArea.setText(selectedPMA.getCoverageText());
-                startDateField.setText(selectedPMA.getStartDate().format(dateFormatter));
-                endDateField.setText(selectedPMA.getEndDate().format(dateFormatter));
-                visitFrequencyCombo.setSelectedItem(selectedPMA.getVisitFrequency());
-                statusCombo.setSelectedItem(selectedPMA.getStatus());
-                chargePerMileField.setText(selectedPMA.getChargePerMile().toString());
-                chargePerHourField.setText(selectedPMA.getChargePerHour().toString());
-                visitPriceField.setText(selectedPMA.getVisitPrice().toString());
-                taxRateField.setText(selectedPMA.getTaxRatePercent().toString());
-                insuranceCheckbox.setSelected(selectedPMA.getRequiresAdditionalInsurance() != null ? selectedPMA.getRequiresAdditionalInsurance() : false);
-                cancelationDaysField.setText(String.valueOf(selectedPMA.getCancelationNoticeDays()));
-                paymentDaysField.setText(String.valueOf(selectedPMA.getPaymentDueAfterWorkDays()));
-                lateFeeField.setText(selectedPMA.getLateFeePercentage().toString());
-                
-                updateButton.setEnabled(true);
-                deleteButton.setEnabled(true);
-            }
+            selectedPMA = pmaDAO.getAgreementById(id);
+            if (selectedPMA == null) return;
+
+            selectClientById(selectedPMA.getClientId());
+            loadLocationsForClient();
+            selectLocation(billLocationCombo, selectedPMA.getClientBillingLocationId());
+            selectLocation(jobLocationCombo, selectedPMA.getClientJobLocationId());
+
+            agreementNumberField.setText(selectedPMA.getAgreementNumber());
+            startDateField.setText(formatDate(selectedPMA.getStartDate()));
+            endDateField.setText(formatDate(selectedPMA.getEndDate()));
+            visitFrequencyCombo.setSelectedItem(selectedPMA.getVisitFrequency());
+            statusCombo.setSelectedItem(selectedPMA.getStatus());
+            visitPriceField.setText(valueOrDefault(selectedPMA.getVisitPrice(), "0.00"));
+            taxRateField.setText(valueOrDefault(selectedPMA.getTaxRatePercent(), "6.00"));
+            signatureCheckbox.setSelected(Boolean.TRUE.equals(selectedPMA.getClientSignatureBoolean()));
+
+            // Derived values from DB (generated columns)
+            taxAmountField.setText(valueOrDefault(selectedPMA.getTaxAmount(), ""));
+            pricePerYearField.setText(valueOrDefault(selectedPMA.getPricePerYear(), ""));
+            updateDerivedFields();
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading agreement: " + ex.getMessage());
         }
@@ -547,7 +384,8 @@ public class PreventiveMaintenancePanel extends JPanel {
     }
 
     private void updateAgreement() {
-        if (selectedPMA == null || !validateForm()) return;
+        if (selectedPMA == null) return;
+        if (!validateForm()) return;
 
         populateFromForm(selectedPMA);
 
@@ -566,112 +404,151 @@ public class PreventiveMaintenancePanel extends JPanel {
         if (selectedPMA == null) return;
 
         int confirm = JOptionPane.showConfirmDialog(this, "Delete this agreement?", "Confirm", JOptionPane.YES_NO_OPTION);
-        if (confirm == JOptionPane.YES_OPTION) {
-            try {
-                if (pmaDAO.deleteAgreement(selectedPMA.getPmaId())) {
-                    JOptionPane.showMessageDialog(this, "Agreement deleted successfully!");
-                    clearForm();
-                    loadAgreements();
-                }
-            } catch (SQLException ex) {
-                JOptionPane.showMessageDialog(this, "Error deleting agreement: " + ex.getMessage());
+        if (confirm != JOptionPane.YES_OPTION) return;
+
+        try {
+            if (pmaDAO.deleteAgreement(selectedPMA.getPreventiveMaintenanceAgreementId())) {
+                JOptionPane.showMessageDialog(this, "Agreement deleted successfully!");
+                clearForm();
+                loadAgreements();
             }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error deleting agreement: " + ex.getMessage());
         }
     }
 
     private void populateFromForm(PreventiveMaintenanceAgreement pma) {
         Client client = (Client) clientCombo.getSelectedItem();
-        ClientLocation billLoc = (ClientLocation) billLocationCombo.getSelectedItem();
-        ClientLocation jobLoc = (ClientLocation) jobLocationCombo.getSelectedItem();
-        
+        ClientLocation bill = (ClientLocation) billLocationCombo.getSelectedItem();
+        ClientLocation job = (ClientLocation) jobLocationCombo.getSelectedItem();
+
         pma.setClientId(client.getClientId());
-        pma.setBillingLocationId(billLoc.getClientLocationId());
-        pma.setJobLocationId(jobLoc.getClientLocationId());
+        pma.setClientBillingLocationId(bill.getClientLocationId());
+        pma.setClientJobLocationId(job.getClientLocationId());
         pma.setAgreementNumber(agreementNumberField.getText().trim());
-        pma.setPropertyName(propertyNameField.getText().trim());
-        pma.setFacilityName(facilityNameField.getText().trim());
-        pma.setAddressLine(addressLineField.getText().trim());
-        pma.setCity(cityField.getText().trim());
-        pma.setState(stateField.getText().trim());
-        pma.setZipCode(zipCodeField.getText().trim());
-        pma.setContactName(contactNameField.getText().trim());
-        pma.setContactEmail(contactEmailField.getText().trim());
-        pma.setPhoneNumber1(phone1Field.getText().trim());
-        pma.setPhoneNumber2(phone2Field.getText().trim());
-        // pma.setCoverageText(coverageTextArea.getText().trim());
         pma.setStartDate(LocalDate.parse(startDateField.getText().trim(), dateFormatter));
         pma.setEndDate(LocalDate.parse(endDateField.getText().trim(), dateFormatter));
         pma.setVisitFrequency((String) visitFrequencyCombo.getSelectedItem());
         pma.setStatus((String) statusCombo.getSelectedItem());
-        pma.setChargePerMile(new BigDecimal(chargePerMileField.getText().trim()));
-        pma.setChargePerHour(new BigDecimal(chargePerHourField.getText().trim()));
         pma.setVisitPrice(new BigDecimal(visitPriceField.getText().trim()));
         pma.setTaxRatePercent(new BigDecimal(taxRateField.getText().trim()));
-        pma.setRequiresAdditionalInsurance(insuranceCheckbox.isSelected());
-        pma.setCancelationNoticeDays(Integer.parseInt(cancelationDaysField.getText().trim()));
-        pma.setPaymentDueAfterWorkDays(Integer.parseInt(paymentDaysField.getText().trim()));
-        pma.setLateFeePercentage(new BigDecimal(lateFeeField.getText().trim()));
+        pma.setClientSignatureBoolean(signatureCheckbox.isSelected());
+    }
+
+    private boolean validateForm() {
+        if (clientCombo.getSelectedItem() == null ||
+            billLocationCombo.getSelectedItem() == null ||
+            jobLocationCombo.getSelectedItem() == null) {
+            JOptionPane.showMessageDialog(this, "Please select client, billing, and job locations.");
+            return false;
+        }
+
+        if (agreementNumberField.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Agreement number is required.");
+            return false;
+        }
+
+        try {
+            LocalDate start = LocalDate.parse(startDateField.getText().trim(), dateFormatter);
+            LocalDate end = LocalDate.parse(endDateField.getText().trim(), dateFormatter);
+            if (end.isBefore(start)) {
+                JOptionPane.showMessageDialog(this, "End date cannot be before start date.");
+                return false;
+            }
+            new BigDecimal(visitPriceField.getText().trim());
+            new BigDecimal(taxRateField.getText().trim());
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Invalid date or number format. Use MM/dd/yyyy for dates.");
+            return false;
+        }
+
+        return true;
     }
 
     private void clearForm() {
         clientCombo.setSelectedIndex(-1);
+        billLocationCombo.removeAllItems();
+        jobLocationCombo.removeAllItems();
         agreementNumberField.setText("");
-        propertyNameField.setText("");
-        facilityNameField.setText("");
-        addressLineField.setText("");
-        cityField.setText("");
-        stateField.setText("PA");
-        zipCodeField.setText("");
-        contactNameField.setText("");
-        contactEmailField.setText("");
-        phone1Field.setText("");
-        phone2Field.setText("");
-        // coverageTextArea.setText("");
         startDateField.setText(LocalDate.now().format(dateFormatter));
         endDateField.setText(LocalDate.now().plusYears(1).format(dateFormatter));
-        visitFrequencyCombo.setSelectedIndex(0);
-        statusCombo.setSelectedIndex(0);
-        chargePerMileField.setText("0.75");
-        chargePerHourField.setText("80.00");
+        visitFrequencyCombo.setSelectedItem("Monthly");
+        statusCombo.setSelectedItem("Draft");
         visitPriceField.setText("0.00");
         taxRateField.setText("6.00");
-        insuranceCheckbox.setSelected(false);
-        cancelationDaysField.setText("30");
-        paymentDaysField.setText("30");
-        lateFeeField.setText("10.00");
+        taxAmountField.setText("");
+        pricePerYearField.setText("");
+        signatureCheckbox.setSelected(false);
         selectedPMA = null;
-        updateButton.setEnabled(false);
-        deleteButton.setEnabled(false);
         pmaTable.clearSelection();
+        updateDerivedFields();
     }
 
-    private boolean validateForm() {
-        if (clientCombo.getSelectedItem() == null || billLocationCombo.getSelectedItem() == null ||
-            jobLocationCombo.getSelectedItem() == null) {
-            JOptionPane.showMessageDialog(this, "Please select client and locations.");
-            return false;
-        }
-        if (agreementNumberField.getText().trim().isEmpty() || addressLineField.getText().trim().isEmpty() ||
-            cityField.getText().trim().isEmpty() || contactNameField.getText().trim().isEmpty()
-            /* || coverageTextArea.getText().trim().isEmpty() */) {
-            JOptionPane.showMessageDialog(this, "Please fill all required fields.");
-            return false;
-        }
+    private void updateDerivedFields() {
         try {
-            LocalDate.parse(startDateField.getText().trim(), dateFormatter);
-            LocalDate.parse(endDateField.getText().trim(), dateFormatter);
-            new BigDecimal(chargePerMileField.getText().trim());
-            new BigDecimal(chargePerHourField.getText().trim());
-            new BigDecimal(visitPriceField.getText().trim());
-            new BigDecimal(taxRateField.getText().trim());
-            Integer.parseInt(cancelationDaysField.getText().trim());
-            Integer.parseInt(paymentDaysField.getText().trim());
-            new BigDecimal(lateFeeField.getText().trim());
+            BigDecimal price = new BigDecimal(visitPriceField.getText().trim());
+            BigDecimal taxRate = new BigDecimal(taxRateField.getText().trim());
+            BigDecimal taxAmount = price.multiply(taxRate)
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            taxAmountField.setText(taxAmount.toString());
+
+            int visitsPerYear = switch ((String) visitFrequencyCombo.getSelectedItem()) {
+                case "Monthly" -> 12;
+                case "Quarterly" -> 4;
+                case "Semi-Annual" -> 2;
+                default -> 1;
+            };
+
+            BigDecimal pricePerYear = price
+                    .multiply(BigDecimal.valueOf(visitsPerYear))
+                    .multiply(BigDecimal.ONE.add(taxRate.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP)))
+                    .setScale(2, RoundingMode.HALF_UP);
+            pricePerYearField.setText(pricePerYear.toString());
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Invalid date or number format.");
-            return false;
+            taxAmountField.setText("");
+            pricePerYearField.setText("");
         }
-        return true;
+    }
+
+    private void selectClientById(Integer clientId) {
+        if (clientId == null) return;
+        for (int i = 0; i < clientCombo.getItemCount(); i++) {
+            Client c = clientCombo.getItemAt(i);
+            if (c != null && clientId.equals(c.getClientId())) {
+                clientCombo.setSelectedIndex(i);
+                break;
+            }
+        }
+    }
+
+    private void selectLocation(JComboBox<ClientLocation> combo, Integer id) {
+        if (id == null) return;
+        for (int i = 0; i < combo.getItemCount(); i++) {
+            ClientLocation loc = combo.getItemAt(i);
+            if (loc != null && id.equals(loc.getClientLocationId())) {
+                combo.setSelectedIndex(i);
+                break;
+            }
+        }
+    }
+
+    private String getClientName(Integer clientId) {
+        if (clientId == null) return "Unknown";
+        try {
+            Client client = clientDAO.getClientById(clientId);
+            if (client == null) return "Unknown";
+            return client.toString();
+        } catch (SQLException e) {
+            return "Unknown";
+        }
+    }
+
+    private String formatDate(LocalDate date) {
+        return date == null ? "" : date.format(dateFormatter);
+    }
+
+    private String valueOrDefault(BigDecimal value, String defaultValue) {
+        return value == null ? defaultValue : value.toString();
     }
 
     public void refreshData() {

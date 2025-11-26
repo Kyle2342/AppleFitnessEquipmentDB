@@ -341,7 +341,6 @@ public class EmployeeTimeLogsPanel extends JPanel {
             List<Employee> employees = employeeDAO.getAllEmployees();
             employeeCombo.removeAllItems();
             filterEmployeeCombo.removeAllItems();
-            filterEmployeeCombo.addItem(null);
 
             for (Employee emp : employees) {
                 employeeCombo.addItem(emp);
