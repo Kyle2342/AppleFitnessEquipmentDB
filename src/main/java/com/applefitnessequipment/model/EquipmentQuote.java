@@ -2,66 +2,24 @@ package com.applefitnessequipment.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
+/**
+ * Model class matching EquipmentQuotes table schema exactly.
+ * @SCHEMA_SINGLE_SOURCE_OF_TRUTH: applefitnessequipmentdb_schema.sql
+ */
 public class EquipmentQuote {
+    // PK
     private Integer equipmentQuoteId;
+
+    // FKs
     private Integer clientId;
-    private Integer billingLocationId;
-    private Integer jobAtLocationId;
+    private Integer clientBillingLocationId;
+    private Integer clientJobLocationId;
 
-    // FROM company information
-    private String fromCompanyName;
-    private String fromStreetAddress;
-    private String fromCity;
-    private String fromState;
-    private String fromZIPCode;
-    private String fromPhone;
-    private String fromFax;
-
-    // Client snapshot information
-    private String clientTypeSnapshot;
-    private String clientCompanyNameSnapshot;
-    private String clientFirstNameSnapshot;
-    private String clientLastNameSnapshot;
-
-    // BILL TO snapshot
-    private String billToCompanyName;
-    private String billToContactName;
-    private String billToStreetAddress;
-    private String billToBuildingName;
-    private String billToSuite;
-    private String billToRoomNumber;
-    private String billToDepartment;
-    private String billToCounty;
-    private String billToCity;
-    private String billToState;
-    private String billToZIPCode;
-    private String billToCountry;
-    private String billToPhone;
-    private String billToFax;
-    private String billToPONumber;
-
-    // JOB AT / SHIP TO snapshot
-    private String jobAtCompanyName;
-    private String jobAtContactName;
-    private String jobAtStreetAddress;
-    private String jobAtBuildingName;
-    private String jobAtSuite;
-    private String jobAtRoomNumber;
-    private String jobAtDepartment;
-    private String jobAtCounty;
-    private String jobAtCity;
-    private String jobAtState;
-    private String jobAtZIPCode;
-    private String jobAtCountry;
-    private String jobAtEmail;
-    private String jobAtPONumber;
-
-    // Core quote info
-    private String quoteNumber;
+    // Core quote data
     private LocalDate quoteDate;
-    private String status;
+    private String quoteNumber;
+    private String status; // ENUM: 'Draft', 'Sent', 'Expired', 'Active', 'Declined', 'Canceled', 'Completed'
 
     // Sales / logistics fields
     private String contactName;
@@ -75,22 +33,25 @@ public class EquipmentQuote {
     private BigDecimal subtotalAmount;
     private BigDecimal totalDiscountAmount;
     private BigDecimal freightAmount;
-    private BigDecimal extendedTotalAmount;
+    private BigDecimal extendedTotalAmount; // GENERATED column
     private BigDecimal salesTaxRatePercent;
-    private BigDecimal salesTaxAmount;
-    private BigDecimal quoteTotalAmount;
+    private BigDecimal salesTaxAmount; // GENERATED column
+    private BigDecimal quoteTotalAmount; // GENERATED column
 
-    // Notes and terms
-    private String notes;
-    private String termsAndConditions;
-    private String extraInfo;
     private Boolean clientSignatureBoolean;
 
-    // Record keeping
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
-    public EquipmentQuote() {}
+    public EquipmentQuote() {
+        this.salespersonName = "Greg Bartram";
+        this.shipVia = "AFE Truck/Trailer";
+        this.freightTerms = "Ppd & Add";
+        this.paymentTerms = "See Notes";
+        this.fobLocation = "Truck Curbside";
+        this.totalDiscountAmount = BigDecimal.ZERO;
+        this.freightAmount = BigDecimal.ZERO;
+        this.salesTaxRatePercent = new BigDecimal("6.00");
+        this.status = "Draft";
+        this.clientSignatureBoolean = false;
+    }
 
     // Getters and Setters
     public Integer getEquipmentQuoteId() {
@@ -109,348 +70,20 @@ public class EquipmentQuote {
         this.clientId = clientId;
     }
 
-    public Integer getBillingLocationId() {
-        return billingLocationId;
+    public Integer getClientBillingLocationId() {
+        return clientBillingLocationId;
     }
 
-    public void setBillingLocationId(Integer billingLocationId) {
-        this.billingLocationId = billingLocationId;
+    public void setClientBillingLocationId(Integer clientBillingLocationId) {
+        this.clientBillingLocationId = clientBillingLocationId;
     }
 
-    public Integer getJobAtLocationId() {
-        return jobAtLocationId;
+    public Integer getClientJobLocationId() {
+        return clientJobLocationId;
     }
 
-    public void setJobAtLocationId(Integer jobAtLocationId) {
-        this.jobAtLocationId = jobAtLocationId;
-    }
-
-    public String getFromCompanyName() {
-        return fromCompanyName;
-    }
-
-    public void setFromCompanyName(String fromCompanyName) {
-        this.fromCompanyName = fromCompanyName;
-    }
-
-    public String getFromStreetAddress() {
-        return fromStreetAddress;
-    }
-
-    public void setFromStreetAddress(String fromStreetAddress) {
-        this.fromStreetAddress = fromStreetAddress;
-    }
-
-    public String getFromCity() {
-        return fromCity;
-    }
-
-    public void setFromCity(String fromCity) {
-        this.fromCity = fromCity;
-    }
-
-    public String getFromState() {
-        return fromState;
-    }
-
-    public void setFromState(String fromState) {
-        this.fromState = fromState;
-    }
-
-    public String getFromZIPCode() {
-        return fromZIPCode;
-    }
-
-    public void setFromZIPCode(String fromZIPCode) {
-        this.fromZIPCode = fromZIPCode;
-    }
-
-    public String getFromPhone() {
-        return fromPhone;
-    }
-
-    public void setFromPhone(String fromPhone) {
-        this.fromPhone = fromPhone;
-    }
-
-    public String getFromFax() {
-        return fromFax;
-    }
-
-    public void setFromFax(String fromFax) {
-        this.fromFax = fromFax;
-    }
-
-    public String getClientTypeSnapshot() {
-        return clientTypeSnapshot;
-    }
-
-    public void setClientTypeSnapshot(String clientTypeSnapshot) {
-        this.clientTypeSnapshot = clientTypeSnapshot;
-    }
-
-    public String getClientCompanyNameSnapshot() {
-        return clientCompanyNameSnapshot;
-    }
-
-    public void setClientCompanyNameSnapshot(String clientCompanyNameSnapshot) {
-        this.clientCompanyNameSnapshot = clientCompanyNameSnapshot;
-    }
-
-    public String getClientFirstNameSnapshot() {
-        return clientFirstNameSnapshot;
-    }
-
-    public void setClientFirstNameSnapshot(String clientFirstNameSnapshot) {
-        this.clientFirstNameSnapshot = clientFirstNameSnapshot;
-    }
-
-    public String getClientLastNameSnapshot() {
-        return clientLastNameSnapshot;
-    }
-
-    public void setClientLastNameSnapshot(String clientLastNameSnapshot) {
-        this.clientLastNameSnapshot = clientLastNameSnapshot;
-    }
-
-    public String getBillToCompanyName() {
-        return billToCompanyName;
-    }
-
-    public void setBillToCompanyName(String billToCompanyName) {
-        this.billToCompanyName = billToCompanyName;
-    }
-
-    public String getBillToContactName() {
-        return billToContactName;
-    }
-
-    public void setBillToContactName(String billToContactName) {
-        this.billToContactName = billToContactName;
-    }
-
-    public String getBillToStreetAddress() {
-        return billToStreetAddress;
-    }
-
-    public void setBillToStreetAddress(String billToStreetAddress) {
-        this.billToStreetAddress = billToStreetAddress;
-    }
-
-    public String getBillToBuildingName() {
-        return billToBuildingName;
-    }
-
-    public void setBillToBuildingName(String billToBuildingName) {
-        this.billToBuildingName = billToBuildingName;
-    }
-
-    public String getBillToSuite() {
-        return billToSuite;
-    }
-
-    public void setBillToSuite(String billToSuite) {
-        this.billToSuite = billToSuite;
-    }
-
-    public String getBillToRoomNumber() {
-        return billToRoomNumber;
-    }
-
-    public void setBillToRoomNumber(String billToRoomNumber) {
-        this.billToRoomNumber = billToRoomNumber;
-    }
-
-    public String getBillToDepartment() {
-        return billToDepartment;
-    }
-
-    public void setBillToDepartment(String billToDepartment) {
-        this.billToDepartment = billToDepartment;
-    }
-
-    public String getBillToCounty() {
-        return billToCounty;
-    }
-
-    public void setBillToCounty(String billToCounty) {
-        this.billToCounty = billToCounty;
-    }
-
-    public String getBillToCity() {
-        return billToCity;
-    }
-
-    public void setBillToCity(String billToCity) {
-        this.billToCity = billToCity;
-    }
-
-    public String getBillToState() {
-        return billToState;
-    }
-
-    public void setBillToState(String billToState) {
-        this.billToState = billToState;
-    }
-
-    public String getBillToZIPCode() {
-        return billToZIPCode;
-    }
-
-    public void setBillToZIPCode(String billToZIPCode) {
-        this.billToZIPCode = billToZIPCode;
-    }
-
-    public String getBillToCountry() {
-        return billToCountry;
-    }
-
-    public void setBillToCountry(String billToCountry) {
-        this.billToCountry = billToCountry;
-    }
-
-    public String getBillToPhone() {
-        return billToPhone;
-    }
-
-    public void setBillToPhone(String billToPhone) {
-        this.billToPhone = billToPhone;
-    }
-
-    public String getBillToFax() {
-        return billToFax;
-    }
-
-    public void setBillToFax(String billToFax) {
-        this.billToFax = billToFax;
-    }
-
-    public String getBillToPONumber() {
-        return billToPONumber;
-    }
-
-    public void setBillToPONumber(String billToPONumber) {
-        this.billToPONumber = billToPONumber;
-    }
-
-    public String getJobAtCompanyName() {
-        return jobAtCompanyName;
-    }
-
-    public void setJobAtCompanyName(String jobAtCompanyName) {
-        this.jobAtCompanyName = jobAtCompanyName;
-    }
-
-    public String getJobAtContactName() {
-        return jobAtContactName;
-    }
-
-    public void setJobAtContactName(String jobAtContactName) {
-        this.jobAtContactName = jobAtContactName;
-    }
-
-    public String getJobAtStreetAddress() {
-        return jobAtStreetAddress;
-    }
-
-    public void setJobAtStreetAddress(String jobAtStreetAddress) {
-        this.jobAtStreetAddress = jobAtStreetAddress;
-    }
-
-    public String getJobAtBuildingName() {
-        return jobAtBuildingName;
-    }
-
-    public void setJobAtBuildingName(String jobAtBuildingName) {
-        this.jobAtBuildingName = jobAtBuildingName;
-    }
-
-    public String getJobAtSuite() {
-        return jobAtSuite;
-    }
-
-    public void setJobAtSuite(String jobAtSuite) {
-        this.jobAtSuite = jobAtSuite;
-    }
-
-    public String getJobAtRoomNumber() {
-        return jobAtRoomNumber;
-    }
-
-    public void setJobAtRoomNumber(String jobAtRoomNumber) {
-        this.jobAtRoomNumber = jobAtRoomNumber;
-    }
-
-    public String getJobAtDepartment() {
-        return jobAtDepartment;
-    }
-
-    public void setJobAtDepartment(String jobAtDepartment) {
-        this.jobAtDepartment = jobAtDepartment;
-    }
-
-    public String getJobAtCounty() {
-        return jobAtCounty;
-    }
-
-    public void setJobAtCounty(String jobAtCounty) {
-        this.jobAtCounty = jobAtCounty;
-    }
-
-    public String getJobAtCity() {
-        return jobAtCity;
-    }
-
-    public void setJobAtCity(String jobAtCity) {
-        this.jobAtCity = jobAtCity;
-    }
-
-    public String getJobAtState() {
-        return jobAtState;
-    }
-
-    public void setJobAtState(String jobAtState) {
-        this.jobAtState = jobAtState;
-    }
-
-    public String getJobAtZIPCode() {
-        return jobAtZIPCode;
-    }
-
-    public void setJobAtZIPCode(String jobAtZIPCode) {
-        this.jobAtZIPCode = jobAtZIPCode;
-    }
-
-    public String getJobAtCountry() {
-        return jobAtCountry;
-    }
-
-    public void setJobAtCountry(String jobAtCountry) {
-        this.jobAtCountry = jobAtCountry;
-    }
-
-    public String getJobAtEmail() {
-        return jobAtEmail;
-    }
-
-    public void setJobAtEmail(String jobAtEmail) {
-        this.jobAtEmail = jobAtEmail;
-    }
-
-    public String getJobAtPONumber() {
-        return jobAtPONumber;
-    }
-
-    public void setJobAtPONumber(String jobAtPONumber) {
-        this.jobAtPONumber = jobAtPONumber;
-    }
-
-    public String getQuoteNumber() {
-        return quoteNumber;
-    }
-
-    public void setQuoteNumber(String quoteNumber) {
-        this.quoteNumber = quoteNumber;
+    public void setClientJobLocationId(Integer clientJobLocationId) {
+        this.clientJobLocationId = clientJobLocationId;
     }
 
     public LocalDate getQuoteDate() {
@@ -459,6 +92,14 @@ public class EquipmentQuote {
 
     public void setQuoteDate(LocalDate quoteDate) {
         this.quoteDate = quoteDate;
+    }
+
+    public String getQuoteNumber() {
+        return quoteNumber;
+    }
+
+    public void setQuoteNumber(String quoteNumber) {
+        this.quoteNumber = quoteNumber;
     }
 
     public String getStatus() {
@@ -573,30 +214,6 @@ public class EquipmentQuote {
         this.quoteTotalAmount = quoteTotalAmount;
     }
 
-    public String getNotes() {
-        return notes;
-    }
-
-    public void setNotes(String notes) {
-        this.notes = notes;
-    }
-
-    public String getTermsAndConditions() {
-        return termsAndConditions;
-    }
-
-    public void setTermsAndConditions(String termsAndConditions) {
-        this.termsAndConditions = termsAndConditions;
-    }
-
-    public String getExtraInfo() {
-        return extraInfo;
-    }
-
-    public void setExtraInfo(String extraInfo) {
-        this.extraInfo = extraInfo;
-    }
-
     public Boolean getClientSignatureBoolean() {
         return clientSignatureBoolean;
     }
@@ -605,24 +222,24 @@ public class EquipmentQuote {
         this.clientSignatureBoolean = clientSignatureBoolean;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+    // Backward compatibility getters (deprecated - use new names)
+    @Deprecated
+    public Integer getBillingLocationId() {
+        return clientBillingLocationId;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
+    @Deprecated
+    public void setBillingLocationId(Integer billingLocationId) {
+        this.clientBillingLocationId = billingLocationId;
     }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+    @Deprecated
+    public Integer getJobAtLocationId() {
+        return clientJobLocationId;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    @Override
-    public String toString() {
-        return quoteNumber != null ? quoteNumber : "New Equipment Quote";
+    @Deprecated
+    public void setJobAtLocationId(Integer jobAtLocationId) {
+        this.clientJobLocationId = jobAtLocationId;
     }
 }

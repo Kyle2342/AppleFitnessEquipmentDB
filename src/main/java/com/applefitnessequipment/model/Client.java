@@ -1,7 +1,5 @@
 package com.applefitnessequipment.model;
 
-import java.time.LocalDateTime;
-
 public class Client {
     private Integer clientId;
     private String clientType; // Individual, Business
@@ -11,15 +9,12 @@ public class Client {
     private String phoneNumber;
     private String email;
     private String notes;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 
     // Constructors
     public Client() {}
 
-    public Client(Integer clientId, String clientType, String firstName, String lastName, 
-                  String companyName, String phoneNumber, String email, String notes,
-                  LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public Client(Integer clientId, String clientType, String firstName, String lastName,
+                  String companyName, String phoneNumber, String email, String notes) {
         this.clientId = clientId;
         this.clientType = clientType;
         this.firstName = firstName;
@@ -28,8 +23,6 @@ public class Client {
         this.phoneNumber = phoneNumber;
         this.email = email;
         this.notes = notes;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
     }
 
     // Getters and Setters
@@ -56,12 +49,6 @@ public class Client {
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
     @Override
     public String toString() {

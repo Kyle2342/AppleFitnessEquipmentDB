@@ -1,12 +1,16 @@
 package com.applefitnessequipment.ui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -14,9 +18,12 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 
 import javax.swing.BorderFactory;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -24,6 +31,7 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.MaskFormatter;
 
 import com.applefitnessequipment.dao.EmployeeDAO;
 import com.applefitnessequipment.dao.EmployeeTimeLogDAO;
@@ -31,18 +39,18 @@ import com.applefitnessequipment.model.Employee;
 import com.applefitnessequipment.model.EmployeeTimeLog;
 
 public class EmployeeTimeLogsPanel extends JPanel {
+
     private EmployeeTimeLogDAO timeLogDAO;
     private EmployeeDAO employeeDAO;
     private JTable timeLogsTable;
     private DefaultTableModel tableModel;
     private JComboBox<Employee> employeeCombo, filterEmployeeCombo;
     private JComboBox<String> dayOfWeekCombo;
-    private JTextField logDateField, timeInFirstField, timeOutFirstField;
-    private JTextField timeInSecondField, timeOutSecondField;
-    private JTextField totalHoursField, milesField; // ptoHoursField;
+    private JFormattedTextField logDateField, timeInField, timeOutField;
+    private JTextField totalHoursField, milesField;
     private JButton addButton, updateButton, deleteButton, clearButton;
     private EmployeeTimeLog selectedTimeLog;
-    private DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
     private DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HH:mm");
 
     public EmployeeTimeLogsPanel() {
@@ -57,19 +65,43 @@ public class EmployeeTimeLogsPanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Top Panel - Filter with auto-filter
+        // ============================================================
+        // Top Panel - Filter
+        // ============================================================
         JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         filterPanel.add(new JLabel("Filter by Employee:"));
+
         filterEmployeeCombo = new JComboBox<>();
         filterEmployeeCombo.addItem(null);
+
+        // White background + renderer
+        filterEmployeeCombo.setBackground(Color.WHITE);
+        filterEmployeeCombo.setOpaque(true);
+        filterEmployeeCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(
+                    JList<?> list, Object value, int index,
+                    boolean isSelected, boolean cellHasFocus) {
+
+                Component comp = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (!isSelected) {
+                    comp.setBackground(Color.WHITE);
+                }
+                return comp;
+            }
+        });
+        filterEmployeeCombo.setFocusable(false);
+
         filterEmployeeCombo.addActionListener(e -> filterTimeLogsByEmployee());  // Auto-filter on change
         ModernUIHelper.styleComboBox(filterEmployeeCombo);
         filterPanel.add(filterEmployeeCombo);
 
         add(filterPanel, BorderLayout.NORTH);
 
+        // ============================================================
         // Center Panel - Table
-        String[] columns = {"ID", "Employee ID", "Day", "Date", "Time In", "Time Out", "Total Hrs", "Miles" /*, "PTO Hrs"*/};
+        // ============================================================
+        String[] columns = {"ID", "Employee", "Day", "Date", "Time In", "Time Out", "Total Hrs", "Miles"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -79,18 +111,17 @@ public class EmployeeTimeLogsPanel extends JPanel {
         timeLogsTable = new JTable(tableModel);
         timeLogsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        // Apply modern styling
         ModernUIHelper.styleTable(timeLogsTable);
-        ModernUIHelper.addTableToggleBehavior(timeLogsTable, () -> clearForm());
-        
-        // Hide the ID columns from the user view
+        ModernUIHelper.addTableToggleBehavior(timeLogsTable, this::clearForm);
+
+        // Hide ID + Employee technical column
         timeLogsTable.getColumnModel().getColumn(0).setMinWidth(0);
         timeLogsTable.getColumnModel().getColumn(0).setMaxWidth(0);
         timeLogsTable.getColumnModel().getColumn(0).setWidth(0);
         timeLogsTable.getColumnModel().getColumn(1).setMinWidth(0);
         timeLogsTable.getColumnModel().getColumn(1).setMaxWidth(0);
         timeLogsTable.getColumnModel().getColumn(1).setWidth(0);
-        
+
         timeLogsTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 int selectedRow = timeLogsTable.getSelectedRow();
@@ -102,10 +133,8 @@ public class EmployeeTimeLogsPanel extends JPanel {
 
         JScrollPane scrollPane = new JScrollPane(timeLogsTable);
 
-        // Allow deselection by clicking on empty space in the scroll pane viewport (not on the table itself)
         scrollPane.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mousePressed(java.awt.event.MouseEvent e) {
-                // Only deselect if clicking in the viewport area (the gray empty space around the table)
                 if (e.getComponent() == scrollPane && !timeLogsTable.getBounds().contains(e.getPoint())) {
                     timeLogsTable.clearSelection();
                     clearForm();
@@ -115,20 +144,50 @@ public class EmployeeTimeLogsPanel extends JPanel {
 
         add(scrollPane, BorderLayout.CENTER);
 
+        // ============================================================
         // Right Panel - Form
+        // ============================================================
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBorder(ModernUIHelper.createModernBorder("Time Log Details"));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
+        // Standard size like invoices
+        JTextField sizingField = new JTextField(20);
+        ModernUIHelper.styleTextField(sizingField);
+        Dimension standardInputSize = sizingField.getPreferredSize();
+
         int row = 0;
+
+        // Section header
+        addSectionLabel(formPanel, gbc, row++, "TIME LOG DETAILS");
 
         // Employee
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Employee:*"), gbc);
         gbc.gridx = 1;
         employeeCombo = new JComboBox<>();
+        employeeCombo.setPreferredSize(standardInputSize);
+
+        employeeCombo.setBackground(Color.WHITE);
+        employeeCombo.setOpaque(true);
+        employeeCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(
+                    JList<?> list, Object value, int index,
+                    boolean isSelected, boolean cellHasFocus) {
+
+                Component comp = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (!isSelected) {
+                    comp.setBackground(Color.WHITE);
+                }
+                return comp;
+            }
+        });
+        // Remove dashed focus rectangle
+        employeeCombo.setFocusable(false);
+
         ModernUIHelper.styleComboBox(employeeCombo);
         formPanel.add(employeeCombo, gbc);
         row++;
@@ -138,62 +197,66 @@ public class EmployeeTimeLogsPanel extends JPanel {
         formPanel.add(new JLabel("Day of Week:*"), gbc);
         gbc.gridx = 1;
         dayOfWeekCombo = new JComboBox<>(new String[]{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday"});
+        dayOfWeekCombo.setPreferredSize(standardInputSize);
+
+        dayOfWeekCombo.setBackground(Color.WHITE);
+        dayOfWeekCombo.setOpaque(true);
+        dayOfWeekCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(
+                    JList<?> list, Object value, int index,
+                    boolean isSelected, boolean cellHasFocus) {
+
+                Component comp = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (!isSelected) {
+                    comp.setBackground(Color.WHITE);
+                }
+                return comp;
+            }
+        });
+        dayOfWeekCombo.setFocusable(false);
+
         ModernUIHelper.styleComboBox(dayOfWeekCombo);
         formPanel.add(dayOfWeekCombo, gbc);
         row++;
 
         // Log Date
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Date:* (yyyy-MM-dd)"), gbc);
+        formPanel.add(new JLabel("Date:* (MM/dd/yyyy)"), gbc);
         gbc.gridx = 1;
-        logDateField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        logDateField = createMaskedField("##/##/####");
+        logDateField.setPreferredSize(standardInputSize);
         logDateField.setText(LocalDate.now().format(dateFormatter));
-        ModernUIHelper.styleTextField(logDateField);
         formPanel.add(logDateField, gbc);
         row++;
 
-        // Time In First
+        // Time In
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Time In:* (HH:mm)"), gbc);
         gbc.gridx = 1;
-        timeInFirstField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(timeInFirstField);
-        formPanel.add(timeInFirstField, gbc);
+        timeInField = createMaskedField("##:##");
+        timeInField.setPreferredSize(standardInputSize);
+        formPanel.add(timeInField, gbc);
         row++;
 
-        // Time Out First
+        // Time Out
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Time Out:* (HH:mm)"), gbc);
         gbc.gridx = 1;
-        timeOutFirstField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(timeOutFirstField);
-        formPanel.add(timeOutFirstField, gbc);
-        row++;
-
-        // Time In Second
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Time In 2: (HH:mm)"), gbc);
-        gbc.gridx = 1;
-        timeInSecondField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(timeInSecondField);
-        formPanel.add(timeInSecondField, gbc);
-        row++;
-
-        // Time Out Second
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Time Out 2: (HH:mm)"), gbc);
-        gbc.gridx = 1;
-        timeOutSecondField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(timeOutSecondField);
-        formPanel.add(timeOutSecondField, gbc);
+        timeOutField = createMaskedField("##:##");
+        timeOutField.setPreferredSize(standardInputSize);
+        formPanel.add(timeOutField, gbc);
         row++;
 
         // Total Hours
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Total Hours:"), gbc);
         gbc.gridx = 1;
-        totalHoursField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        totalHoursField = new JTextField();
+        totalHoursField.setPreferredSize(standardInputSize);
+        totalHoursField.setEditable(false);
         ModernUIHelper.styleTextField(totalHoursField);
+        totalHoursField.setBackground(Color.WHITE);
         formPanel.add(totalHoursField, gbc);
         row++;
 
@@ -201,25 +264,17 @@ public class EmployeeTimeLogsPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Miles:"), gbc);
         gbc.gridx = 1;
-        milesField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        milesField = new JTextField();
+        milesField.setPreferredSize(standardInputSize);
         ModernUIHelper.styleTextField(milesField);
         formPanel.add(milesField, gbc);
         row++;
-
-        // PTO Hours - commented out
-        // gbc.gridx = 0; gbc.gridy = row;
-        // formPanel.add(new JLabel("PTO Hours:"), gbc);
-        // gbc.gridx = 1;
-        // ptoHoursField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        // ModernUIHelper.styleTextField(ptoHoursField);
-        // formPanel.add(ptoHoursField, gbc);
-        // row++;
 
         // Buttons
         gbc.gridx = 0; gbc.gridy = row;
         gbc.gridwidth = 2;
         JPanel buttonPanel = new JPanel(new FlowLayout());
-        
+
         addButton = new JButton("Add");
         addButton.addActionListener(e -> addTimeLog());
         ModernUIHelper.styleButton(addButton, "success");
@@ -249,6 +304,38 @@ public class EmployeeTimeLogsPanel extends JPanel {
         add(formScrollPane, BorderLayout.EAST);
     }
 
+    // Section label helper
+    private void addSectionLabel(JPanel panel, GridBagConstraints gbc, int row, String text) {
+        gbc.gridx = 0;
+        gbc.gridy = row;
+        gbc.gridwidth = 2;
+
+        JLabel label = new JLabel(text);
+        label.setFont(label.getFont().deriveFont(java.awt.Font.BOLD, 13f));
+        label.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 1, 0, new java.awt.Color(200, 200, 200)),
+            BorderFactory.createEmptyBorder(10, 0, 5, 0)
+        ));
+        panel.add(label, gbc);
+
+        gbc.gridwidth = 1;
+    }
+
+    // Helper for masked fields
+    private JFormattedTextField createMaskedField(String mask) {
+        try {
+            MaskFormatter formatter = new MaskFormatter(mask);
+            formatter.setPlaceholderCharacter('_');
+            JFormattedTextField field = new JFormattedTextField(formatter);
+            ModernUIHelper.styleTextField(field);
+            return field;
+        } catch (ParseException e) {
+            JFormattedTextField field = new JFormattedTextField();
+            ModernUIHelper.styleTextField(field);
+            return field;
+        }
+    }
+
     private void loadEmployees() {
         try {
             List<Employee> employees = employeeDAO.getAllEmployees();
@@ -274,15 +361,14 @@ public class EmployeeTimeLogsPanel extends JPanel {
             tableModel.setRowCount(0);
             for (EmployeeTimeLog log : logs) {
                 tableModel.addRow(new Object[]{
-                    log.getTimeLogId(),
-                    log.getEmployeeId(),
+                    log.getEmployeeTimeLogId(),
+                    getEmployeeDisplayName(log.getEmployeeId()),
                     log.getDayOfWeek(),
-                    log.getLogDate(),
-                    log.getTimeInFirst(),
-                    log.getTimeOutFirst(),
+                    log.getLogDate() != null ? log.getLogDate().format(dateFormatter) : "",
+                    log.getTimeIn() != null ? log.getTimeIn().format(timeFormatter) : "",
+                    log.getTimeOut() != null ? log.getTimeOut().format(timeFormatter) : "",
                     log.getTotalHours(),
-                    log.getMiles(),
-                    log.getPtoHours()
+                    log.getMiles()
                 });
             }
         } catch (SQLException ex) {
@@ -303,15 +389,14 @@ public class EmployeeTimeLogsPanel extends JPanel {
             tableModel.setRowCount(0);
             for (EmployeeTimeLog log : logs) {
                 tableModel.addRow(new Object[]{
-                    log.getTimeLogId(),
-                    log.getEmployeeId(),
+                    log.getEmployeeTimeLogId(),
+                    getEmployeeDisplayName(log.getEmployeeId()),
                     log.getDayOfWeek(),
-                    log.getLogDate(),
-                    log.getTimeInFirst(),
-                    log.getTimeOutFirst(),
+                    log.getLogDate() != null ? log.getLogDate().format(dateFormatter) : "",
+                    log.getTimeIn() != null ? log.getTimeIn().format(timeFormatter) : "",
+                    log.getTimeOut() != null ? log.getTimeOut().format(timeFormatter) : "",
                     log.getTotalHours(),
-                    log.getMiles(),
-                    log.getPtoHours()
+                    log.getMiles()
                 });
             }
         } catch (SQLException ex) {
@@ -327,7 +412,6 @@ public class EmployeeTimeLogsPanel extends JPanel {
             try {
                 selectedTimeLog = timeLogDAO.getTimeLogById(timeLogId);
                 if (selectedTimeLog != null) {
-                    // Find and select the employee
                     for (int i = 0; i < employeeCombo.getItemCount(); i++) {
                         Employee emp = employeeCombo.getItemAt(i);
                         if (emp != null && emp.getEmployeeId().equals(selectedTimeLog.getEmployeeId())) {
@@ -335,22 +419,16 @@ public class EmployeeTimeLogsPanel extends JPanel {
                             break;
                         }
                     }
-                    
+
                     dayOfWeekCombo.setSelectedItem(selectedTimeLog.getDayOfWeek());
                     logDateField.setText(selectedTimeLog.getLogDate().format(dateFormatter));
-                    timeInFirstField.setText(selectedTimeLog.getTimeInFirst().format(timeFormatter));
-                    timeOutFirstField.setText(selectedTimeLog.getTimeOutFirst().format(timeFormatter));
-                    timeInSecondField.setText(selectedTimeLog.getTimeInSecond() != null ? 
-                        selectedTimeLog.getTimeInSecond().format(timeFormatter) : "");
-                    timeOutSecondField.setText(selectedTimeLog.getTimeOutSecond() != null ? 
-                        selectedTimeLog.getTimeOutSecond().format(timeFormatter) : "");
-                    totalHoursField.setText(selectedTimeLog.getTotalHours() != null ? 
+                    timeInField.setText(selectedTimeLog.getTimeIn().format(timeFormatter));
+                    timeOutField.setText(selectedTimeLog.getTimeOut().format(timeFormatter));
+                    totalHoursField.setText(selectedTimeLog.getTotalHours() != null ?
                         selectedTimeLog.getTotalHours().toString() : "");
                     milesField.setText(selectedTimeLog.getMiles() != null ?
                         selectedTimeLog.getMiles().toString() : "");
-                    // ptoHoursField.setText(selectedTimeLog.getPtoHours() != null ?
-                    //     selectedTimeLog.getPtoHours().toString() : "");
-                    
+
                     updateButton.setEnabled(true);
                     deleteButton.setEnabled(true);
                 }
@@ -376,6 +454,9 @@ public class EmployeeTimeLogsPanel extends JPanel {
                 JOptionPane.showMessageDialog(this, "Failed to add time log.",
                     "Error", JOptionPane.ERROR_MESSAGE);
             }
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(),
+                "Validation Error", JOptionPane.WARNING_MESSAGE);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error adding time log: " + ex.getMessage(),
                 "Database Error", JOptionPane.ERROR_MESSAGE);
@@ -397,6 +478,9 @@ public class EmployeeTimeLogsPanel extends JPanel {
                 JOptionPane.showMessageDialog(this, "Failed to update time log.",
                     "Error", JOptionPane.ERROR_MESSAGE);
             }
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(),
+                "Validation Error", JOptionPane.WARNING_MESSAGE);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error updating time log: " + ex.getMessage(),
                 "Database Error", JOptionPane.ERROR_MESSAGE);
@@ -412,7 +496,7 @@ public class EmployeeTimeLogsPanel extends JPanel {
 
         if (confirm == JOptionPane.YES_OPTION) {
             try {
-                if (timeLogDAO.deleteTimeLog(selectedTimeLog.getTimeLogId())) {
+                if (timeLogDAO.deleteTimeLog(selectedTimeLog.getEmployeeTimeLogId())) {
                     JOptionPane.showMessageDialog(this, "Time log deleted successfully!");
                     clearForm();
                     loadTimeLogs();
@@ -420,7 +504,7 @@ public class EmployeeTimeLogsPanel extends JPanel {
                     JOptionPane.showMessageDialog(this, "Failed to delete time log.",
                         "Error", JOptionPane.ERROR_MESSAGE);
                 }
-            } catch (SQLException ex) {
+            } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error deleting time log: " + ex.getMessage(),
                     "Database Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -432,39 +516,31 @@ public class EmployeeTimeLogsPanel extends JPanel {
         log.setEmployeeId(selectedEmployee.getEmployeeId());
         log.setDayOfWeek((String) dayOfWeekCombo.getSelectedItem());
         log.setLogDate(LocalDate.parse(logDateField.getText().trim(), dateFormatter));
-        log.setTimeInFirst(LocalTime.parse(timeInFirstField.getText().trim(), timeFormatter));
-        log.setTimeOutFirst(LocalTime.parse(timeOutFirstField.getText().trim(), timeFormatter));
-        
-        if (!timeInSecondField.getText().trim().isEmpty()) {
-            log.setTimeInSecond(LocalTime.parse(timeInSecondField.getText().trim(), timeFormatter));
-        }
-        if (!timeOutSecondField.getText().trim().isEmpty()) {
-            log.setTimeOutSecond(LocalTime.parse(timeOutSecondField.getText().trim(), timeFormatter));
-        }
-        if (!totalHoursField.getText().trim().isEmpty()) {
-            log.setTotalHours(new BigDecimal(totalHoursField.getText().trim()));
-        }
+        log.setTimeIn(LocalTime.parse(timeInField.getText().trim(), timeFormatter));
+        log.setTimeOut(LocalTime.parse(timeOutField.getText().trim(), timeFormatter));
+
         if (!milesField.getText().trim().isEmpty()) {
             log.setMiles(new BigDecimal(milesField.getText().trim()));
+        } else {
+            log.setMiles(null);
         }
-        // if (!ptoHoursField.getText().trim().isEmpty()) {
-        //     log.setPtoHours(new BigDecimal(ptoHoursField.getText().trim()));
-        // }
+
+        log.recalculateTotalHours();
+        if (log.getTotalHours() != null) {
+            totalHoursField.setText(log.getTotalHours().toString());
+        } else {
+            totalHoursField.setText("");
+        }
     }
 
     private void clearForm() {
-        if (employeeCombo.getItemCount() > 0) {
-            employeeCombo.setSelectedIndex(0);
-        }
+        employeeCombo.setSelectedIndex(-1);
         dayOfWeekCombo.setSelectedIndex(0);
         logDateField.setText(LocalDate.now().format(dateFormatter));
-        timeInFirstField.setText("");
-        timeOutFirstField.setText("");
-        timeInSecondField.setText("");
-        timeOutSecondField.setText("");
+        timeInField.setText("");
+        timeOutField.setText("");
         totalHoursField.setText("");
         milesField.setText("");
-        // ptoHoursField.setText("");
         selectedTimeLog = null;
         updateButton.setEnabled(false);
         deleteButton.setEnabled(false);
@@ -478,21 +554,58 @@ public class EmployeeTimeLogsPanel extends JPanel {
             return false;
         }
 
+        LocalDate parsedDate;
         try {
-            LocalDate.parse(logDateField.getText().trim(), dateFormatter);
+            parsedDate = LocalDate.parse(logDateField.getText().trim(), dateFormatter);
         } catch (DateTimeParseException e) {
-            JOptionPane.showMessageDialog(this, "Invalid date format. Use yyyy-MM-dd.",
+            JOptionPane.showMessageDialog(this, "Invalid date format. Use MM/dd/yyyy.",
                 "Validation Error", JOptionPane.WARNING_MESSAGE);
             return false;
         }
 
         try {
-            LocalTime.parse(timeInFirstField.getText().trim(), timeFormatter);
-            LocalTime.parse(timeOutFirstField.getText().trim(), timeFormatter);
+            LocalTime timeIn = LocalTime.parse(timeInField.getText().trim(), timeFormatter);
+            LocalTime timeOut = LocalTime.parse(timeOutField.getText().trim(), timeFormatter);
+
+            if (!timeOut.isAfter(timeIn)) {
+                JOptionPane.showMessageDialog(this, "Time Out must be after Time In.",
+                    "Validation Error", JOptionPane.WARNING_MESSAGE);
+                return false;
+            }
         } catch (DateTimeParseException e) {
             JOptionPane.showMessageDialog(this, "Invalid time format. Use HH:mm (e.g., 08:30).",
                 "Validation Error", JOptionPane.WARNING_MESSAGE);
             return false;
+        }
+
+        if (parsedDate.isAfter(LocalDate.now())) {
+            JOptionPane.showMessageDialog(this, "Log date cannot be in the future.",
+                "Validation Error", JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+
+        String expectedDay =
+            parsedDate.getDayOfWeek().toString().substring(0, 1).toUpperCase() +
+            parsedDate.getDayOfWeek().toString().substring(1).toLowerCase();
+        if (!expectedDay.equals(dayOfWeekCombo.getSelectedItem())) {
+            JOptionPane.showMessageDialog(this, "Day of Week must match the selected date.",
+                "Validation Error", JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+
+        if (!milesField.getText().trim().isEmpty()) {
+            try {
+                BigDecimal miles = new BigDecimal(milesField.getText().trim());
+                if (miles.compareTo(BigDecimal.ZERO) < 0) {
+                    JOptionPane.showMessageDialog(this, "Miles cannot be negative.",
+                        "Validation Error", JOptionPane.WARNING_MESSAGE);
+                    return false;
+                }
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this, "Invalid miles value.",
+                    "Validation Error", JOptionPane.WARNING_MESSAGE);
+                return false;
+            }
         }
 
         return true;
@@ -501,5 +614,16 @@ public class EmployeeTimeLogsPanel extends JPanel {
     public void refreshData() {
         loadEmployees();
         loadTimeLogs();
+    }
+
+    private String getEmployeeDisplayName(Integer employeeId) {
+        if (employeeId == null) return "";
+        for (int i = 0; i < employeeCombo.getItemCount(); i++) {
+            Employee emp = employeeCombo.getItemAt(i);
+            if (emp != null && employeeId.equals(emp.getEmployeeId())) {
+                return emp.toString();
+            }
+        }
+        return "Employee " + employeeId;
     }
 }

@@ -5,7 +5,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,28 +14,28 @@ import com.applefitnessequipment.model.Client;
 public class ClientDAO {
 
     // SQL Scripts for CRUD Operations
-    private static final String INSERT_CLIENT = 
-        "INSERT INTO clients (ClientType, FirstName, LastName, CompanyName, PhoneNumber, Email, Notes) " +
+    private static final String INSERT_CLIENT =
+        "INSERT INTO Clients (ClientType, FirstName, LastName, CompanyName, PhoneNumber, Email, Notes) " +
         "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-    private static final String SELECT_ALL_CLIENTS = 
-        "SELECT ClientID, ClientType, FirstName, LastName, CompanyName, PhoneNumber, Email, Notes, CreatedAt, UpdatedAt " +
-        "FROM clients ORDER BY ClientID DESC";
+    private static final String SELECT_ALL_CLIENTS =
+        "SELECT ClientID, ClientType, FirstName, LastName, CompanyName, PhoneNumber, Email, Notes " +
+        "FROM Clients ORDER BY ClientID DESC";
 
-    private static final String SELECT_CLIENT_BY_ID = 
-        "SELECT ClientID, ClientType, FirstName, LastName, CompanyName, PhoneNumber, Email, Notes, CreatedAt, UpdatedAt " +
-        "FROM clients WHERE ClientID = ?";
+    private static final String SELECT_CLIENT_BY_ID =
+        "SELECT ClientID, ClientType, FirstName, LastName, CompanyName, PhoneNumber, Email, Notes " +
+        "FROM Clients WHERE ClientID = ?";
 
-    private static final String UPDATE_CLIENT = 
-        "UPDATE clients SET ClientType = ?, FirstName = ?, LastName = ?, CompanyName = ?, " +
+    private static final String UPDATE_CLIENT =
+        "UPDATE Clients SET ClientType = ?, FirstName = ?, LastName = ?, CompanyName = ?, " +
         "PhoneNumber = ?, Email = ?, Notes = ? WHERE ClientID = ?";
 
-    private static final String DELETE_CLIENT = 
-        "DELETE FROM clients WHERE ClientID = ?";
+    private static final String DELETE_CLIENT =
+        "DELETE FROM Clients WHERE ClientID = ?";
 
-    private static final String SEARCH_CLIENTS = 
-        "SELECT ClientID, ClientType, FirstName, LastName, CompanyName, PhoneNumber, Email, Notes, CreatedAt, UpdatedAt " +
-        "FROM clients WHERE FirstName LIKE ? OR LastName LIKE ? OR CompanyName LIKE ? OR Email LIKE ? " +
+    private static final String SEARCH_CLIENTS =
+        "SELECT ClientID, ClientType, FirstName, LastName, CompanyName, PhoneNumber, Email, Notes " +
+        "FROM Clients WHERE FirstName LIKE ? OR LastName LIKE ? OR CompanyName LIKE ? OR Email LIKE ? " +
         "ORDER BY ClientID DESC";
 
     /**
@@ -174,17 +173,7 @@ public class ClientDAO {
         client.setPhoneNumber(rs.getString("PhoneNumber"));
         client.setEmail(rs.getString("Email"));
         client.setNotes(rs.getString("Notes"));
-        
-        Timestamp createdAt = rs.getTimestamp("CreatedAt");
-        if (createdAt != null) {
-            client.setCreatedAt(createdAt.toLocalDateTime());
-        }
-        
-        Timestamp updatedAt = rs.getTimestamp("UpdatedAt");
-        if (updatedAt != null) {
-            client.setUpdatedAt(updatedAt.toLocalDateTime());
-        }
-        
+
         return client;
     }
 }

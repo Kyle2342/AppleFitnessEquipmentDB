@@ -18,7 +18,6 @@ import com.applefitnessequipment.ui.DatabaseManagementApp;
  * Make sure MySQL is running and the database is set up before starting the application.
  */
 public class Main {
-    
     public static void main(String[] args) {
         // Set the look and feel to match the system
         try {

@@ -3,48 +3,149 @@ package com.applefitnessequipment.model;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * Model class matching PreventiveMaintenanceAgreements table schema exactly.
+ * @SCHEMA_SINGLE_SOURCE_OF_TRUTH: applefitnessequipmentdb_schema.sql
+ */
 public class PreventiveMaintenance {
-    private Integer pmaId;
+    // PK
+    private Integer preventiveMaintenanceAgreementId;
+
+    // FKs
     private Integer clientId;
-    private Integer propertyLocationId;
+    private Integer clientBillingLocationId;
+    private Integer clientJobLocationId;
+
+    // Agreement Details
     private String agreementNumber;
     private LocalDate startDate;
     private LocalDate endDate;
-    private String billingFrequency;
-    private String status;
-    private BigDecimal monthlyRate;
-    private BigDecimal annualRate;
+    private String visitFrequency; // ENUM: 'Monthly', 'Quarterly', 'Semi-Annual', 'Annual'
+    private String status; // ENUM: 'Draft', 'Sent', 'Expired', 'Active', 'Declined', 'Canceled', 'Completed'
 
-    public PreventiveMaintenance() {}
+    // Financial Terms
+    private BigDecimal visitPrice;
+    private BigDecimal taxRatePercent;
+    private BigDecimal taxAmount; // GENERATED column
+    private BigDecimal pricePerYear; // GENERATED column
+
+    private Boolean clientSignatureBoolean;
+
+    public PreventiveMaintenance() {
+        this.taxRatePercent = new BigDecimal("6.00");
+        this.clientSignatureBoolean = false;
+    }
 
     // Getters and Setters
-    public Integer getPmaId() { return pmaId; }
-    public void setPmaId(Integer pmaId) { this.pmaId = pmaId; }
+    public Integer getPreventiveMaintenanceAgreementId() {
+        return preventiveMaintenanceAgreementId;
+    }
 
-    public Integer getClientId() { return clientId; }
-    public void setClientId(Integer clientId) { this.clientId = clientId; }
+    public void setPreventiveMaintenanceAgreementId(Integer preventiveMaintenanceAgreementId) {
+        this.preventiveMaintenanceAgreementId = preventiveMaintenanceAgreementId;
+    }
 
-    public Integer getPropertyLocationId() { return propertyLocationId; }
-    public void setPropertyLocationId(Integer propertyLocationId) { this.propertyLocationId = propertyLocationId; }
+    public Integer getClientId() {
+        return clientId;
+    }
 
-    public String getAgreementNumber() { return agreementNumber; }
-    public void setAgreementNumber(String agreementNumber) { this.agreementNumber = agreementNumber; }
+    public void setClientId(Integer clientId) {
+        this.clientId = clientId;
+    }
 
-    public LocalDate getStartDate() { return startDate; }
-    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+    public Integer getClientBillingLocationId() {
+        return clientBillingLocationId;
+    }
 
-    public LocalDate getEndDate() { return endDate; }
-    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+    public void setClientBillingLocationId(Integer clientBillingLocationId) {
+        this.clientBillingLocationId = clientBillingLocationId;
+    }
 
-    public String getBillingFrequency() { return billingFrequency; }
-    public void setBillingFrequency(String billingFrequency) { this.billingFrequency = billingFrequency; }
+    public Integer getClientJobLocationId() {
+        return clientJobLocationId;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public void setClientJobLocationId(Integer clientJobLocationId) {
+        this.clientJobLocationId = clientJobLocationId;
+    }
 
-    public BigDecimal getMonthlyRate() { return monthlyRate; }
-    public void setMonthlyRate(BigDecimal monthlyRate) { this.monthlyRate = monthlyRate; }
+    public String getAgreementNumber() {
+        return agreementNumber;
+    }
 
-    public BigDecimal getAnnualRate() { return annualRate; }
-    public void setAnnualRate(BigDecimal annualRate) { this.annualRate = annualRate; }
+    public void setAgreementNumber(String agreementNumber) {
+        this.agreementNumber = agreementNumber;
+    }
+
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
+    }
+
+    public String getVisitFrequency() {
+        return visitFrequency;
+    }
+
+    public void setVisitFrequency(String visitFrequency) {
+        this.visitFrequency = visitFrequency;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public BigDecimal getVisitPrice() {
+        return visitPrice;
+    }
+
+    public void setVisitPrice(BigDecimal visitPrice) {
+        this.visitPrice = visitPrice;
+    }
+
+    public BigDecimal getTaxRatePercent() {
+        return taxRatePercent;
+    }
+
+    public void setTaxRatePercent(BigDecimal taxRatePercent) {
+        this.taxRatePercent = taxRatePercent;
+    }
+
+    public BigDecimal getTaxAmount() {
+        return taxAmount;
+    }
+
+    public void setTaxAmount(BigDecimal taxAmount) {
+        this.taxAmount = taxAmount;
+    }
+
+    public BigDecimal getPricePerYear() {
+        return pricePerYear;
+    }
+
+    public void setPricePerYear(BigDecimal pricePerYear) {
+        this.pricePerYear = pricePerYear;
+    }
+
+    public Boolean getClientSignatureBoolean() {
+        return clientSignatureBoolean;
+    }
+
+    public void setClientSignatureBoolean(Boolean clientSignatureBoolean) {
+        this.clientSignatureBoolean = clientSignatureBoolean;
+    }
 }

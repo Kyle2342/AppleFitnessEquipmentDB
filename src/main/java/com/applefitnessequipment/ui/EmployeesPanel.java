@@ -19,7 +19,6 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JPasswordField;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
@@ -27,31 +26,43 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 
 import com.applefitnessequipment.dao.EmployeeDAO;
 import com.applefitnessequipment.model.Employee;
 
 public class EmployeesPanel extends JPanel {
-    private EmployeeDAO employeeDAO;
+    private static final String DATE_PATTERN = "MM/dd/yyyy";
+    private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(DATE_PATTERN);
+
+    private final EmployeeDAO employeeDAO;
+
     private JTable employeesTable;
     private DefaultTableModel tableModel;
+
     private JTextField searchField;
-    private JTextField firstNameField, lastNameField, middleInitialField;
-    private JTextField dobField, workEmailField, personalEmailField;
-    private JTextField workPhoneField, mobilePhoneField;
+    private JTextField firstNameField, lastNameField;
+    private JTextField dobField, emailField;
+    private JTextField phoneNumberField;
+    private JTextField buildingNameField, suiteNumberField;
     private JTextField streetAddressField, cityField, stateField, zipField, countryField;
-    private JTextField positionField, hireDateField, usernameField;
-    private JPasswordField passwordField;
+    private JTextField positionField, hireDateField, terminationDateField;
     private JTextField payRateField;
     private JComboBox<String> genderCombo, employmentTypeCombo, payTypeCombo;
     private JCheckBox activeCheckBox;
     private JButton addButton, updateButton, deleteButton, clearButton;
+
     private Employee selectedEmployee;
     private List<Employee> allEmployees;
-    private DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    // flag to prevent recursive updates in phone formatting
+    private boolean isUpdatingPhone = false;
 
     public EmployeesPanel() {
-        employeeDAO = new EmployeeDAO();
+        this.employeeDAO = new EmployeeDAO();
         initComponents();
         loadEmployees();
     }
@@ -60,7 +71,7 @@ public class EmployeesPanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Top Panel - Search with auto-search
+        // ===================== TOP: SEARCH =====================
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         searchPanel.add(new JLabel("Search:"));
         searchField = new JTextField(35);
@@ -69,36 +80,32 @@ public class EmployeesPanel extends JPanel {
             BorderFactory.createLineBorder(new java.awt.Color(180, 180, 180), 1),
             BorderFactory.createEmptyBorder(8, 8, 8, 8)
         ));
-        // Auto-search as user types
         searchField.getDocument().addDocumentListener(new DocumentListener() {
             public void changedUpdate(DocumentEvent e) { filterEmployees(); }
             public void removeUpdate(DocumentEvent e) { filterEmployees(); }
             public void insertUpdate(DocumentEvent e) { filterEmployees(); }
         });
         searchPanel.add(searchField);
-
         add(searchPanel, BorderLayout.NORTH);
 
-        // Center Panel - Table
-        String[] columns = {"ID", "Name", "Position", "Type", "Active", "Username", "Hire Date"};
+        // ===================== CENTER: TABLE =====================
+        String[] columns = {"ID", "Name", "Position", "Type", "Active", "Hire Date"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
+            public boolean isCellEditable(int row, int column) { return false; }
         };
+
         employeesTable = new JTable(tableModel);
         employeesTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        // Apply modern styling
         ModernUIHelper.styleTable(employeesTable);
-        ModernUIHelper.addTableToggleBehavior(employeesTable, () -> clearForm());
-        
-        // Hide the ID column from the user view
+        ModernUIHelper.addTableToggleBehavior(employeesTable, this::clearForm);
+
+        // hide ID column visually
         employeesTable.getColumnModel().getColumn(0).setMinWidth(0);
         employeesTable.getColumnModel().getColumn(0).setMaxWidth(0);
         employeesTable.getColumnModel().getColumn(0).setWidth(0);
-        
+
         employeesTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 int selectedRow = employeesTable.getSelectedRow();
@@ -108,22 +115,23 @@ public class EmployeesPanel extends JPanel {
             }
         });
 
-        JScrollPane scrollPane = new JScrollPane(employeesTable);
+        JScrollPane tableScrollPane = new JScrollPane(employeesTable);
 
-        // Allow deselection by clicking on empty space in the scroll pane viewport (not on the table itself)
-        scrollPane.addMouseListener(new java.awt.event.MouseAdapter() {
+        // Optional: clicking empty space clears selection
+        tableScrollPane.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
             public void mousePressed(java.awt.event.MouseEvent e) {
-                // Only deselect if clicking in the viewport area (the gray empty space around the table)
-                if (e.getComponent() == scrollPane && !employeesTable.getBounds().contains(e.getPoint())) {
+                // If click is outside table bounds, clear selection
+                if (!employeesTable.getBounds().contains(e.getPoint())) {
                     employeesTable.clearSelection();
                     clearForm();
                 }
             }
         });
 
-        add(scrollPane, BorderLayout.CENTER);
+        add(tableScrollPane, BorderLayout.CENTER);
 
-        // Right Panel - Form (Scrollable)
+        // ===================== RIGHT: FORM =====================
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBorder(ModernUIHelper.createModernBorder("Employee Details"));
         GridBagConstraints gbc = new GridBagConstraints();
@@ -150,18 +158,9 @@ public class EmployeesPanel extends JPanel {
         formPanel.add(lastNameField, gbc);
         row++;
 
-        // Middle Initial
+        // DOB
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Middle Initial:"), gbc);
-        gbc.gridx = 1;
-        middleInitialField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(middleInitialField);
-        formPanel.add(middleInitialField, gbc);
-        row++;
-
-        // Date of Birth
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("DOB (yyyy-MM-dd):"), gbc);
+        formPanel.add(new JLabel("DOB (" + DATE_PATTERN + "):"), gbc);
         gbc.gridx = 1;
         dobField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
         ModernUIHelper.styleTextField(dobField);
@@ -177,40 +176,41 @@ public class EmployeesPanel extends JPanel {
         formPanel.add(genderCombo, gbc);
         row++;
 
-        // Work Email
+        // Email
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Work Email:"), gbc);
+        formPanel.add(new JLabel("Email:"), gbc);
         gbc.gridx = 1;
-        workEmailField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(workEmailField);
-        formPanel.add(workEmailField, gbc);
+        emailField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        ModernUIHelper.styleTextField(emailField);
+        formPanel.add(emailField, gbc);
         row++;
 
-        // Personal Email
+        // Phone Number
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Personal Email:"), gbc);
+        formPanel.add(new JLabel("Phone Number:"), gbc);
         gbc.gridx = 1;
-        personalEmailField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(personalEmailField);
-        formPanel.add(personalEmailField, gbc);
+        phoneNumberField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        ModernUIHelper.styleTextField(phoneNumberField);
+        setupPhoneFormatting(phoneNumberField);
+        formPanel.add(phoneNumberField, gbc);
         row++;
 
-        // Work Phone
+        // Building Name
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Work Phone:"), gbc);
+        formPanel.add(new JLabel("Building Name:"), gbc);
         gbc.gridx = 1;
-        workPhoneField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(workPhoneField);
-        formPanel.add(workPhoneField, gbc);
+        buildingNameField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        ModernUIHelper.styleTextField(buildingNameField);
+        formPanel.add(buildingNameField, gbc);
         row++;
 
-        // Mobile Phone
+        // Suite Number
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Mobile Phone:"), gbc);
+        formPanel.add(new JLabel("Suite Number:"), gbc);
         gbc.gridx = 1;
-        mobilePhoneField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(mobilePhoneField);
-        formPanel.add(mobilePhoneField, gbc);
+        suiteNumberField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        ModernUIHelper.styleTextField(suiteNumberField);
+        formPanel.add(suiteNumberField, gbc);
         row++;
 
         // Street Address
@@ -280,7 +280,7 @@ public class EmployeesPanel extends JPanel {
 
         // Hire Date
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Hire Date:* (yyyy-MM-dd)"), gbc);
+        formPanel.add(new JLabel("Hire Date:* (" + DATE_PATTERN + ")"), gbc);
         gbc.gridx = 1;
         hireDateField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
         hireDateField.setText(LocalDate.now().format(dateFormatter));
@@ -288,30 +288,22 @@ public class EmployeesPanel extends JPanel {
         formPanel.add(hireDateField, gbc);
         row++;
 
-        // Active Status
+        // Termination Date
+        gbc.gridx = 0; gbc.gridy = row;
+        formPanel.add(new JLabel("Termination Date: (" + DATE_PATTERN + ")"), gbc);
+        gbc.gridx = 1;
+        terminationDateField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        ModernUIHelper.styleTextField(terminationDateField);
+        formPanel.add(terminationDateField, gbc);
+        row++;
+
+        // Active
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Active:"), gbc);
         gbc.gridx = 1;
         activeCheckBox = new JCheckBox();
         activeCheckBox.setSelected(true);
         formPanel.add(activeCheckBox, gbc);
-        row++;
-
-        // Username
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Username:*"), gbc);
-        gbc.gridx = 1;
-        usernameField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(usernameField);
-        formPanel.add(usernameField, gbc);
-        row++;
-
-        // Password
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Password:*"), gbc);
-        gbc.gridx = 1;
-        passwordField = new JPasswordField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        formPanel.add(passwordField, gbc);
         row++;
 
         // Pay Type
@@ -336,7 +328,7 @@ public class EmployeesPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = row;
         gbc.gridwidth = 2;
         JPanel buttonPanel = new JPanel(new FlowLayout());
-        
+
         addButton = new JButton("Add");
         addButton.addActionListener(e -> addEmployee());
         ModernUIHelper.styleButton(addButton, "success");
@@ -366,13 +358,89 @@ public class EmployeesPanel extends JPanel {
         add(formScrollPane, BorderLayout.EAST);
     }
 
+    // ===================== PHONE FORMATTING =====================
+
+    /**
+     * Setup phone number formatting: displays as (###) ###-#### but saves as digits only.
+     */
+    private void setupPhoneFormatting(JTextField field) {
+        ((AbstractDocument) field.getDocument()).setDocumentFilter(new DocumentFilter() {
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                    throws BadLocationException {
+
+                if (isUpdatingPhone) {
+                    super.replace(fb, offset, length, text, attrs);
+                    return;
+                }
+
+                String currentText = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String newText = currentText.substring(0, offset) + text +
+                                 currentText.substring(offset + length);
+
+                String digitsOnly = newText.replaceAll("[^0-9]", "");
+                if (digitsOnly.length() > 10) {
+                    return;
+                }
+
+                String formatted = formatPhoneNumber(digitsOnly);
+
+                isUpdatingPhone = true;
+                fb.remove(0, fb.getDocument().getLength());
+                fb.insertString(0, formatted, attrs);
+                isUpdatingPhone = false;
+            }
+
+            @Override
+            public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
+                if (isUpdatingPhone) {
+                    super.remove(fb, offset, length);
+                    return;
+                }
+
+                String currentText = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String newText = currentText.substring(0, offset) +
+                                 currentText.substring(offset + length);
+
+                String digitsOnly = newText.replaceAll("[^0-9]", "");
+                String formatted = formatPhoneNumber(digitsOnly);
+
+                isUpdatingPhone = true;
+                fb.remove(0, fb.getDocument().getLength());
+                fb.insertString(0, formatted, null);
+                isUpdatingPhone = false;
+            }
+        });
+    }
+
+    /**
+     * Format phone number: 1234567890 -> (123) 456-7890
+     */
+    private String formatPhoneNumber(String digits) {
+        if (digits.length() == 0) return "";
+        if (digits.length() <= 3) return "(" + digits;
+        if (digits.length() <= 6) return "(" + digits.substring(0, 3) + ") " + digits.substring(3);
+        return "(" + digits.substring(0, 3) + ") " + digits.substring(3, 6) + "-" + digits.substring(6);
+    }
+
+    /**
+     * Extract just the digits from a formatted phone number.
+     */
+    private String getPhoneDigits(String formatted) {
+        return formatted.replaceAll("[^0-9]", "");
+    }
+
+    // ===================== DATA LOADING / FILTERING =====================
+
     private void loadEmployees() {
         try {
             allEmployees = employeeDAO.getAllEmployees();
             filterEmployees();
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error loading employees: " + ex.getMessage(),
-                "Database Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                "Error loading employees: " + ex.getMessage(),
+                "Database Error",
+                JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -380,26 +448,35 @@ public class EmployeesPanel extends JPanel {
         if (allEmployees == null) return;
 
         String searchTerm = searchField.getText().trim().toLowerCase();
-
         tableModel.setRowCount(0);
+
         for (Employee emp : allEmployees) {
-            // Apply search filter
-            boolean searchMatches = searchTerm.isEmpty() ||
+            boolean searchMatches =
+                searchTerm.isEmpty() ||
                 (emp.getFirstName() != null && emp.getFirstName().toLowerCase().contains(searchTerm)) ||
                 (emp.getLastName() != null && emp.getLastName().toLowerCase().contains(searchTerm)) ||
                 (emp.getPositionTitle() != null && emp.getPositionTitle().toLowerCase().contains(searchTerm)) ||
-                (emp.getUsername() != null && emp.getUsername().toLowerCase().contains(searchTerm)) ||
-                (emp.getWorkEmail() != null && emp.getWorkEmail().toLowerCase().contains(searchTerm));
+                (emp.getEmail() != null && emp.getEmail().toLowerCase().contains(searchTerm));
 
             if (searchMatches) {
+                String fullName = emp.getFullName() != null
+                    ? emp.getFullName()
+                    : ( (emp.getFirstName() != null ? emp.getFirstName() : "") + " " +
+                        (emp.getLastName() != null ? emp.getLastName() : "") ).trim();
+
+                String activeDisplay = emp.isActive() ? "Yes" : "No";
+
+                String hireDateDisplay = emp.getHireDate() != null
+                    ? emp.getHireDate().toString()
+                    : "";
+
                 tableModel.addRow(new Object[]{
                     emp.getEmployeeId(),
-                    emp.getFirstName() + " " + emp.getLastName(),
+                    fullName,
                     emp.getPositionTitle(),
                     emp.getEmploymentType(),
-                    emp.getActiveStatus() ? "Yes" : "No",
-                    emp.getUsername(),
-                    emp.getHireDate()
+                    activeDisplay,
+                    hireDateDisplay
                 });
             }
         }
@@ -407,70 +484,97 @@ public class EmployeesPanel extends JPanel {
 
     private void loadSelectedEmployee() {
         int selectedRow = employeesTable.getSelectedRow();
-        if (selectedRow >= 0) {
-            int employeeId = (Integer) tableModel.getValueAt(selectedRow, 0);
-            try {
-                selectedEmployee = employeeDAO.getEmployeeById(employeeId);
-                if (selectedEmployee != null) {
-                    firstNameField.setText(selectedEmployee.getFirstName());
-                    lastNameField.setText(selectedEmployee.getLastName());
-                    middleInitialField.setText(selectedEmployee.getMiddleInitial());
-                    dobField.setText(selectedEmployee.getDateOfBirth() != null ? 
-                        selectedEmployee.getDateOfBirth().format(dateFormatter) : "");
-                    genderCombo.setSelectedItem(selectedEmployee.getGender());
-                    workEmailField.setText(selectedEmployee.getWorkEmail());
-                    personalEmailField.setText(selectedEmployee.getPersonalEmail());
-                    workPhoneField.setText(selectedEmployee.getWorkPhone());
-                    mobilePhoneField.setText(selectedEmployee.getMobilePhone());
-                    streetAddressField.setText(selectedEmployee.getHomeStreetAddress());
-                    cityField.setText(selectedEmployee.getHomeCity());
-                    stateField.setText(selectedEmployee.getHomeState());
-                    zipField.setText(selectedEmployee.getHomeZIPCode());
-                    countryField.setText(selectedEmployee.getHomeCountry());
-                    positionField.setText(selectedEmployee.getPositionTitle());
-                    employmentTypeCombo.setSelectedItem(selectedEmployee.getEmploymentType());
-                    hireDateField.setText(selectedEmployee.getHireDate().format(dateFormatter));
-                    activeCheckBox.setSelected(selectedEmployee.getActiveStatus());
-                    usernameField.setText(selectedEmployee.getUsername());
-                    passwordField.setText(""); // Don't show password
-                    payTypeCombo.setSelectedItem(selectedEmployee.getPayType());
-                    payRateField.setText(selectedEmployee.getPayRate().toString());
-                    
-                    updateButton.setEnabled(true);
-                    deleteButton.setEnabled(true);
-                }
-            } catch (SQLException ex) {
-                JOptionPane.showMessageDialog(this, "Error loading employee details: " + ex.getMessage(),
-                    "Database Error", JOptionPane.ERROR_MESSAGE);
+        if (selectedRow < 0) return;
+
+        int employeeId = (Integer) tableModel.getValueAt(selectedRow, 0);
+        try {
+            selectedEmployee = employeeDAO.getEmployeeById(employeeId);
+            if (selectedEmployee == null) return;
+
+            firstNameField.setText(nvl(selectedEmployee.getFirstName()));
+            lastNameField.setText(nvl(selectedEmployee.getLastName()));
+
+            LocalDate dob = selectedEmployee.getDateOfBirth();
+            dobField.setText(dob != null ? dob.format(dateFormatter) : "");
+
+            String gender = selectedEmployee.getGender();
+            if (gender != null) {
+                genderCombo.setSelectedItem(gender);
+            } else {
+                genderCombo.setSelectedIndex(0);
             }
+
+            emailField.setText(nvl(selectedEmployee.getEmail()));
+
+            // Phone: DB stores digits; format for display
+            String phoneNumber = selectedEmployee.getPhoneNumber();
+            phoneNumberField.setText(phoneNumber != null && !phoneNumber.isEmpty() ? formatPhoneNumber(phoneNumber) : "");
+
+            buildingNameField.setText(nvl(selectedEmployee.getBuildingName()));
+            suiteNumberField.setText(nvl(selectedEmployee.getSuiteNumber()));
+            streetAddressField.setText(nvl(selectedEmployee.getStreetAddress()));
+            cityField.setText(nvl(selectedEmployee.getCity()));
+            stateField.setText(nvl(selectedEmployee.getState()));
+            zipField.setText(nvl(selectedEmployee.getZipCode()));
+            countryField.setText(nvl(selectedEmployee.getCountry()));
+
+            positionField.setText(nvl(selectedEmployee.getPositionTitle()));
+            employmentTypeCombo.setSelectedItem(selectedEmployee.getEmploymentType());
+
+            LocalDate hireDate = selectedEmployee.getHireDate();
+            hireDateField.setText(hireDate != null ? hireDate.format(dateFormatter) : "");
+
+            LocalDate termDate = selectedEmployee.getTerminationDate();
+            terminationDateField.setText(termDate != null ? termDate.format(dateFormatter) : "");
+
+            activeCheckBox.setSelected(selectedEmployee.isActive());
+
+            payTypeCombo.setSelectedItem(selectedEmployee.getPayType());
+            payRateField.setText(selectedEmployee.getPayRate() != null
+                ? selectedEmployee.getPayRate().toString()
+                : "");
+
+            updateButton.setEnabled(true);
+            deleteButton.setEnabled(true);
+
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this,
+                "Error loading employee details: " + ex.getMessage(),
+                "Database Error",
+                JOptionPane.ERROR_MESSAGE);
         }
     }
 
+    // ===================== CRUD ACTIONS =====================
+
     private void addEmployee() {
-        if (!validateForm(true)) return;
+        if (!validateForm()) return;
 
         Employee employee = new Employee();
         populateEmployeeFromForm(employee);
 
         try {
-            String password = new String(passwordField.getPassword());
-            if (employeeDAO.addEmployee(employee, password)) {
+            if (employeeDAO.addEmployee(employee)) {
                 JOptionPane.showMessageDialog(this, "Employee added successfully!");
                 clearForm();
                 loadEmployees();
             } else {
-                JOptionPane.showMessageDialog(this, "Failed to add employee.",
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                    "Failed to add employee.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
             }
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error adding employee: " + ex.getMessage(),
-                "Database Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                "Error adding employee: " + ex.getMessage(),
+                "Database Error",
+                JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void updateEmployee() {
         if (selectedEmployee == null) return;
-        if (!validateForm(false)) return;
+        if (!validateForm()) return;
 
         populateEmployeeFromForm(selectedEmployee);
 
@@ -480,21 +584,28 @@ public class EmployeesPanel extends JPanel {
                 clearForm();
                 loadEmployees();
             } else {
-                JOptionPane.showMessageDialog(this, "Failed to update employee.",
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                    "Failed to update employee.",
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE);
             }
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error updating employee: " + ex.getMessage(),
-                "Database Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                "Error updating employee: " + ex.getMessage(),
+                "Database Error",
+                JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void deleteEmployee() {
         if (selectedEmployee == null) return;
 
-        int confirm = JOptionPane.showConfirmDialog(this,
+        int confirm = JOptionPane.showConfirmDialog(
+            this,
             "Are you sure you want to delete this employee?",
-            "Confirm Delete", JOptionPane.YES_NO_OPTION);
+            "Confirm Delete",
+            JOptionPane.YES_NO_OPTION
+        );
 
         if (confirm == JOptionPane.YES_OPTION) {
             try {
@@ -503,58 +614,72 @@ public class EmployeesPanel extends JPanel {
                     clearForm();
                     loadEmployees();
                 } else {
-                    JOptionPane.showMessageDialog(this, "Failed to delete employee.",
-                        "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this,
+                        "Failed to delete employee.",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
                 }
             } catch (SQLException ex) {
-                JOptionPane.showMessageDialog(this, "Error deleting employee: " + ex.getMessage(),
-                    "Database Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this,
+                    "Error deleting employee: " + ex.getMessage(),
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
             }
         }
     }
 
+    // ===================== FORM HELPERS =====================
+
     private void populateEmployeeFromForm(Employee employee) {
         employee.setFirstName(firstNameField.getText().trim());
         employee.setLastName(lastNameField.getText().trim());
-        employee.setMiddleInitial(middleInitialField.getText().trim());
-        
-        try {
-            if (!dobField.getText().trim().isEmpty()) {
-                employee.setDateOfBirth(LocalDate.parse(dobField.getText().trim(), dateFormatter));
-            }
-        } catch (DateTimeParseException e) {
-            employee.setDateOfBirth(null);
-        }
-        
-        employee.setGender((String) genderCombo.getSelectedItem());
-        employee.setWorkEmail(workEmailField.getText().trim());
-        employee.setPersonalEmail(personalEmailField.getText().trim());
-        employee.setWorkPhone(workPhoneField.getText().trim());
-        employee.setMobilePhone(mobilePhoneField.getText().trim());
-        employee.setHomeStreetAddress(streetAddressField.getText().trim());
-        employee.setHomeCity(cityField.getText().trim());
-        employee.setHomeState(stateField.getText().trim());
-        employee.setHomeZIPCode(zipField.getText().trim());
-        employee.setHomeCountry(countryField.getText().trim());
+
+        // DOB
+        String dobText = dobField.getText().trim();
+        employee.setDateOfBirth(parseDateOrNull(dobText));
+
+        String gender = (String) genderCombo.getSelectedItem();
+        employee.setGender(gender);
+
+        employee.setEmail(emailField.getText().trim());
+
+        // Save only digits for phone number
+        employee.setPhoneNumber(getPhoneDigits(phoneNumberField.getText()));
+
+        employee.setBuildingName(buildingNameField.getText().trim());
+        employee.setSuiteNumber(suiteNumberField.getText().trim());
+        employee.setStreetAddress(streetAddressField.getText().trim());
+        employee.setCity(cityField.getText().trim());
+        employee.setState(stateField.getText().trim());
+        employee.setZipCode(zipField.getText().trim());
+        employee.setCountry(countryField.getText().trim());
+
         employee.setPositionTitle(positionField.getText().trim());
         employee.setEmploymentType((String) employmentTypeCombo.getSelectedItem());
+
+        // hire date is required (validated beforehand)
         employee.setHireDate(LocalDate.parse(hireDateField.getText().trim(), dateFormatter));
+
+        // termination date optional
+        String termText = terminationDateField.getText().trim();
+        employee.setTerminationDate(parseDateOrNull(termText));
+
         employee.setActiveStatus(activeCheckBox.isSelected());
-        employee.setUsername(usernameField.getText().trim());
         employee.setPayType((String) payTypeCombo.getSelectedItem());
-        employee.setPayRate(new BigDecimal(payRateField.getText().trim()));
+
+        String payRateText = payRateField.getText().trim();
+        employee.setPayRate(payRateText.isEmpty() ? null : new BigDecimal(payRateText));
     }
 
     private void clearForm() {
         firstNameField.setText("");
         lastNameField.setText("");
-        middleInitialField.setText("");
         dobField.setText("");
         genderCombo.setSelectedIndex(0);
-        workEmailField.setText("");
-        personalEmailField.setText("");
-        workPhoneField.setText("");
-        mobilePhoneField.setText("");
+        emailField.setText("");
+        phoneNumberField.setText("");
+        buildingNameField.setText("");
+        suiteNumberField.setText("");
         streetAddressField.setText("");
         cityField.setText("");
         stateField.setText("PA");
@@ -563,9 +688,8 @@ public class EmployeesPanel extends JPanel {
         positionField.setText("");
         employmentTypeCombo.setSelectedIndex(0);
         hireDateField.setText(LocalDate.now().format(dateFormatter));
+        terminationDateField.setText("");
         activeCheckBox.setSelected(true);
-        usernameField.setText("");
-        passwordField.setText("");
         payTypeCombo.setSelectedIndex(0);
         payRateField.setText("");
         selectedEmployee = null;
@@ -574,55 +698,97 @@ public class EmployeesPanel extends JPanel {
         employeesTable.clearSelection();
     }
 
-    private boolean validateForm(boolean isNew) {
-        if (firstNameField.getText().trim().isEmpty() || lastNameField.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "First name and last name are required.",
-                "Validation Error", JOptionPane.WARNING_MESSAGE);
+    private boolean validateForm() {
+        if (firstNameField.getText().trim().isEmpty() ||
+            lastNameField.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                "First name and last name are required.",
+                "Validation Error",
+                JOptionPane.WARNING_MESSAGE);
             return false;
         }
 
-        if (streetAddressField.getText().trim().isEmpty() || cityField.getText().trim().isEmpty() ||
-            stateField.getText().trim().isEmpty() || zipField.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Complete address is required.",
-                "Validation Error", JOptionPane.WARNING_MESSAGE);
+        if (streetAddressField.getText().trim().isEmpty() ||
+            cityField.getText().trim().isEmpty() ||
+            stateField.getText().trim().isEmpty() ||
+            zipField.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                "Complete address is required.",
+                "Validation Error",
+                JOptionPane.WARNING_MESSAGE);
             return false;
         }
 
         if (positionField.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Position title is required.",
-                "Validation Error", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                "Position title is required.",
+                "Validation Error",
+                JOptionPane.WARNING_MESSAGE);
             return false;
         }
 
         try {
             LocalDate.parse(hireDateField.getText().trim(), dateFormatter);
         } catch (DateTimeParseException e) {
-            JOptionPane.showMessageDialog(this, "Invalid hire date format. Use yyyy-MM-dd.",
-                "Validation Error", JOptionPane.WARNING_MESSAGE);
-            return false;
-        }
-
-        if (usernameField.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Username is required.",
-                "Validation Error", JOptionPane.WARNING_MESSAGE);
-            return false;
-        }
-
-        if (isNew && passwordField.getPassword().length == 0) {
-            JOptionPane.showMessageDialog(this, "Password is required for new employees.",
-                "Validation Error", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                "Invalid hire date format. Use " + DATE_PATTERN + ".",
+                "Validation Error",
+                JOptionPane.WARNING_MESSAGE);
             return false;
         }
 
         try {
-            new BigDecimal(payRateField.getText().trim());
+            BigDecimal payRate = new BigDecimal(payRateField.getText().trim());
+            if (payRate.compareTo(BigDecimal.ZERO) < 0) {
+                JOptionPane.showMessageDialog(this,
+                    "Pay rate cannot be negative.",
+                    "Validation Error",
+                    JOptionPane.WARNING_MESSAGE);
+                return false;
+            }
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Invalid pay rate. Please enter a valid number.",
-                "Validation Error", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this,
+                "Invalid pay rate. Please enter a valid number.",
+                "Validation Error",
+                JOptionPane.WARNING_MESSAGE);
             return false;
         }
 
+        // termination date (if present) must be >= hire date
+        if (!terminationDateField.getText().trim().isEmpty()) {
+            try {
+                LocalDate hireDate = LocalDate.parse(hireDateField.getText().trim(), dateFormatter);
+                LocalDate termDate = LocalDate.parse(terminationDateField.getText().trim(), dateFormatter);
+                if (termDate.isBefore(hireDate)) {
+                    JOptionPane.showMessageDialog(this,
+                        "Termination date cannot be before hire date.",
+                        "Validation Error",
+                        JOptionPane.WARNING_MESSAGE);
+                    return false;
+                }
+            } catch (DateTimeParseException e) {
+                JOptionPane.showMessageDialog(this,
+                    "Invalid termination date format. Use " + DATE_PATTERN + ".",
+                    "Validation Error",
+                    JOptionPane.WARNING_MESSAGE);
+                return false;
+            }
+        }
+
         return true;
+    }
+
+    private LocalDate parseDateOrNull(String text) {
+        if (text == null || text.trim().isEmpty()) return null;
+        try {
+            return LocalDate.parse(text.trim(), dateFormatter);
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
+
+    private String nvl(String value) {
+        return value == null ? "" : value;
     }
 
     public void refreshData() {

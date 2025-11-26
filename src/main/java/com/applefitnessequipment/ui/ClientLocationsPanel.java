@@ -35,9 +35,9 @@ public class ClientLocationsPanel extends JPanel {
     private JComboBox<String> locationTypeFilterCombo;  // For filtering by type
     private JComboBox<Client> formClientCombo;  // For form
     private JComboBox<String> locationTypeCombo;
-    private JTextField companyNameField, contactNameField, streetAddressField;
-    private JTextField buildingField, suiteField, roomField, deptField;
-    private JTextField cityField, countyField, stateField, zipField, countryField;
+    private JTextField streetAddressField;
+    private JTextField buildingField, roomField;
+    private JTextField cityField, stateField, zipField, countryField;
     private JTextField phoneField, faxField, emailField;
     private JButton addButton, updateButton, deleteButton, clearButton;
     private ClientLocation selectedLocation;
@@ -91,7 +91,7 @@ public class ClientLocationsPanel extends JPanel {
         add(filterPanel, BorderLayout.NORTH);
 
         // Center Panel - Table
-        String[] columns = {"ID", "Client ID", "Type", "Company", "Address", "City", "State", "Phone"};
+        String[] columns = {"ID", "Client ID", "Type", "Address", "City", "State", "Phone"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -164,92 +164,47 @@ public class ClientLocationsPanel extends JPanel {
         formPanel.add(locationTypeCombo, gbc);
         row++;
 
-        // Company Name
+        // Building
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Company Name:"), gbc);
+        formPanel.add(new JLabel("Building Name:"), gbc);
         gbc.gridx = 1;
-        companyNameField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(companyNameField);
-        formPanel.add(companyNameField, gbc);
+        buildingField = new JTextField(20);
+        ModernUIHelper.styleTextField(buildingField);
+        formPanel.add(buildingField, gbc);
         row++;
 
-        // Contact Name
+        // Room Number
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Contact Name:"), gbc);
+        formPanel.add(new JLabel("Room Number:"), gbc);
         gbc.gridx = 1;
-        contactNameField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(contactNameField);
-        formPanel.add(contactNameField, gbc);
+        roomField = new JTextField(20);
+        ModernUIHelper.styleTextField(roomField);
+        formPanel.add(roomField, gbc);
         row++;
 
         // Street Address
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Street Address:*"), gbc);
         gbc.gridx = 1;
-        streetAddressField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        streetAddressField = new JTextField(20);
         ModernUIHelper.styleTextField(streetAddressField);
         formPanel.add(streetAddressField, gbc);
-        row++;
-
-        // Building
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Building:"), gbc);
-        gbc.gridx = 1;
-        buildingField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(buildingField);
-        formPanel.add(buildingField, gbc);
-        row++;
-
-        // Suite
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Suite:"), gbc);
-        gbc.gridx = 1;
-        suiteField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(suiteField);
-        formPanel.add(suiteField, gbc);
-        row++;
-
-        // Room
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Room:"), gbc);
-        gbc.gridx = 1;
-        roomField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(roomField);
-        formPanel.add(roomField, gbc);
-        row++;
-
-        // Department
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Department:"), gbc);
-        gbc.gridx = 1;
-        deptField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(deptField);
-        formPanel.add(deptField, gbc);
         row++;
 
         // City
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("City:*"), gbc);
         gbc.gridx = 1;
-        cityField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        cityField = new JTextField(20);
         ModernUIHelper.styleTextField(cityField);
         formPanel.add(cityField, gbc);
-        row++;
-
-        // County
-        gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("County:*"), gbc);
-        gbc.gridx = 1;
-        countyField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
-        ModernUIHelper.styleTextField(countyField);
-        formPanel.add(countyField, gbc);
         row++;
 
         // State
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("State:*"), gbc);
         gbc.gridx = 1;
-        stateField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        stateField = new JTextField(20);
         stateField.setText("PA");
         ModernUIHelper.styleTextField(stateField);
         formPanel.add(stateField, gbc);
@@ -259,7 +214,7 @@ public class ClientLocationsPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("ZIP Code:*"), gbc);
         gbc.gridx = 1;
-        zipField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        zipField = new JTextField(20);
         ModernUIHelper.styleTextField(zipField);
         formPanel.add(zipField, gbc);
         row++;
@@ -268,7 +223,7 @@ public class ClientLocationsPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Country:*"), gbc);
         gbc.gridx = 1;
-        countryField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        countryField = new JTextField(20);
         countryField.setText("USA");
         ModernUIHelper.styleTextField(countryField);
         formPanel.add(countryField, gbc);
@@ -278,7 +233,7 @@ public class ClientLocationsPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Phone:"), gbc);
         gbc.gridx = 1;
-        phoneField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        phoneField = new JTextField(20);
         ModernUIHelper.styleTextField(phoneField);
         formPanel.add(phoneField, gbc);
         row++;
@@ -287,7 +242,7 @@ public class ClientLocationsPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Fax:"), gbc);
         gbc.gridx = 1;
-        faxField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        faxField = new JTextField(20);
         ModernUIHelper.styleTextField(faxField);
         formPanel.add(faxField, gbc);
         row++;
@@ -296,7 +251,7 @@ public class ClientLocationsPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Email:"), gbc);
         gbc.gridx = 1;
-        emailField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        emailField = new JTextField(20);
         ModernUIHelper.styleTextField(emailField);
         formPanel.add(emailField, gbc);
         row++;
@@ -372,14 +327,13 @@ public class ClientLocationsPanel extends JPanel {
             // Apply client search filter
             boolean clientMatches = searchText.isEmpty();
             if (!clientMatches) {
-                // Search in client name and company name
+                // Search in client name
                 try {
                     Client client = clientDAO.getClientById(loc.getClientId());
                     if (client != null) {
                         String clientName = (client.getCompanyName() != null ? client.getCompanyName() :
                                            client.getFirstName() + " " + client.getLastName()).toLowerCase();
-                        String companyName = (loc.getCompanyName() != null ? loc.getCompanyName() : "").toLowerCase();
-                        clientMatches = clientName.contains(searchText) || companyName.contains(searchText);
+                        clientMatches = clientName.contains(searchText);
                     }
                 } catch (SQLException e) {
                     // Skip this location if error
@@ -395,7 +349,6 @@ public class ClientLocationsPanel extends JPanel {
                     loc.getClientLocationId(),
                     loc.getClientId(),
                     loc.getLocationType(),
-                    loc.getCompanyName(),
                     loc.getStreetAddress(),
                     loc.getCity(),
                     loc.getState(),
@@ -420,24 +373,19 @@ public class ClientLocationsPanel extends JPanel {
                             break;
                         }
                     }
-                    
+
                     locationTypeCombo.setSelectedItem(selectedLocation.getLocationType());
-                    companyNameField.setText(selectedLocation.getCompanyName());
-                    contactNameField.setText(selectedLocation.getContactName());
                     streetAddressField.setText(selectedLocation.getStreetAddress());
                     buildingField.setText(selectedLocation.getBuildingName());
-                    suiteField.setText(selectedLocation.getSuite());
                     roomField.setText(selectedLocation.getRoomNumber());
-                    deptField.setText(selectedLocation.getDepartment());
                     cityField.setText(selectedLocation.getCity());
-                    countyField.setText(selectedLocation.getCounty());
                     stateField.setText(selectedLocation.getState());
                     zipField.setText(selectedLocation.getZipCode());
                     countryField.setText(selectedLocation.getCountry());
                     phoneField.setText(selectedLocation.getPhone());
                     faxField.setText(selectedLocation.getFax());
                     emailField.setText(selectedLocation.getEmail());
-                    
+
                     updateButton.setEnabled(true);
                     deleteButton.setEnabled(true);
                 }
@@ -518,15 +466,10 @@ public class ClientLocationsPanel extends JPanel {
         Client selectedClient = (Client) formClientCombo.getSelectedItem();
         location.setClientId(selectedClient.getClientId());
         location.setLocationType((String) locationTypeCombo.getSelectedItem());
-        location.setCompanyName(companyNameField.getText().trim());
-        location.setContactName(contactNameField.getText().trim());
         location.setStreetAddress(streetAddressField.getText().trim());
         location.setBuildingName(buildingField.getText().trim());
-        location.setSuite(suiteField.getText().trim());
         location.setRoomNumber(roomField.getText().trim());
-        location.setDepartment(deptField.getText().trim());
         location.setCity(cityField.getText().trim());
-        location.setCounty(countyField.getText().trim());
         location.setState(stateField.getText().trim());
         location.setZipCode(zipField.getText().trim());
         location.setCountry(countryField.getText().trim());
@@ -538,15 +481,10 @@ public class ClientLocationsPanel extends JPanel {
     private void clearForm() {
         formClientCombo.setSelectedIndex(-1);
         locationTypeCombo.setSelectedIndex(0);
-        companyNameField.setText("");
-        contactNameField.setText("");
         streetAddressField.setText("");
         buildingField.setText("");
-        suiteField.setText("");
         roomField.setText("");
-        deptField.setText("");
         cityField.setText("");
-        countyField.setText("");
         stateField.setText("PA");
         zipField.setText("");
         countryField.setText("USA");
@@ -567,9 +505,9 @@ public class ClientLocationsPanel extends JPanel {
         }
 
         if (streetAddressField.getText().trim().isEmpty() || cityField.getText().trim().isEmpty() ||
-            countyField.getText().trim().isEmpty() || stateField.getText().trim().isEmpty() ||
-            zipField.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Street address, city, county, state, and ZIP are required.",
+            stateField.getText().trim().isEmpty() || zipField.getText().trim().isEmpty() ||
+            countryField.getText().trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Street address, city, state, ZIP, and country are required.",
                 "Validation Error", JOptionPane.WARNING_MESSAGE);
             return false;
         }

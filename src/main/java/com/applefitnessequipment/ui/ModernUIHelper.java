@@ -10,6 +10,7 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
@@ -20,65 +21,72 @@ import javax.swing.table.JTableHeader;
 public class ModernUIHelper {
     
     // Apple Fitness Equipment brand colors
-    public static final Color PRIMARY_COLOR = new Color(204, 34, 41);       // Brand Red #CC2229
-    public static final Color SUCCESS_COLOR = new Color(46, 125, 50);       // Green
-    public static final Color DANGER_COLOR = new Color(204, 34, 41);        // Red (same as brand)
-    public static final Color WARNING_COLOR = new Color(245, 124, 0);       // Orange
-    public static final Color SECONDARY_COLOR = new Color(158, 158, 158);   // Gray
-    public static final Color LIGHT_BG = new Color(245, 245, 245);          // Light gray background
-    public static final Color WHITE = Color.WHITE;
-    public static final Color TEXT_COLOR = new Color(33, 33, 33);           // Near black text
+    public static final Color PRIMARY_COLOR   = new Color(204, 34, 41);    // Brand Red #CC2229
+    public static final Color SUCCESS_COLOR   = new Color(46, 125, 50);    // Green
+    public static final Color DANGER_COLOR    = new Color(204, 34, 41);    // Red (same as brand)
+    public static final Color WARNING_COLOR   = new Color(245, 124, 0);    // Orange
+    public static final Color SECONDARY_COLOR = new Color(158, 158, 158);  // Gray
+    public static final Color LIGHT_BG        = new Color(245, 245, 245);  // Light gray background
+    public static final Color WHITE           = Color.WHITE;
+    public static final Color TEXT_COLOR      = new Color(33, 33, 33);     // Near black text
     
     // Fonts
-    public static final Font TITLE_FONT = new Font("Segoe UI", Font.BOLD, 16);
+    public static final Font TITLE_FONT  = new Font("Segoe UI", Font.BOLD, 16);
     public static final Font NORMAL_FONT = new Font("Segoe UI", Font.PLAIN, 13);
-    public static final Font SMALL_FONT = new Font("Segoe UI", Font.PLAIN, 11);
+    public static final Font SMALL_FONT  = new Font("Segoe UI", Font.PLAIN, 11);
     
     /**
-     * Style a button with primary color
+     * Style a button with primary/semantic colors
      */
     public static void styleButton(JButton button, String type) {
         button.setFont(NORMAL_FONT);
         button.setFocusPainted(false);
         button.setBorderPainted(false);
         button.setOpaque(true);
-        
-        switch(type.toLowerCase()) {
+
+        // Make Swing use white for disabled text globally
+        UIManager.put("Button.disabledText", WHITE);
+
+        // Use a basic UI so LAF doesn’t get too fancy with states
+        button.setUI(new javax.swing.plaf.basic.BasicButtonUI());
+
+        // White text always
+        button.setForeground(WHITE);
+
+        // Background by type
+        switch (type.toLowerCase()) {
             case "primary":
                 button.setBackground(PRIMARY_COLOR);
-                button.setForeground(WHITE);
                 break;
             case "success":
                 button.setBackground(SUCCESS_COLOR);
-                button.setForeground(WHITE);
                 break;
             case "danger":
                 button.setBackground(DANGER_COLOR);
-                button.setForeground(WHITE);
                 break;
             case "warning":
                 button.setBackground(WARNING_COLOR);
-                button.setForeground(WHITE);
                 break;
             case "secondary":
             default:
                 button.setBackground(SECONDARY_COLOR);
-                button.setForeground(WHITE);
                 break;
         }
-        
+
         button.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(button.getBackground().darker(), 1),
             BorderFactory.createEmptyBorder(8, 15, 8, 15)
         ));
-        
-        // Add hover effect
+
+        // Hover effect (only when enabled)
         button.addMouseListener(new java.awt.event.MouseAdapter() {
             Color original = button.getBackground();
             
             @Override
             public void mouseEntered(java.awt.event.MouseEvent e) {
-                button.setBackground(original.brighter());
+                if (button.isEnabled()) {
+                    button.setBackground(original.brighter());
+                }
             }
             
             @Override
@@ -112,14 +120,14 @@ public class ModernUIHelper {
         header.setOpaque(true);
         header.setPreferredSize(new java.awt.Dimension(header.getPreferredSize().width, 40));
 
-        // Create and set a custom header renderer that forces our colors
+        // Custom header renderer
         header.setDefaultRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
                 JLabel label = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 label.setBackground(new Color(33, 33, 33));  // Dark background
-                label.setForeground(Color.WHITE);  // White text
+                label.setForeground(Color.WHITE);            // White text
                 label.setFont(new Font("Segoe UI", Font.BOLD, 14));
                 label.setHorizontalAlignment(JLabel.CENTER);
                 label.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 5));

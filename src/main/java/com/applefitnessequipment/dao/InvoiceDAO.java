@@ -11,11 +11,15 @@ import java.util.List;
 import com.applefitnessequipment.db.DBConnection;
 import com.applefitnessequipment.model.Invoice;
 
+/**
+ * DAO for Invoices table.
+ * @SCHEMA_SINGLE_SOURCE_OF_TRUTH: applefitnessequipmentdb_schema.sql
+ */
 public class InvoiceDAO {
 
     public List<Invoice> getAllInvoices() throws SQLException {
         List<Invoice> invoices = new ArrayList<>();
-        String sql = "SELECT * FROM invoices ORDER BY InvoiceDate DESC";
+        String sql = "SELECT * FROM Invoices ORDER BY InvoiceDate DESC";
 
         try (Connection conn = DBConnection.getConnection();
              Statement stmt = conn.createStatement();
@@ -29,7 +33,7 @@ public class InvoiceDAO {
     }
 
     public Invoice getInvoiceById(int invoiceId) throws SQLException {
-        String sql = "SELECT * FROM invoices WHERE InvoiceID = ?";
+        String sql = "SELECT * FROM Invoices WHERE InvoiceID = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -45,230 +49,103 @@ public class InvoiceDAO {
     }
 
     public boolean addInvoice(Invoice invoice) throws SQLException {
-        String sql = "INSERT INTO invoices (ClientID, BillingLocationID, JobLocationID, " +
-                    "PreventiveMaintenanceAgreementID, EquipmentQuoteID, InvoiceNumber, QuoteNumber, " +
-                    "InvoiceDate, DueDate, PONumber, Terms, Status, " +
-                    "SubtotalAmount, TaxRatePercent, PaymentsApplied, PaidDate, " +
-                    "ReturnedCheckFee, InterestPercent, InterestStartDays, InterestIntervalDays, " +
-                    "FromCompanyName, FromStreetAddress, FromCity, FromState, FromZIPCode, FromPhone, FromFax, " +
-                    "ClientTypeSnapshot, ClientCompanyNameSnapshot, ClientFirstNameSnapshot, ClientLastNameSnapshot, " +
-                    "BillToCompanyName, BillToContactName, BillToStreetAddress, BillToBuildingName, " +
-                    "BillToSuite, BillToRoomNumber, BillToDepartment, BillToCity, BillToCounty, " +
-                    "BillToState, BillToZIPCode, BillToCountry, BillToPhone, BillToPONumber, " +
-                    "JobAtCompanyName, JobAtContactName, JobAtStreetAddress, JobAtBuildingName, " +
-                    "JobAtSuite, JobAtRoomNumber, JobAtDepartment, JobAtCity, JobAtCounty, " +
-                    "JobAtState, JobAtZIPCode, JobAtCountry, JobAtPhone, JobAtPONumber) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " +
-                    "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " +
-                    "?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO Invoices " +
+                    "(ClientID, ClientBillingLocationID, ClientJobLocationID, " +
+                    "PreventiveMaintenanceAgreementID, EquipmentQuoteID, " +
+                    "InvoiceDate, InvoiceNumber, PONumber, Terms, DueDate, Status, " +
+                    "SubtotalAmount, TaxRatePercent, PaymentsApplied, PaidDate) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            int idx = 1;
-            pstmt.setInt(idx++, invoice.getClientId());
-            pstmt.setInt(idx++, invoice.getBillingLocationId());
-            pstmt.setInt(idx++, invoice.getJobLocationId());
+            pstmt.setInt(1, invoice.getClientId());
+            pstmt.setInt(2, invoice.getClientBillingLocationId());
+            pstmt.setInt(3, invoice.getClientJobLocationId());
 
             if (invoice.getPreventiveMaintenanceAgreementId() != null) {
-                pstmt.setInt(idx++, invoice.getPreventiveMaintenanceAgreementId());
+                pstmt.setInt(4, invoice.getPreventiveMaintenanceAgreementId());
             } else {
-                pstmt.setNull(idx++, java.sql.Types.INTEGER);
+                pstmt.setNull(4, java.sql.Types.INTEGER);
             }
 
             if (invoice.getEquipmentQuoteId() != null) {
-                pstmt.setInt(idx++, invoice.getEquipmentQuoteId());
+                pstmt.setInt(5, invoice.getEquipmentQuoteId());
             } else {
-                pstmt.setNull(idx++, java.sql.Types.INTEGER);
+                pstmt.setNull(5, java.sql.Types.INTEGER);
             }
 
-            pstmt.setString(idx++, invoice.getInvoiceNumber());
-            pstmt.setString(idx++, invoice.getQuoteNumber());
-            pstmt.setDate(idx++, java.sql.Date.valueOf(invoice.getInvoiceDate()));
-            pstmt.setDate(idx++, java.sql.Date.valueOf(invoice.getDueDate()));
-            pstmt.setString(idx++, invoice.getPoNumber());
-            pstmt.setString(idx++, invoice.getTerms());
-            pstmt.setString(idx++, invoice.getStatus());
-            pstmt.setBigDecimal(idx++, invoice.getSubtotalAmount());
-            pstmt.setBigDecimal(idx++, invoice.getTaxRatePercent());
-            pstmt.setBigDecimal(idx++, invoice.getPaymentsApplied());
+            pstmt.setDate(6, java.sql.Date.valueOf(invoice.getInvoiceDate()));
+            pstmt.setString(7, invoice.getInvoiceNumber());
+            pstmt.setString(8, invoice.getPoNumber());
+            pstmt.setString(9, invoice.getTerms());
+            pstmt.setDate(10, java.sql.Date.valueOf(invoice.getDueDate()));
+            pstmt.setString(11, invoice.getStatus());
+            pstmt.setBigDecimal(12, invoice.getSubtotalAmount());
+            pstmt.setBigDecimal(13, invoice.getTaxRatePercent());
+            pstmt.setBigDecimal(14, invoice.getPaymentsApplied());
 
             if (invoice.getPaidDate() != null) {
-                pstmt.setDate(idx++, java.sql.Date.valueOf(invoice.getPaidDate()));
+                pstmt.setDate(15, java.sql.Date.valueOf(invoice.getPaidDate()));
             } else {
-                pstmt.setNull(idx++, java.sql.Types.DATE);
+                pstmt.setNull(15, java.sql.Types.DATE);
             }
-
-            pstmt.setBigDecimal(idx++, invoice.getReturnedCheckFee());
-            pstmt.setBigDecimal(idx++, invoice.getInterestPercent());
-            pstmt.setInt(idx++, invoice.getInterestStartDays());
-            pstmt.setInt(idx++, invoice.getInterestIntervalDays());
-
-            // FROM fields
-            pstmt.setString(idx++, invoice.getFromCompanyName());
-            pstmt.setString(idx++, invoice.getFromStreetAddress());
-            pstmt.setString(idx++, invoice.getFromCity());
-            pstmt.setString(idx++, invoice.getFromState());
-            pstmt.setString(idx++, invoice.getFromZIPCode());
-            pstmt.setString(idx++, invoice.getFromPhone());
-            pstmt.setString(idx++, invoice.getFromFax());
-
-            // Client snapshot fields
-            pstmt.setString(idx++, invoice.getClientTypeSnapshot());
-            pstmt.setString(idx++, invoice.getClientCompanyNameSnapshot());
-            pstmt.setString(idx++, invoice.getClientFirstNameSnapshot());
-            pstmt.setString(idx++, invoice.getClientLastNameSnapshot());
-
-            // BILL TO fields
-            pstmt.setString(idx++, invoice.getBillToCompanyName());
-            pstmt.setString(idx++, invoice.getBillToContactName());
-            pstmt.setString(idx++, invoice.getBillToStreetAddress());
-            pstmt.setString(idx++, invoice.getBillToBuildingName());
-            pstmt.setString(idx++, invoice.getBillToSuite());
-            pstmt.setString(idx++, invoice.getBillToRoomNumber());
-            pstmt.setString(idx++, invoice.getBillToDepartment());
-            pstmt.setString(idx++, invoice.getBillToCity());
-            pstmt.setString(idx++, invoice.getBillToCounty());
-            pstmt.setString(idx++, invoice.getBillToState());
-            pstmt.setString(idx++, invoice.getBillToZIPCode());
-            pstmt.setString(idx++, invoice.getBillToCountry());
-            pstmt.setString(idx++, invoice.getBillToPhone());
-            pstmt.setString(idx++, invoice.getBillToPONumber());
-
-            // JOB AT fields
-            pstmt.setString(idx++, invoice.getJobAtCompanyName());
-            pstmt.setString(idx++, invoice.getJobAtContactName());
-            pstmt.setString(idx++, invoice.getJobAtStreetAddress());
-            pstmt.setString(idx++, invoice.getJobAtBuildingName());
-            pstmt.setString(idx++, invoice.getJobAtSuite());
-            pstmt.setString(idx++, invoice.getJobAtRoomNumber());
-            pstmt.setString(idx++, invoice.getJobAtDepartment());
-            pstmt.setString(idx++, invoice.getJobAtCity());
-            pstmt.setString(idx++, invoice.getJobAtCounty());
-            pstmt.setString(idx++, invoice.getJobAtState());
-            pstmt.setString(idx++, invoice.getJobAtZIPCode());
-            pstmt.setString(idx++, invoice.getJobAtCountry());
-            pstmt.setString(idx++, invoice.getJobAtPhone());
-            pstmt.setString(idx++, invoice.getJobAtPONumber());
 
             return pstmt.executeUpdate() > 0;
         }
     }
 
     public boolean updateInvoice(Invoice invoice) throws SQLException {
-        String sql = "UPDATE invoices SET ClientID = ?, BillingLocationID = ?, JobLocationID = ?, " +
-                    "PreventiveMaintenanceAgreementID = ?, EquipmentQuoteID = ?, InvoiceNumber = ?, QuoteNumber = ?, " +
-                    "InvoiceDate = ?, DueDate = ?, PONumber = ?, Terms = ?, Status = ?, " +
-                    "SubtotalAmount = ?, TaxRatePercent = ?, " +
-                    "PaymentsApplied = ?, PaidDate = ?, " +
-                    "ReturnedCheckFee = ?, InterestPercent = ?, InterestStartDays = ?, InterestIntervalDays = ?, " +
-                    "FromCompanyName = ?, FromStreetAddress = ?, FromCity = ?, FromState = ?, FromZIPCode = ?, FromPhone = ?, FromFax = ?, " +
-                    "ClientTypeSnapshot = ?, ClientCompanyNameSnapshot = ?, ClientFirstNameSnapshot = ?, ClientLastNameSnapshot = ?, " +
-                    "BillToCompanyName = ?, BillToContactName = ?, BillToStreetAddress = ?, BillToBuildingName = ?, " +
-                    "BillToSuite = ?, BillToRoomNumber = ?, BillToDepartment = ?, BillToCity = ?, BillToCounty = ?, " +
-                    "BillToState = ?, BillToZIPCode = ?, BillToCountry = ?, BillToPhone = ?, BillToPONumber = ?, " +
-                    "JobAtCompanyName = ?, JobAtContactName = ?, JobAtStreetAddress = ?, JobAtBuildingName = ?, " +
-                    "JobAtSuite = ?, JobAtRoomNumber = ?, JobAtDepartment = ?, JobAtCity = ?, JobAtCounty = ?, " +
-                    "JobAtState = ?, JobAtZIPCode = ?, JobAtCountry = ?, JobAtPhone = ?, JobAtPONumber = ? " +
+        String sql = "UPDATE Invoices SET " +
+                    "ClientID = ?, ClientBillingLocationID = ?, ClientJobLocationID = ?, " +
+                    "PreventiveMaintenanceAgreementID = ?, EquipmentQuoteID = ?, " +
+                    "InvoiceDate = ?, InvoiceNumber = ?, PONumber = ?, Terms = ?, DueDate = ?, Status = ?, " +
+                    "SubtotalAmount = ?, TaxRatePercent = ?, PaymentsApplied = ?, PaidDate = ? " +
                     "WHERE InvoiceID = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            int idx = 1;
-            pstmt.setInt(idx++, invoice.getClientId());
-            pstmt.setInt(idx++, invoice.getBillingLocationId());
-            pstmt.setInt(idx++, invoice.getJobLocationId());
+            pstmt.setInt(1, invoice.getClientId());
+            pstmt.setInt(2, invoice.getClientBillingLocationId());
+            pstmt.setInt(3, invoice.getClientJobLocationId());
 
             if (invoice.getPreventiveMaintenanceAgreementId() != null) {
-                pstmt.setInt(idx++, invoice.getPreventiveMaintenanceAgreementId());
+                pstmt.setInt(4, invoice.getPreventiveMaintenanceAgreementId());
             } else {
-                pstmt.setNull(idx++, java.sql.Types.INTEGER);
+                pstmt.setNull(4, java.sql.Types.INTEGER);
             }
 
             if (invoice.getEquipmentQuoteId() != null) {
-                pstmt.setInt(idx++, invoice.getEquipmentQuoteId());
+                pstmt.setInt(5, invoice.getEquipmentQuoteId());
             } else {
-                pstmt.setNull(idx++, java.sql.Types.INTEGER);
+                pstmt.setNull(5, java.sql.Types.INTEGER);
             }
 
-            pstmt.setString(idx++, invoice.getInvoiceNumber());
-            pstmt.setString(idx++, invoice.getQuoteNumber());
-            pstmt.setDate(idx++, java.sql.Date.valueOf(invoice.getInvoiceDate()));
-            pstmt.setDate(idx++, java.sql.Date.valueOf(invoice.getDueDate()));
-            pstmt.setString(idx++, invoice.getPoNumber());
-            pstmt.setString(idx++, invoice.getTerms());
-            pstmt.setString(idx++, invoice.getStatus());
-            pstmt.setBigDecimal(idx++, invoice.getSubtotalAmount());
-            pstmt.setBigDecimal(idx++, invoice.getTaxRatePercent());
-            pstmt.setBigDecimal(idx++, invoice.getPaymentsApplied());
+            pstmt.setDate(6, java.sql.Date.valueOf(invoice.getInvoiceDate()));
+            pstmt.setString(7, invoice.getInvoiceNumber());
+            pstmt.setString(8, invoice.getPoNumber());
+            pstmt.setString(9, invoice.getTerms());
+            pstmt.setDate(10, java.sql.Date.valueOf(invoice.getDueDate()));
+            pstmt.setString(11, invoice.getStatus());
+            pstmt.setBigDecimal(12, invoice.getSubtotalAmount());
+            pstmt.setBigDecimal(13, invoice.getTaxRatePercent());
+            pstmt.setBigDecimal(14, invoice.getPaymentsApplied());
 
             if (invoice.getPaidDate() != null) {
-                pstmt.setDate(idx++, java.sql.Date.valueOf(invoice.getPaidDate()));
+                pstmt.setDate(15, java.sql.Date.valueOf(invoice.getPaidDate()));
             } else {
-                pstmt.setNull(idx++, java.sql.Types.DATE);
+                pstmt.setNull(15, java.sql.Types.DATE);
             }
 
-            pstmt.setBigDecimal(idx++, invoice.getReturnedCheckFee());
-            pstmt.setBigDecimal(idx++, invoice.getInterestPercent());
-            pstmt.setInt(idx++, invoice.getInterestStartDays());
-            pstmt.setInt(idx++, invoice.getInterestIntervalDays());
-
-            // FROM fields
-            pstmt.setString(idx++, invoice.getFromCompanyName());
-            pstmt.setString(idx++, invoice.getFromStreetAddress());
-            pstmt.setString(idx++, invoice.getFromCity());
-            pstmt.setString(idx++, invoice.getFromState());
-            pstmt.setString(idx++, invoice.getFromZIPCode());
-            pstmt.setString(idx++, invoice.getFromPhone());
-            pstmt.setString(idx++, invoice.getFromFax());
-
-            // Client snapshot fields
-            pstmt.setString(idx++, invoice.getClientTypeSnapshot());
-            pstmt.setString(idx++, invoice.getClientCompanyNameSnapshot());
-            pstmt.setString(idx++, invoice.getClientFirstNameSnapshot());
-            pstmt.setString(idx++, invoice.getClientLastNameSnapshot());
-
-            // BILL TO fields
-            pstmt.setString(idx++, invoice.getBillToCompanyName());
-            pstmt.setString(idx++, invoice.getBillToContactName());
-            pstmt.setString(idx++, invoice.getBillToStreetAddress());
-            pstmt.setString(idx++, invoice.getBillToBuildingName());
-            pstmt.setString(idx++, invoice.getBillToSuite());
-            pstmt.setString(idx++, invoice.getBillToRoomNumber());
-            pstmt.setString(idx++, invoice.getBillToDepartment());
-            pstmt.setString(idx++, invoice.getBillToCity());
-            pstmt.setString(idx++, invoice.getBillToCounty());
-            pstmt.setString(idx++, invoice.getBillToState());
-            pstmt.setString(idx++, invoice.getBillToZIPCode());
-            pstmt.setString(idx++, invoice.getBillToCountry());
-            pstmt.setString(idx++, invoice.getBillToPhone());
-            pstmt.setString(idx++, invoice.getBillToPONumber());
-
-            // JOB AT fields
-            pstmt.setString(idx++, invoice.getJobAtCompanyName());
-            pstmt.setString(idx++, invoice.getJobAtContactName());
-            pstmt.setString(idx++, invoice.getJobAtStreetAddress());
-            pstmt.setString(idx++, invoice.getJobAtBuildingName());
-            pstmt.setString(idx++, invoice.getJobAtSuite());
-            pstmt.setString(idx++, invoice.getJobAtRoomNumber());
-            pstmt.setString(idx++, invoice.getJobAtDepartment());
-            pstmt.setString(idx++, invoice.getJobAtCity());
-            pstmt.setString(idx++, invoice.getJobAtCounty());
-            pstmt.setString(idx++, invoice.getJobAtState());
-            pstmt.setString(idx++, invoice.getJobAtZIPCode());
-            pstmt.setString(idx++, invoice.getJobAtCountry());
-            pstmt.setString(idx++, invoice.getJobAtPhone());
-            pstmt.setString(idx++, invoice.getJobAtPONumber());
-
-            pstmt.setInt(idx++, invoice.getInvoiceId());
+            pstmt.setInt(16, invoice.getInvoiceId());
 
             return pstmt.executeUpdate() > 0;
         }
     }
 
     public boolean deleteInvoice(int invoiceId) throws SQLException {
-        String sql = "DELETE FROM invoices WHERE InvoiceID = ?";
+        String sql = "DELETE FROM Invoices WHERE InvoiceID = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -282,8 +159,8 @@ public class InvoiceDAO {
         Invoice invoice = new Invoice();
         invoice.setInvoiceId(rs.getInt("InvoiceID"));
         invoice.setClientId(rs.getInt("ClientID"));
-        invoice.setBillingLocationId(rs.getInt("BillingLocationID"));
-        invoice.setJobLocationId(rs.getInt("JobLocationID"));
+        invoice.setClientBillingLocationId(rs.getInt("ClientBillingLocationID"));
+        invoice.setClientJobLocationId(rs.getInt("ClientJobLocationID"));
 
         int pmaId = rs.getInt("PreventiveMaintenanceAgreementID");
         if (!rs.wasNull()) {
@@ -295,85 +172,33 @@ public class InvoiceDAO {
             invoice.setEquipmentQuoteId(eqId);
         }
 
-        invoice.setInvoiceNumber(rs.getString("InvoiceNumber"));
-        invoice.setQuoteNumber(rs.getString("QuoteNumber"));
-
         if (rs.getDate("InvoiceDate") != null) {
             invoice.setInvoiceDate(rs.getDate("InvoiceDate").toLocalDate());
         }
+
+        invoice.setInvoiceNumber(rs.getString("InvoiceNumber"));
+        invoice.setPoNumber(rs.getString("PONumber"));
+        invoice.setTerms(rs.getString("Terms"));
+
         if (rs.getDate("DueDate") != null) {
             invoice.setDueDate(rs.getDate("DueDate").toLocalDate());
         }
-        if (rs.getDate("PaidDate") != null) {
-            invoice.setPaidDate(rs.getDate("PaidDate").toLocalDate());
-        }
 
-        invoice.setPoNumber(rs.getString("PONumber"));
-        invoice.setTerms(rs.getString("Terms"));
         invoice.setStatus(rs.getString("Status"));
         invoice.setSubtotalAmount(rs.getBigDecimal("SubtotalAmount"));
         invoice.setTaxRatePercent(rs.getBigDecimal("TaxRatePercent"));
+
+        // Read GENERATED columns (read-only)
         invoice.setTaxAmount(rs.getBigDecimal("TaxAmount"));
         invoice.setTotalAmount(rs.getBigDecimal("TotalAmount"));
+
         invoice.setPaymentsApplied(rs.getBigDecimal("PaymentsApplied"));
-        invoice.setBalanceDue(rs.getBigDecimal("BalanceDue"));  // Generated column from database
-        invoice.setReturnedCheckFee(rs.getBigDecimal("ReturnedCheckFee"));
-        invoice.setInterestPercent(rs.getBigDecimal("InterestPercent"));
-        invoice.setInterestStartDays(rs.getInt("InterestStartDays"));
-        invoice.setInterestIntervalDays(rs.getInt("InterestIntervalDays"));
 
-        // FROM fields
-        invoice.setFromCompanyName(rs.getString("FromCompanyName"));
-        invoice.setFromStreetAddress(rs.getString("FromStreetAddress"));
-        invoice.setFromCity(rs.getString("FromCity"));
-        invoice.setFromState(rs.getString("FromState"));
-        invoice.setFromZIPCode(rs.getString("FromZIPCode"));
-        invoice.setFromPhone(rs.getString("FromPhone"));
-        invoice.setFromFax(rs.getString("FromFax"));
+        // Read GENERATED column (read-only)
+        invoice.setBalanceDue(rs.getBigDecimal("BalanceDue"));
 
-        // Client snapshot fields
-        invoice.setClientTypeSnapshot(rs.getString("ClientTypeSnapshot"));
-        invoice.setClientCompanyNameSnapshot(rs.getString("ClientCompanyNameSnapshot"));
-        invoice.setClientFirstNameSnapshot(rs.getString("ClientFirstNameSnapshot"));
-        invoice.setClientLastNameSnapshot(rs.getString("ClientLastNameSnapshot"));
-
-        // BILL TO fields
-        invoice.setBillToCompanyName(rs.getString("BillToCompanyName"));
-        invoice.setBillToContactName(rs.getString("BillToContactName"));
-        invoice.setBillToStreetAddress(rs.getString("BillToStreetAddress"));
-        invoice.setBillToBuildingName(rs.getString("BillToBuildingName"));
-        invoice.setBillToSuite(rs.getString("BillToSuite"));
-        invoice.setBillToRoomNumber(rs.getString("BillToRoomNumber"));
-        invoice.setBillToDepartment(rs.getString("BillToDepartment"));
-        invoice.setBillToCity(rs.getString("BillToCity"));
-        invoice.setBillToCounty(rs.getString("BillToCounty"));
-        invoice.setBillToState(rs.getString("BillToState"));
-        invoice.setBillToZIPCode(rs.getString("BillToZIPCode"));
-        invoice.setBillToCountry(rs.getString("BillToCountry"));
-        invoice.setBillToPhone(rs.getString("BillToPhone"));
-        invoice.setBillToPONumber(rs.getString("BillToPONumber"));
-
-        // JOB AT fields
-        invoice.setJobAtCompanyName(rs.getString("JobAtCompanyName"));
-        invoice.setJobAtContactName(rs.getString("JobAtContactName"));
-        invoice.setJobAtStreetAddress(rs.getString("JobAtStreetAddress"));
-        invoice.setJobAtBuildingName(rs.getString("JobAtBuildingName"));
-        invoice.setJobAtSuite(rs.getString("JobAtSuite"));
-        invoice.setJobAtRoomNumber(rs.getString("JobAtRoomNumber"));
-        invoice.setJobAtDepartment(rs.getString("JobAtDepartment"));
-        invoice.setJobAtCity(rs.getString("JobAtCity"));
-        invoice.setJobAtCounty(rs.getString("JobAtCounty"));
-        invoice.setJobAtState(rs.getString("JobAtState"));
-        invoice.setJobAtZIPCode(rs.getString("JobAtZIPCode"));
-        invoice.setJobAtCountry(rs.getString("JobAtCountry"));
-        invoice.setJobAtPhone(rs.getString("JobAtPhone"));
-        invoice.setJobAtPONumber(rs.getString("JobAtPONumber"));
-
-        if (rs.getTimestamp("CreatedAt") != null) {
-            invoice.setCreatedAt(rs.getTimestamp("CreatedAt").toLocalDateTime());
-        }
-        if (rs.getTimestamp("UpdatedAt") != null) {
-            invoice.setUpdatedAt(rs.getTimestamp("UpdatedAt").toLocalDateTime());
+        if (rs.getDate("PaidDate") != null) {
+            invoice.setPaidDate(rs.getDate("PaidDate").toLocalDate());
         }
 
         return invoice;

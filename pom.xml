@@ -22,13 +22,6 @@
             <version>9.0.0</version>
         </dependency>
 
-        <!-- BCrypt library used to hash and compare user passwords -->
-        <dependency>
-            <groupId>org.mindrot</groupId>
-            <artifactId>jbcrypt</artifactId>
-            <version>0.4</version>
-        </dependency>
-
     </dependencies>
 
 </project>

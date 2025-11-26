@@ -138,6 +138,12 @@ public class ClientsPanel extends JPanel {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
+        // Match invoice panel sizing/colors for inputs
+        JTextField sizingField = new JTextField(20);
+        ModernUIHelper.styleTextField(sizingField);
+        Dimension standardInputSize = sizingField.getPreferredSize();
+        java.awt.Color standardFieldBackground = sizingField.getBackground();
+
         int row = 0;
 
         // Client Type - Make dropdown bigger like text fields
@@ -146,7 +152,9 @@ public class ClientsPanel extends JPanel {
         gbc.gridx = 1;
         clientTypeCombo = new JComboBox<>(new String[]{"Individual", "Business"});
         clientTypeCombo.setFont(ModernUIHelper.NORMAL_FONT);
-        clientTypeCombo.setPreferredSize(new Dimension(250, 35));  // Match text field size
+        clientTypeCombo.setPreferredSize(standardInputSize);
+        clientTypeCombo.setBackground(standardFieldBackground);
+        clientTypeCombo.setOpaque(true);
         formPanel.add(clientTypeCombo, gbc);
         row++;
 
@@ -154,7 +162,7 @@ public class ClientsPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("First Name:"), gbc);
         gbc.gridx = 1;
-        firstNameField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        firstNameField = new JTextField(20);
         ModernUIHelper.styleTextField(firstNameField);
         formPanel.add(firstNameField, gbc);
         row++;
@@ -163,7 +171,7 @@ public class ClientsPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Last Name:"), gbc);
         gbc.gridx = 1;
-        lastNameField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        lastNameField = new JTextField(20);
         ModernUIHelper.styleTextField(lastNameField);
         formPanel.add(lastNameField, gbc);
         row++;
@@ -172,7 +180,7 @@ public class ClientsPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Company Name:"), gbc);
         gbc.gridx = 1;
-        companyNameField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        companyNameField = new JTextField(20);
         ModernUIHelper.styleTextField(companyNameField);
         formPanel.add(companyNameField, gbc);
         row++;
@@ -181,7 +189,7 @@ public class ClientsPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Phone:"), gbc);
         gbc.gridx = 1;
-        phoneField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        phoneField = new JTextField(20);
         ModernUIHelper.styleTextField(phoneField);
         setupPhoneFormatting(phoneField);
         formPanel.add(phoneField, gbc);
@@ -191,7 +199,7 @@ public class ClientsPanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Email:"), gbc);
         gbc.gridx = 1;
-        emailField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
+        emailField = new JTextField(20);
         ModernUIHelper.styleTextField(emailField);
         formPanel.add(emailField, gbc);
         row++;
@@ -202,7 +210,7 @@ public class ClientsPanel extends JPanel {
         formPanel.add(new JLabel("Notes:"), gbc);
         gbc.gridx = 1;
         gbc.fill = GridBagConstraints.BOTH;
-        notesArea = new JTextArea(3, ModernUIHelper.STANDARD_FIELD_WIDTH);  // Reduced from 4 to 3 rows
+        notesArea = new JTextArea(3, 20);
         notesArea.setLineWrap(true);
         notesArea.setWrapStyleWord(true);
         notesArea.setFont(ModernUIHelper.NORMAL_FONT);

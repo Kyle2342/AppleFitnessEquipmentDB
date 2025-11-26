@@ -261,6 +261,7 @@ public class DatabaseManagementApp extends JFrame {
         subTabs.setBackground(java.awt.Color.WHITE);
         subTabs.setOpaque(true);
         subTabs.setBorder(BorderFactory.createEmptyBorder(5, 10, 0, 10));
+        subTabs.setFocusable(false);  // Prevent focus indicator (black dotted box on double-click)
 
         // Style the sub-tabs with simpler look
         subTabs.addChangeListener(e -> {

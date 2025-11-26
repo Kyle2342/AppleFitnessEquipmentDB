@@ -60,7 +60,7 @@ public class InvoicesPanel extends JPanel {
     private JComboBox<PreventiveMaintenanceAgreement> pmaCombo;
 
     // Form fields - Invoice details
-    private JTextField invoiceNumberField, poNumberField;
+    private JTextField invoiceNumberField;
     private JTextField invoiceDateField, dueDateField, paidDateField;
     private JTextField termsField;
     private JComboBox<String> statusCombo;
@@ -268,7 +268,6 @@ public class InvoicesPanel extends JPanel {
         addSectionLabel(formPanel, gbc, row++, "INVOICE DETAILS");
 
         row = addField(formPanel, gbc, row, "Invoice Number:*", invoiceNumberField = new JTextField(20));
-        row = addField(formPanel, gbc, row, "PO Number:", poNumberField = new JTextField(20));
         row = addField(formPanel, gbc, row, "Invoice Date (MM/dd/yyyy):*", invoiceDateField = new JTextField(20));
         row = addField(formPanel, gbc, row, "Due Date (MM/dd/yyyy):*", dueDateField = new JTextField(20));
         row = addField(formPanel, gbc, row, "Terms:*", termsField = new JTextField(20));
@@ -720,7 +719,6 @@ public class InvoicesPanel extends JPanel {
             }
 
             invoiceNumberField.setText(invoice.getInvoiceNumber());
-            poNumberField.setText(invoice.getPoNumber() != null ? invoice.getPoNumber() : "");
             invoiceDateField.setText(invoice.getInvoiceDate().format(displayDateFormatter));
             dueDateField.setText(invoice.getDueDate().format(displayDateFormatter));
             termsField.setText(invoice.getTerms());
@@ -1058,8 +1056,6 @@ public class InvoicesPanel extends JPanel {
         }
 
         invoice.setInvoiceNumber(invoiceNumberField.getText().trim());
-        invoice.setPoNumber(poNumberField.getText().trim().isEmpty() ? null : poNumberField.getText().trim());
-
         invoice.setInvoiceDate(LocalDate.parse(invoiceDateField.getText().trim(), displayDateFormatter));
         invoice.setDueDate(LocalDate.parse(dueDateField.getText().trim(), displayDateFormatter));
 
@@ -1092,31 +1088,25 @@ public class InvoicesPanel extends JPanel {
         invoice.setBillToContactName(billLoc.getContactName());
         invoice.setBillToStreetAddress(billLoc.getStreetAddress());
         invoice.setBillToBuildingName(billLoc.getBuildingName());
-        invoice.setBillToSuite(billLoc.getSuite());
         invoice.setBillToRoomNumber(billLoc.getRoomNumber());
-        invoice.setBillToDepartment(billLoc.getDepartment());
         invoice.setBillToCity(billLoc.getCity());
-        invoice.setBillToCounty(billLoc.getCounty());
         invoice.setBillToState(billLoc.getState());
         invoice.setBillToZIPCode(billLoc.getZipCode());
         invoice.setBillToCountry(billLoc.getCountry());
         invoice.setBillToPhone(billLoc.getPhone());
-        invoice.setBillToPONumber(poNumberField.getText().trim().isEmpty() ? null : poNumberField.getText().trim());
+        invoice.setBillToPONumber(null);
 
         invoice.setJobAtCompanyName(jobLoc.getCompanyName());
         invoice.setJobAtContactName(jobLoc.getContactName());
         invoice.setJobAtStreetAddress(jobLoc.getStreetAddress());
         invoice.setJobAtBuildingName(jobLoc.getBuildingName());
-        invoice.setJobAtSuite(jobLoc.getSuite());
         invoice.setJobAtRoomNumber(jobLoc.getRoomNumber());
-        invoice.setJobAtDepartment(jobLoc.getDepartment());
         invoice.setJobAtCity(jobLoc.getCity());
-        invoice.setJobAtCounty(jobLoc.getCounty());
         invoice.setJobAtState(jobLoc.getState());
         invoice.setJobAtZIPCode(jobLoc.getZipCode());
         invoice.setJobAtCountry(jobLoc.getCountry());
         invoice.setJobAtPhone(jobLoc.getPhone());
-        invoice.setJobAtPONumber(poNumberField.getText().trim().isEmpty() ? null : poNumberField.getText().trim());
+        invoice.setJobAtPONumber(null);
 
         invoice.setFromCompanyName("Apple Fitness Equipment");
         invoice.setFromStreetAddress("1412 Majestic View Dr.");
@@ -1146,7 +1136,6 @@ public class InvoicesPanel extends JPanel {
         pmaCombo.removeAllItems();
 
         invoiceNumberField.setText("");
-        poNumberField.setText("");
         invoiceDateField.setText(LocalDate.now().format(displayDateFormatter));
         dueDateField.setText(LocalDate.now().plusDays(30).format(displayDateFormatter));
         termsField.setText("Net 30");

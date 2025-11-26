@@ -2,45 +2,103 @@ package com.applefitnessequipment.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.util.Objects;
 
 public class Employee {
+
+    // =========================================================
+    // FIELDS (aligned with CREATE TABLE Employees)
+    // =========================================================
+
+    // PK
     private Integer employeeId;
+
+    // Personal info
     private String firstName;
     private String lastName;
-    private String middleInitial;
     private LocalDate dateOfBirth;
     private String gender;
-    private String workEmail;
-    private String personalEmail;
-    private String workPhone;
-    private String mobilePhone;
-    private String homeBuildingName;
-    private String homeSuiteNumber;
-    private String homeStreetAddress;
-    private String homeCity;
-    private String homeState;
-    private String homeZIPCode;
-    private String homeCountry;
+    private String email;
+    private String phoneNumber;
+
+    // Address
+    private String buildingName;
+    private String suiteNumber;
+    private String streetAddress;
+    private String city;
+    private String state;
+    private String zipCode;
+    private String country;
+
+    // Employment details
     private String positionTitle;
     private String employmentType;
+    private String payType;
+    private BigDecimal payRate;
     private LocalDate hireDate;
     private LocalDate terminationDate;
     private Boolean activeStatus;
-    private String emergencyContactName;
-    private String emergencyContactPhone;
-    private String emergencyContactRelationship;
-    private String username;
-    private String passwordHash;
-    private String payType;
-    private BigDecimal payRate;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 
-    // Constructors
-    public Employee() {}
+    // =========================================================
+    // CONSTRUCTORS
+    // =========================================================
 
-    // Getters and Setters
+    public Employee() {
+        // no-arg constructor for frameworks / DAO
+    }
+
+    /**
+     * Convenience constructor for creating new employees (no ID yet).
+     * You can use this in your UI/service layer if you want.
+     */
+    public Employee(
+            String firstName,
+            String lastName,
+            LocalDate dateOfBirth,
+            String gender,
+            String email,
+            String phoneNumber,
+            String buildingName,
+            String suiteNumber,
+            String streetAddress,
+            String city,
+            String state,
+            String zipCode,
+            String country,
+            String positionTitle,
+            String employmentType,
+            String payType,
+            BigDecimal payRate,
+            LocalDate hireDate,
+            LocalDate terminationDate,
+            Boolean activeStatus
+    ) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.dateOfBirth = dateOfBirth;
+        this.gender = gender;
+        this.email = email;
+        this.phoneNumber = phoneNumber;
+        this.buildingName = buildingName;
+        this.suiteNumber = suiteNumber;
+        this.streetAddress = streetAddress;
+        this.city = city;
+        this.state = state;
+        this.zipCode = zipCode;
+        this.country = country;
+        this.positionTitle = positionTitle;
+        this.employmentType = employmentType;
+        this.payType = payType;
+        this.payRate = payRate;
+        this.hireDate = hireDate;
+        this.terminationDate = terminationDate;
+        this.activeStatus = activeStatus;
+    }
+
+    // =========================================================
+    // GETTERS & SETTERS
+    // =========================================================
+
     public Integer getEmployeeId() { return employeeId; }
     public void setEmployeeId(Integer employeeId) { this.employeeId = employeeId; }
 
@@ -50,53 +108,50 @@ public class Employee {
     public String getLastName() { return lastName; }
     public void setLastName(String lastName) { this.lastName = lastName; }
 
-    public String getMiddleInitial() { return middleInitial; }
-    public void setMiddleInitial(String middleInitial) { this.middleInitial = middleInitial; }
-
     public LocalDate getDateOfBirth() { return dateOfBirth; }
     public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
 
     public String getGender() { return gender; }
     public void setGender(String gender) { this.gender = gender; }
 
-    public String getWorkEmail() { return workEmail; }
-    public void setWorkEmail(String workEmail) { this.workEmail = workEmail; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
-    public String getPersonalEmail() { return personalEmail; }
-    public void setPersonalEmail(String personalEmail) { this.personalEmail = personalEmail; }
+    public String getPhoneNumber() { return phoneNumber; }
+    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
 
-    public String getWorkPhone() { return workPhone; }
-    public void setWorkPhone(String workPhone) { this.workPhone = workPhone; }
+    public String getBuildingName() { return buildingName; }
+    public void setBuildingName(String buildingName) { this.buildingName = buildingName; }
 
-    public String getMobilePhone() { return mobilePhone; }
-    public void setMobilePhone(String mobilePhone) { this.mobilePhone = mobilePhone; }
+    public String getSuiteNumber() { return suiteNumber; }
+    public void setSuiteNumber(String suiteNumber) { this.suiteNumber = suiteNumber; }
 
-    public String getHomeBuildingName() { return homeBuildingName; }
-    public void setHomeBuildingName(String homeBuildingName) { this.homeBuildingName = homeBuildingName; }
+    public String getStreetAddress() { return streetAddress; }
+    public void setStreetAddress(String streetAddress) { this.streetAddress = streetAddress; }
 
-    public String getHomeSuiteNumber() { return homeSuiteNumber; }
-    public void setHomeSuiteNumber(String homeSuiteNumber) { this.homeSuiteNumber = homeSuiteNumber; }
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
 
-    public String getHomeStreetAddress() { return homeStreetAddress; }
-    public void setHomeStreetAddress(String homeStreetAddress) { this.homeStreetAddress = homeStreetAddress; }
+    public String getState() { return state; }
+    public void setState(String state) { this.state = state; }
 
-    public String getHomeCity() { return homeCity; }
-    public void setHomeCity(String homeCity) { this.homeCity = homeCity; }
+    public String getZipCode() { return zipCode; }
+    public void setZipCode(String zipCode) { this.zipCode = zipCode; }
 
-    public String getHomeState() { return homeState; }
-    public void setHomeState(String homeState) { this.homeState = homeState; }
-
-    public String getHomeZIPCode() { return homeZIPCode; }
-    public void setHomeZIPCode(String homeZIPCode) { this.homeZIPCode = homeZIPCode; }
-
-    public String getHomeCountry() { return homeCountry; }
-    public void setHomeCountry(String homeCountry) { this.homeCountry = homeCountry; }
+    public String getCountry() { return country; }
+    public void setCountry(String country) { this.country = country; }
 
     public String getPositionTitle() { return positionTitle; }
     public void setPositionTitle(String positionTitle) { this.positionTitle = positionTitle; }
 
     public String getEmploymentType() { return employmentType; }
     public void setEmploymentType(String employmentType) { this.employmentType = employmentType; }
+
+    public String getPayType() { return payType; }
+    public void setPayType(String payType) { this.payType = payType; }
+
+    public BigDecimal getPayRate() { return payRate; }
+    public void setPayRate(BigDecimal payRate) { this.payRate = payRate; }
 
     public LocalDate getHireDate() { return hireDate; }
     public void setHireDate(LocalDate hireDate) { this.hireDate = hireDate; }
@@ -107,37 +162,41 @@ public class Employee {
     public Boolean getActiveStatus() { return activeStatus; }
     public void setActiveStatus(Boolean activeStatus) { this.activeStatus = activeStatus; }
 
-    public String getEmergencyContactName() { return emergencyContactName; }
-    public void setEmergencyContactName(String emergencyContactName) { this.emergencyContactName = emergencyContactName; }
+    // =========================================================
+    // CONVENIENCE METHODS
+    // =========================================================
 
-    public String getEmergencyContactPhone() { return emergencyContactPhone; }
-    public void setEmergencyContactPhone(String emergencyContactPhone) { this.emergencyContactPhone = emergencyContactPhone; }
+    public boolean isActive() {
+        // fall back to DB default = true if null
+        return activeStatus == null || Boolean.TRUE.equals(activeStatus);
+    }
 
-    public String getEmergencyContactRelationship() { return emergencyContactRelationship; }
-    public void setEmergencyContactRelationship(String emergencyContactRelationship) { this.emergencyContactRelationship = emergencyContactRelationship; }
-
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
-
-    public String getPasswordHash() { return passwordHash; }
-    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
-
-    public String getPayType() { return payType; }
-    public void setPayType(String payType) { this.payType = payType; }
-
-    public BigDecimal getPayRate() { return payRate; }
-    public void setPayRate(BigDecimal payRate) { this.payRate = payRate; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public String getFullName() {
+        String first = firstName != null ? firstName.trim() : "";
+        String last = lastName != null ? lastName.trim() : "";
+        String full = (first + " " + last).trim();
+        return full.isEmpty() ? null : full;
+    }
 
     @Override
     public String toString() {
-        String name = (firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "");
-        String position = positionTitle != null ? " (" + positionTitle + ")" : "";
-        return name.trim().isEmpty() ? "Unnamed Employee" : name.trim() + position;
+        String name = getFullName();
+        String positionSuffix = positionTitle != null && !positionTitle.trim().isEmpty()
+                ? " (" + positionTitle.trim() + ")"
+                : "";
+        return name == null ? "Unnamed Employee" : name + positionSuffix;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Employee that)) return false;
+        // Use ID for equality
+        return Objects.equals(employeeId, that.employeeId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(employeeId);
     }
 }
