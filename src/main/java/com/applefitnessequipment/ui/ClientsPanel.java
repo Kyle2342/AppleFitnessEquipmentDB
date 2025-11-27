@@ -88,7 +88,7 @@ public class ClientsPanel extends JPanel {
         add(topPanel, BorderLayout.NORTH);
 
         // Center Panel - Table
-        String[] columns = {"ID", "Company", "Name", "Type", "Phone", "Email"};
+        String[] columns = {"ID", "Name", "Company", "Type", "Phone", "Email"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -377,8 +377,8 @@ public class ClientsPanel extends JPanel {
 
                 tableModel.addRow(new Object[]{
                     client.getClientId(),
-                    client.getCompanyName(),
                     nameDisplay,
+                    client.getCompanyName(),
                     client.getClientType(),
                     phoneDisplay,
                     client.getEmail()
