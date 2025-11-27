@@ -118,6 +118,15 @@ public class ClientLocationsPanel extends JPanel {
         locationsTable.getColumnModel().getColumn(1).setMaxWidth(0);
         locationsTable.getColumnModel().getColumn(1).setWidth(0);
 
+        // Optimize column widths - reduce Type and Phone to give Address more space
+        locationsTable.getColumnModel().getColumn(4).setPreferredWidth(80);  // Type: "Billing" or "Job"
+        locationsTable.getColumnModel().getColumn(4).setMaxWidth(100);
+        locationsTable.getColumnModel().getColumn(6).setPreferredWidth(120); // Phone: "(###) ###-####"
+        locationsTable.getColumnModel().getColumn(6).setMaxWidth(150);
+        locationsTable.getColumnModel().getColumn(7).setPreferredWidth(120); // Fax: "(###) ###-####"
+        locationsTable.getColumnModel().getColumn(7).setMaxWidth(150);
+        locationsTable.getColumnModel().getColumn(5).setPreferredWidth(300); // Address: needs more space
+
         locationsTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 int selectedRow = locationsTable.getSelectedRow();
