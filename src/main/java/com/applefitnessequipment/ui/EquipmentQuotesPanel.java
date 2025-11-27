@@ -131,7 +131,7 @@ public class EquipmentQuotesPanel extends JPanel {
 
         // Form
         JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(ModernUIHelper.createModernBorder("Quote Details"));
+        formPanel.setBorder(ModernUIHelper.createModernBorder("Equipment Quote Details"));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;

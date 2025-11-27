@@ -3,7 +3,6 @@ package com.applefitnessequipment.ui;
 import java.awt.BorderLayout;
 import java.awt.Image;
 
-import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
@@ -199,7 +198,7 @@ public class DatabaseManagementApp extends JFrame {
         PreventiveMaintenancePanel pmPanel = new PreventiveMaintenancePanel();
         salesServiceTabs.addTab("Invoices", invoicesPanel);
         salesServiceTabs.addTab("Equipment Quotes", quotesPanel);
-        salesServiceTabs.addTab("Preventive Maintenance Quotes", pmPanel);
+        salesServiceTabs.addTab("Preventive Maintenance Agreements", pmPanel);
         tabbedPane.addTab("Sales & Service", salesServiceTabs);
 
         // Add change listeners to refresh data when tabs are selected

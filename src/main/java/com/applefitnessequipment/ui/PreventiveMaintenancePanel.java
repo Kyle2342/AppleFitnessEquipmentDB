@@ -161,7 +161,7 @@ public class PreventiveMaintenancePanel extends JPanel {
         formPanel.add(jobLocationCombo, gbc);
         row++;
 
-        addSectionLabel(formPanel, gbc, row++, "QUOTE INFO");
+        addSectionLabel(formPanel, gbc, row++, "AGREEMENT INFO");
 
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Quote #:*"), gbc);

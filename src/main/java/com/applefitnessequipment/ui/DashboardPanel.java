@@ -17,6 +17,8 @@ import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -388,7 +390,7 @@ public class DashboardPanel extends JPanel {
     private JPanel createRecentInvoicesCard() {
         JPanel card = createActivityCard("Recent Invoices");
 
-        String[] columns = {"Invoice #", "Client", "Amount", "Status"};
+        String[] columns = {"Invoice #", "Client", "Amount", "Amount Due", "Status"};
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -398,21 +400,22 @@ public class DashboardPanel extends JPanel {
 
         try {
             List<Invoice> invoices = invoiceDAO.getAllInvoices();
-            int count = 0;
-            for (Invoice inv : invoices) {
-                if (count >= 5) break;
+            invoices.sort(Comparator.comparing(
+                (Invoice inv) -> safeDate(inv.getInvoiceDate())
+            ).reversed());
 
+            for (Invoice inv : invoices) {
                 String clientName = getClientName(inv.getClientId());
                 model.addRow(new Object[]{
                     inv.getInvoiceNumber(),
                     clientName,
                     "$" + formatCurrency(inv.getTotalAmount()),
+                    "$" + formatCurrency(inv.getBalanceDue()),
                     inv.getStatus()
                 });
-                count++;
             }
         } catch (SQLException e) {
-            model.addRow(new Object[]{"--", "--", "--", "--"});
+            model.addRow(new Object[]{"--", "--", "--", "--", "--"});
         }
 
         JTable table = createStyledTable(model);
@@ -427,7 +430,7 @@ public class DashboardPanel extends JPanel {
     private JPanel createRecentQuotesCard() {
         JPanel card = createActivityCard("Recent Quotes");
 
-        String[] columns = {"Quote #", "Contact", "Amount", "Status"};
+        String[] columns = {"Quote #", "Client", "Amount", "Status"};
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -437,17 +440,21 @@ public class DashboardPanel extends JPanel {
 
         try {
             List<EquipmentQuote> quotes = quoteDAO.getAllQuotes();
-            int count = 0;
-            for (EquipmentQuote quote : quotes) {
-                if (count >= 5) break;
+            quotes.sort(Comparator.comparing(
+                (EquipmentQuote q) -> safeDate(q.getQuoteDate())
+            ).reversed());
 
+            for (EquipmentQuote quote : quotes) {
+                String clientName = getClientName(quote.getClientId());
+                BigDecimal amount = quote.getQuoteTotalAmount() != null
+                    ? quote.getQuoteTotalAmount()
+                    : quote.getSubtotalAmount();
                 model.addRow(new Object[]{
                     quote.getQuoteNumber(),
-                    quote.getContactName(),
-                    "$" + formatCurrency(quote.getSubtotalAmount()),
+                    clientName,
+                    "$" + formatCurrency(amount),
                     quote.getStatus()
                 });
-                count++;
             }
         } catch (SQLException e) {
             model.addRow(new Object[]{"--", "--", "--", "--"});
@@ -463,9 +470,9 @@ public class DashboardPanel extends JPanel {
     }
 
     private JPanel createRecentPMCard() {
-        JPanel card = createActivityCard("Active PM Agreements");
+        JPanel card = createActivityCard("Active Preventive Maintenance Agreements");
 
-        String[] columns = {"Agreement #", "Client", "End Date", "Status"};
+        String[] columns = {"Agreement #", "Client", "End Date", "Amount", "Status"};
         DefaultTableModel model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -475,28 +482,26 @@ public class DashboardPanel extends JPanel {
 
         try {
             List<PreventiveMaintenanceAgreement> agreements = pmDAO.getAllAgreements();
-            int count = 0;
-
-            for (PreventiveMaintenanceAgreement pm : agreements) {
-                if (count >= 5) break;
-                // Show only Active agreements
-                if ("Active".equalsIgnoreCase(pm.getStatus())) {
+            agreements.stream()
+                .filter(pm -> "Active".equalsIgnoreCase(pm.getStatus()) && Boolean.TRUE.equals(pm.getClientSignatureBoolean()))
+                .sorted(Comparator.comparing((PreventiveMaintenanceAgreement pm) -> safeDate(pm.getStartDate())).reversed())
+                .forEach(pm -> {
                     String clientName = getClientName(pm.getClientId());
+                    BigDecimal amount = pm.getPricePerYear() != null ? pm.getPricePerYear() : pm.getVisitPrice();
                     model.addRow(new Object[]{
                         pm.getAgreementNumber(),
                         clientName,
-                        pm.getEndDate() != null ? pm.getEndDate().format(DateTimeFormatter.ofPattern("MM/dd/yyyy")) : "N/A",
+                        pm.getEndDate() != null ? pm.getEndDate().format(DateTimeFormatter.ofPattern("MM/dd/yyyy")) : "",
+                        "$" + formatCurrency(amount),
                         pm.getStatus()
                     });
-                    count++;
-                }
-            }
+                });
 
-            if (count == 0) {
-                model.addRow(new Object[]{"No active", "agreements", "found", "--"});
+            if (model.getRowCount() == 0) {
+                model.addRow(new Object[]{"No active", "agreements", "", "", "--"});
             }
         } catch (SQLException e) {
-            model.addRow(new Object[]{"--", "--", "--", "--"});
+            model.addRow(new Object[]{"--", "--", "--", "--", "--"});
         }
 
         JTable table = createStyledTable(model);
@@ -530,7 +535,7 @@ public class DashboardPanel extends JPanel {
         card.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         JLabel titleLabel = new JLabel(title);
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
         titleLabel.setForeground(PRIMARY_RED);
         titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
 
@@ -542,12 +547,12 @@ public class DashboardPanel extends JPanel {
     private JTable createStyledTable(DefaultTableModel model) {
         JTable table = new JTable(model);
         ModernUIHelper.addTableToggleBehavior(table);
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        table.setRowHeight(28);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        table.setRowHeight(32);
         table.setGridColor(new Color(230, 230, 230));
         table.setSelectionBackground(new Color(255, 235, 238));
         table.setSelectionForeground(TEXT_DARK);
-        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 11));
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
         table.getTableHeader().setBackground(new Color(245, 245, 245));
         table.getTableHeader().setForeground(TEXT_DARK);
 
@@ -690,15 +695,34 @@ public class DashboardPanel extends JPanel {
         try {
             Client client = clientDAO.getClientById(clientId);
             if (client != null) {
-                if (client.getCompanyName() != null && !client.getCompanyName().isEmpty()) {
-                    return client.getCompanyName();
-                }
-                return client.getFirstName() + " " + client.getLastName();
+                return formatClientName(client);
             }
         } catch (SQLException e) {
             // Fall through
         }
         return "Unknown";
+    }
+
+    private String formatClientName(Client client) {
+        if (client == null) return "Unknown";
+        String type = client.getClientType();
+        String company = client.getCompanyName() != null ? client.getCompanyName().trim() : "";
+        String first = client.getFirstName() != null ? client.getFirstName().trim() : "";
+        String last = client.getLastName() != null ? client.getLastName().trim() : "";
+
+        if ("Business".equalsIgnoreCase(type) && !company.isEmpty()) {
+            return company;
+        }
+
+        String fullName = (first + " " + last).trim();
+        if (!fullName.isEmpty()) {
+            return fullName;
+        }
+        return !company.isEmpty() ? company : "Unknown";
+    }
+
+    private LocalDate safeDate(LocalDate date) {
+        return date == null ? LocalDate.MIN : date;
     }
 
     private String formatCurrency(BigDecimal amount) {
