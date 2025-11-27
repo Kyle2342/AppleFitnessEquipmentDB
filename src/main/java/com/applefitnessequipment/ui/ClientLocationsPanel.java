@@ -20,6 +20,10 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 
 import com.applefitnessequipment.dao.ClientDAO;
 import com.applefitnessequipment.dao.ClientLocationDAO;
@@ -42,6 +46,7 @@ public class ClientLocationsPanel extends JPanel {
     private JButton addButton, updateButton, deleteButton, clearButton;
     private ClientLocation selectedLocation;
     private List<ClientLocation> allLocations;  // Cache for filtering
+    private boolean isUpdatingPhone = false;
 
     public ClientLocationsPanel() {
         locationDAO = new ClientLocationDAO();
@@ -91,7 +96,7 @@ public class ClientLocationsPanel extends JPanel {
         add(filterPanel, BorderLayout.NORTH);
 
         // Center Panel - Table
-        String[] columns = {"ID", "Client ID", "Type", "Address", "City", "State", "Phone"};
+        String[] columns = {"ID", "Client ID", "Name", "Company", "Type", "Address", "Phone", "Fax", "Email"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -235,6 +240,13 @@ public class ClientLocationsPanel extends JPanel {
         gbc.gridx = 1;
         phoneField = new JTextField(20);
         ModernUIHelper.styleTextField(phoneField);
+        setupPhoneFormatting(phoneField);
+        phoneField.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override
+            public void focusLost(java.awt.event.FocusEvent e) {
+                formatPhoneField(phoneField);
+            }
+        });
         formPanel.add(phoneField, gbc);
         row++;
 
@@ -244,6 +256,13 @@ public class ClientLocationsPanel extends JPanel {
         gbc.gridx = 1;
         faxField = new JTextField(20);
         ModernUIHelper.styleTextField(faxField);
+        setupPhoneFormatting(faxField);
+        faxField.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override
+            public void focusLost(java.awt.event.FocusEvent e) {
+                formatPhoneField(faxField);
+            }
+        });
         formPanel.add(faxField, gbc);
         row++;
 
@@ -324,21 +343,13 @@ public class ClientLocationsPanel extends JPanel {
 
         tableModel.setRowCount(0);
         for (ClientLocation loc : allLocations) {
+            String clientName = getClientName(loc.getClientId());
+            String companyName = getCompanyName(loc.getClientId());
+            String searchable = (clientName + " " + companyName).toLowerCase().trim();
+
             // Apply client search filter
-            boolean clientMatches = searchText.isEmpty();
-            if (!clientMatches) {
-                // Search in client name
-                try {
-                    Client client = clientDAO.getClientById(loc.getClientId());
-                    if (client != null) {
-                        String clientName = (client.getCompanyName() != null ? client.getCompanyName() :
-                                           client.getFirstName() + " " + client.getLastName()).toLowerCase();
-                        clientMatches = clientName.contains(searchText);
-                    }
-                } catch (SQLException e) {
-                    // Skip this location if error
-                }
-            }
+            boolean clientMatches = searchText.isEmpty() ||
+                searchable.contains(searchText);
 
             // Apply type filter
             boolean typeMatches = "Show All".equals(typeFilter) ||
@@ -348,11 +359,13 @@ public class ClientLocationsPanel extends JPanel {
                 tableModel.addRow(new Object[]{
                     loc.getClientLocationId(),
                     loc.getClientId(),
+                    clientName,
+                    companyName,
                     loc.getLocationType(),
-                    loc.getStreetAddress(),
-                    loc.getCity(),
-                    loc.getState(),
-                    loc.getPhone()
+                    formatAddress(loc),
+                    formatPhone(loc.getPhone()),
+                    formatPhone(loc.getFax()),
+                    loc.getEmail()
                 });
             }
         }
@@ -382,8 +395,8 @@ public class ClientLocationsPanel extends JPanel {
                     stateField.setText(selectedLocation.getState());
                     zipField.setText(selectedLocation.getZipCode());
                     countryField.setText(selectedLocation.getCountry());
-                    phoneField.setText(selectedLocation.getPhone());
-                    faxField.setText(selectedLocation.getFax());
+                    phoneField.setText(formatPhone(selectedLocation.getPhone()));
+                    faxField.setText(formatPhone(selectedLocation.getFax()));
                     emailField.setText(selectedLocation.getEmail());
 
                     updateButton.setEnabled(true);
@@ -473,8 +486,8 @@ public class ClientLocationsPanel extends JPanel {
         location.setState(stateField.getText().trim());
         location.setZipCode(zipField.getText().trim());
         location.setCountry(countryField.getText().trim());
-        location.setPhone(phoneField.getText().trim());
-        location.setFax(faxField.getText().trim());
+        location.setPhone(digitsOnly(phoneField.getText()));
+        location.setFax(digitsOnly(faxField.getText()));
         location.setEmail(emailField.getText().trim());
     }
 
@@ -518,5 +531,133 @@ public class ClientLocationsPanel extends JPanel {
     public void refreshData() {
         loadClients();
         loadLocations();
+    }
+
+    private String getClientName(Integer clientId) {
+        try {
+            Client client = clientDAO.getClientById(clientId);
+            if (client == null) return "";
+
+            String first = safe(client.getFirstName());
+            String last = safe(client.getLastName());
+            String fullName = (first + " " + last).trim();
+            return fullName;
+        } catch (SQLException e) {
+            return "";
+        }
+    }
+
+    private String getCompanyName(Integer clientId) {
+        try {
+            Client client = clientDAO.getClientById(clientId);
+            if (client == null) return "";
+            return safe(client.getCompanyName());
+        } catch (SQLException e) {
+            return "";
+        }
+    }
+
+    private String formatAddress(ClientLocation loc) {
+        if (loc == null) return "";
+
+        String street = safe(loc.getStreetAddress());
+        String city = safe(loc.getCity());
+        String state = safe(loc.getState());
+        String zip = safe(loc.getZipCode());
+        String country = safe(loc.getCountry());
+
+        StringBuilder sb = new StringBuilder();
+        if (!street.isEmpty()) sb.append(street);
+        if (!city.isEmpty()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(city);
+        }
+        if (!state.isEmpty() || !zip.isEmpty()) {
+            if (sb.length() > 0) sb.append(", ");
+            if (!state.isEmpty()) sb.append(state);
+            if (!zip.isEmpty()) {
+                if (!state.isEmpty()) sb.append(" ");
+                sb.append(zip);
+            }
+        }
+        if (!country.isEmpty()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(country);
+        }
+        return sb.toString();
+    }
+
+    private String safe(String value) {
+        return value != null ? value.trim() : "";
+    }
+
+    private String formatPhone(String raw) {
+        String digits = safe(raw).replaceAll("\\D", "");
+        return formatPhoneNumber(digits);
+    }
+
+    private String formatPhoneNumber(String digits) {
+        if (digits.length() == 0) return "";
+        if (digits.length() <= 3) return "(" + digits;
+        if (digits.length() <= 6) return "(" + digits.substring(0, 3) + ") " + digits.substring(3);
+        return "(" + digits.substring(0, 3) + ") " + digits.substring(3, 6) + "-" + digits.substring(6);
+    }
+
+    private void formatPhoneField(JTextField field) {
+        field.setText(formatPhone(field.getText()));
+    }
+
+    private void setupPhoneFormatting(JTextField field) {
+        ((AbstractDocument) field.getDocument()).setDocumentFilter(new DocumentFilter() {
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                    throws BadLocationException {
+                if (isUpdatingPhone) {
+                    super.replace(fb, offset, length, text, attrs);
+                    return;
+                }
+
+                String currentText = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String newText = currentText.substring(0, offset) + text +
+                                 currentText.substring(offset + length);
+
+                String digitsOnly = newText.replaceAll("[^0-9]", "");
+                if (digitsOnly.length() > 10) {
+                    return;
+                }
+
+                String formatted = formatPhoneNumber(digitsOnly);
+
+                isUpdatingPhone = true;
+                fb.remove(0, fb.getDocument().getLength());
+                fb.insertString(0, formatted, attrs);
+                isUpdatingPhone = false;
+            }
+
+            @Override
+            public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
+                if (isUpdatingPhone) {
+                    super.remove(fb, offset, length);
+                    return;
+                }
+
+                String currentText = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String newText = currentText.substring(0, offset) +
+                                 currentText.substring(offset + length);
+
+                String digitsOnly = newText.replaceAll("[^0-9]", "");
+                String formatted = formatPhoneNumber(digitsOnly);
+
+                isUpdatingPhone = true;
+                fb.remove(0, fb.getDocument().getLength());
+                fb.insertString(0, formatted, null);
+                isUpdatingPhone = false;
+            }
+        });
+    }
+
+    private String digitsOnly(String raw) {
+        String digits = safe(raw).replaceAll("\\D", "");
+        return digits.isEmpty() ? null : digits;
     }
 }

@@ -1,6 +1,7 @@
 package com.applefitnessequipment.ui;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -10,6 +11,7 @@ import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -26,12 +28,18 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 
 import com.applefitnessequipment.dao.ClientDAO;
 import com.applefitnessequipment.dao.ClientLocationDAO;
 import com.applefitnessequipment.dao.PMAgreementDAO;
+import com.applefitnessequipment.dao.PMAgreementEquipmentDAO;
 import com.applefitnessequipment.model.Client;
 import com.applefitnessequipment.model.ClientLocation;
+import com.applefitnessequipment.model.PMAgreementEquipment;
 import com.applefitnessequipment.model.PreventiveMaintenanceAgreement;
 
 /**
@@ -39,14 +47,17 @@ import com.applefitnessequipment.model.PreventiveMaintenanceAgreement;
  */
 public class PreventiveMaintenancePanel extends JPanel {
     private final PMAgreementDAO pmaDAO;
+    private final PMAgreementEquipmentDAO equipmentDAO;
     private final ClientDAO clientDAO;
     private final ClientLocationDAO locationDAO;
 
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
+    private boolean isUpdatingDate = false;
 
     private JTable pmaTable;
     private DefaultTableModel tableModel;
 
+    // changed to plain JComboBox
     private JComboBox<Client> clientCombo;
     private JComboBox<ClientLocation> billLocationCombo;
     private JComboBox<ClientLocation> jobLocationCombo;
@@ -61,10 +72,15 @@ public class PreventiveMaintenancePanel extends JPanel {
     private JTextField pricePerYearField;
     private JCheckBox signatureCheckbox;
 
+    private JTable equipmentsTable;
+    private DefaultTableModel equipmentsTableModel;
+    private final List<PMAgreementEquipment> equipments = new ArrayList<>();
+
     private PreventiveMaintenanceAgreement selectedPMA;
 
     public PreventiveMaintenancePanel() {
         this.pmaDAO = new PMAgreementDAO();
+        this.equipmentDAO = new PMAgreementEquipmentDAO();
         this.clientDAO = new ClientDAO();
         this.locationDAO = new ClientLocationDAO();
 
@@ -81,7 +97,7 @@ public class PreventiveMaintenancePanel extends JPanel {
         add(topPanel, BorderLayout.NORTH);
 
         // Table
-        String[] columns = {"ID", "Agreement #", "Client", "Start", "End", "Status", "Visit Price", "Price/Year"};
+        String[] columns = {"ID", "Quote #", "Client", "Start", "End", "Status", "Visit Price", "Price/Year"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -110,13 +126,14 @@ public class PreventiveMaintenancePanel extends JPanel {
 
         // Form
         JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(ModernUIHelper.createModernBorder("Agreement Details"));
+        formPanel.setBorder(ModernUIHelper.createModernBorder("Preventive Maintenance Agreements Details"));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         int row = 0;
 
-        // Client
+        addSectionLabel(formPanel, gbc, row++, "CLIENT");
+
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Client:*"), gbc);
         gbc.gridx = 1;
@@ -144,9 +161,10 @@ public class PreventiveMaintenancePanel extends JPanel {
         formPanel.add(jobLocationCombo, gbc);
         row++;
 
-        // Agreement #
+        addSectionLabel(formPanel, gbc, row++, "QUOTE INFO");
+
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Agreement #:*"), gbc);
+        formPanel.add(new JLabel("Quote #:*"), gbc);
         gbc.gridx = 1;
         agreementNumberField = new JTextField(20);
         ModernUIHelper.styleTextField(agreementNumberField);
@@ -159,6 +177,7 @@ public class PreventiveMaintenancePanel extends JPanel {
         gbc.gridx = 1;
         startDateField = new JTextField(20);
         ModernUIHelper.styleTextField(startDateField);
+        setupDateFormatting(startDateField);
         formPanel.add(startDateField, gbc);
         row++;
 
@@ -167,6 +186,7 @@ public class PreventiveMaintenancePanel extends JPanel {
         gbc.gridx = 1;
         endDateField = new JTextField(20);
         ModernUIHelper.styleTextField(endDateField);
+        setupDateFormatting(endDateField);
         formPanel.add(endDateField, gbc);
         row++;
 
@@ -188,7 +208,8 @@ public class PreventiveMaintenancePanel extends JPanel {
         formPanel.add(statusCombo, gbc);
         row++;
 
-        // Money
+        addSectionLabel(formPanel, gbc, row++, "PRICING");
+
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Visit Price:*"), gbc);
         gbc.gridx = 1;
@@ -206,7 +227,7 @@ public class PreventiveMaintenancePanel extends JPanel {
         row++;
 
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Tax Amount (calc):"), gbc);
+        formPanel.add(new JLabel("Tax Amount:"), gbc);
         gbc.gridx = 1;
         taxAmountField = new JTextField(20);
         taxAmountField.setEditable(false);
@@ -216,13 +237,53 @@ public class PreventiveMaintenancePanel extends JPanel {
         row++;
 
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Price Per Year (calc):"), gbc);
+        formPanel.add(new JLabel("Price Per Year:"), gbc);
         gbc.gridx = 1;
         pricePerYearField = new JTextField(20);
         pricePerYearField.setEditable(false);
         pricePerYearField.setBackground(java.awt.Color.WHITE);
         ModernUIHelper.styleTextField(pricePerYearField);
         formPanel.add(pricePerYearField, gbc);
+        row++;
+
+        addSectionLabel(formPanel, gbc, row++, "EQUIPMENT");
+
+        equipmentsTableModel = new DefaultTableModel(new String[]{"Row #", "Equipment Type", "Make", "Model", "Serial Number"}, 0) {
+            @Override
+            public boolean isCellEditable(int rowIdx, int column) {
+                return false;
+            }
+        };
+        equipmentsTable = new JTable(equipmentsTableModel);
+        ModernUIHelper.addTableToggleBehavior(equipmentsTable);
+        JScrollPane equipmentScroll = new JScrollPane(equipmentsTable);
+        equipmentScroll.setPreferredSize(new Dimension(450, 150));
+        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridwidth = 2;
+        formPanel.add(equipmentScroll, gbc);
+        gbc.gridwidth = 1;
+        row++;
+
+        JPanel equipmentButtons = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton addEquipmentButton = new JButton("Add Equipment");
+        addEquipmentButton.addActionListener(e -> addEquipment());
+        ModernUIHelper.styleButton(addEquipmentButton, "success");
+        equipmentButtons.add(addEquipmentButton);
+
+        JButton editEquipmentButton = new JButton("Edit Equipment");
+        editEquipmentButton.addActionListener(e -> editEquipment());
+        ModernUIHelper.styleButton(editEquipmentButton, "primary");
+        equipmentButtons.add(editEquipmentButton);
+
+        JButton deleteEquipmentButton = new JButton("Delete Equipment");
+        deleteEquipmentButton.addActionListener(e -> deleteEquipment());
+        ModernUIHelper.styleButton(deleteEquipmentButton, "danger");
+        equipmentButtons.add(deleteEquipmentButton);
+
+        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridwidth = 2;
+        formPanel.add(equipmentButtons, gbc);
+        gbc.gridwidth = 1;
         row++;
 
         // Signature
@@ -280,8 +341,8 @@ public class PreventiveMaintenancePanel extends JPanel {
         try {
             List<Client> clients = clientDAO.getAllClients();
             clientCombo.removeAllItems();
-            for (Client client : clients) {
-                clientCombo.addItem(client);
+            for (Client c : clients) {
+                clientCombo.addItem(c);
             }
             clientCombo.setSelectedIndex(-1);
         } catch (SQLException ex) {
@@ -311,6 +372,9 @@ public class PreventiveMaintenancePanel extends JPanel {
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading locations: " + ex.getMessage());
         }
+
+        billLocationCombo.setSelectedIndex(-1);
+        jobLocationCombo.setSelectedIndex(-1);
     }
 
     private void loadAgreements() {
@@ -330,7 +394,7 @@ public class PreventiveMaintenancePanel extends JPanel {
                 });
             }
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error loading agreements: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Error loading quotes: " + ex.getMessage());
         }
     }
 
@@ -360,9 +424,15 @@ public class PreventiveMaintenancePanel extends JPanel {
             // Derived values from DB (generated columns)
             taxAmountField.setText(valueOrDefault(selectedPMA.getTaxAmount(), ""));
             pricePerYearField.setText(valueOrDefault(selectedPMA.getPricePerYear(), ""));
+
+            // Load equipment
+            equipments.clear();
+            equipments.addAll(equipmentDAO.getEquipmentByAgreementId(selectedPMA.getPreventiveMaintenanceAgreementId()));
+            refreshEquipmentsTable();
+
             updateDerivedFields();
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error loading agreement: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Error loading quote: " + ex.getMessage());
         }
     }
 
@@ -374,12 +444,13 @@ public class PreventiveMaintenancePanel extends JPanel {
 
         try {
             if (pmaDAO.addAgreement(pma)) {
-                JOptionPane.showMessageDialog(this, "Agreement added successfully!");
+                saveEquipments(pma.getPreventiveMaintenanceAgreementId());
+                JOptionPane.showMessageDialog(this, "Preventive Maintenance Quote added successfully!");
                 clearForm();
                 loadAgreements();
             }
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error adding agreement: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Error adding quote: " + ex.getMessage());
         }
     }
 
@@ -391,29 +462,30 @@ public class PreventiveMaintenancePanel extends JPanel {
 
         try {
             if (pmaDAO.updateAgreement(selectedPMA)) {
-                JOptionPane.showMessageDialog(this, "Agreement updated successfully!");
+                saveEquipments(selectedPMA.getPreventiveMaintenanceAgreementId());
+                JOptionPane.showMessageDialog(this, "Preventive Maintenance Quote updated successfully!");
                 clearForm();
                 loadAgreements();
             }
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error updating agreement: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Error updating quote: " + ex.getMessage());
         }
     }
 
     private void deleteAgreement() {
         if (selectedPMA == null) return;
 
-        int confirm = JOptionPane.showConfirmDialog(this, "Delete this agreement?", "Confirm", JOptionPane.YES_NO_OPTION);
+        int confirm = JOptionPane.showConfirmDialog(this, "Delete this Preventive Maintenance Quote?", "Confirm", JOptionPane.YES_NO_OPTION);
         if (confirm != JOptionPane.YES_OPTION) return;
 
         try {
             if (pmaDAO.deleteAgreement(selectedPMA.getPreventiveMaintenanceAgreementId())) {
-                JOptionPane.showMessageDialog(this, "Agreement deleted successfully!");
+                JOptionPane.showMessageDialog(this, "Preventive Maintenance Quote deleted successfully!");
                 clearForm();
                 loadAgreements();
             }
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error deleting agreement: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Error deleting quote: " + ex.getMessage());
         }
     }
 
@@ -444,7 +516,12 @@ public class PreventiveMaintenancePanel extends JPanel {
         }
 
         if (agreementNumberField.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Agreement number is required.");
+            JOptionPane.showMessageDialog(this, "Quote number is required.");
+            return false;
+        }
+
+        if (equipments.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Add at least one equipment.");
             return false;
         }
 
@@ -469,6 +546,8 @@ public class PreventiveMaintenancePanel extends JPanel {
         clientCombo.setSelectedIndex(-1);
         billLocationCombo.removeAllItems();
         jobLocationCombo.removeAllItems();
+        billLocationCombo.setSelectedIndex(-1);
+        jobLocationCombo.setSelectedIndex(-1);
         agreementNumberField.setText("");
         startDateField.setText(LocalDate.now().format(dateFormatter));
         endDateField.setText(LocalDate.now().plusYears(1).format(dateFormatter));
@@ -479,6 +558,8 @@ public class PreventiveMaintenancePanel extends JPanel {
         taxAmountField.setText("");
         pricePerYearField.setText("");
         signatureCheckbox.setSelected(false);
+        equipments.clear();
+        refreshEquipmentsTable();
         selectedPMA = null;
         pmaTable.clearSelection();
         updateDerivedFields();
@@ -516,7 +597,7 @@ public class PreventiveMaintenancePanel extends JPanel {
             Client c = clientCombo.getItemAt(i);
             if (c != null && clientId.equals(c.getClientId())) {
                 clientCombo.setSelectedIndex(i);
-                break;
+                return;
             }
         }
     }
@@ -551,8 +632,217 @@ public class PreventiveMaintenancePanel extends JPanel {
         return value == null ? defaultValue : value.toString();
     }
 
+    private void addSectionLabel(JPanel panel, GridBagConstraints gbc, int row, String text) {
+        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridwidth = 2;
+        JLabel label = new JLabel(text);
+        label.setFont(label.getFont().deriveFont(java.awt.Font.BOLD, 13f));
+        label.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 1, 0, new java.awt.Color(200, 200, 200)),
+            BorderFactory.createEmptyBorder(8, 0, 4, 0)
+        ));
+        panel.add(label, gbc);
+        gbc.gridwidth = 1;
+    }
+
+    private void addEquipment() {
+        JTextField equipmentTypeField = new JTextField(30);
+        JTextField makeField = new JTextField(30);
+        JTextField modelField = new JTextField(30);
+        JTextField serialNumberField = new JTextField(30);
+
+        JPanel equipmentPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        gbc.gridx = 0; gbc.gridy = 0;
+        equipmentPanel.add(new JLabel("Equipment Type:*"), gbc);
+        gbc.gridx = 1;
+        equipmentPanel.add(equipmentTypeField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 1;
+        equipmentPanel.add(new JLabel("Make:*"), gbc);
+        gbc.gridx = 1;
+        equipmentPanel.add(makeField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 2;
+        equipmentPanel.add(new JLabel("Model:*"), gbc);
+        gbc.gridx = 1;
+        equipmentPanel.add(modelField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 3;
+        equipmentPanel.add(new JLabel("Serial Number:*"), gbc);
+        gbc.gridx = 1;
+        equipmentPanel.add(serialNumberField, gbc);
+
+        int result = JOptionPane.showConfirmDialog(this, equipmentPanel, "Add Equipment", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            String equipmentType = equipmentTypeField.getText().trim();
+            String make = makeField.getText().trim();
+            String model = modelField.getText().trim();
+            String serialNumber = serialNumberField.getText().trim();
+
+            if (equipmentType.isEmpty() || make.isEmpty() || model.isEmpty() || serialNumber.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "All fields are required.");
+                return;
+            }
+
+            PMAgreementEquipment equipment = new PMAgreementEquipment();
+            equipment.setRowNumber(equipments.size() + 1);
+            equipment.setEquipmentType(equipmentType);
+            equipment.setMake(make);
+            equipment.setModel(model);
+            equipment.setSerialNumber(serialNumber);
+            equipments.add(equipment);
+            refreshEquipmentsTable();
+        }
+    }
+
+    private void editEquipment() {
+        int selectedRow = equipmentsTable.getSelectedRow();
+        if (selectedRow < 0) {
+            JOptionPane.showMessageDialog(this, "Select an equipment to edit.");
+            return;
+        }
+        PMAgreementEquipment equipment = equipments.get(selectedRow);
+
+        JTextField equipmentTypeField = new JTextField(equipment.getEquipmentType(), 30);
+        JTextField makeField = new JTextField(equipment.getMake(), 30);
+        JTextField modelField = new JTextField(equipment.getModel(), 30);
+        JTextField serialNumberField = new JTextField(equipment.getSerialNumber(), 30);
+
+        JPanel equipmentPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        gbc.gridx = 0; gbc.gridy = 0;
+        equipmentPanel.add(new JLabel("Equipment Type:*"), gbc);
+        gbc.gridx = 1;
+        equipmentPanel.add(equipmentTypeField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 1;
+        equipmentPanel.add(new JLabel("Make:*"), gbc);
+        gbc.gridx = 1;
+        equipmentPanel.add(makeField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 2;
+        equipmentPanel.add(new JLabel("Model:*"), gbc);
+        gbc.gridx = 1;
+        equipmentPanel.add(modelField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 3;
+        equipmentPanel.add(new JLabel("Serial Number:*"), gbc);
+        gbc.gridx = 1;
+        equipmentPanel.add(serialNumberField, gbc);
+
+        int result = JOptionPane.showConfirmDialog(this, equipmentPanel, "Edit Equipment", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            String equipmentType = equipmentTypeField.getText().trim();
+            String make = makeField.getText().trim();
+            String model = modelField.getText().trim();
+            String serialNumber = serialNumberField.getText().trim();
+
+            if (equipmentType.isEmpty() || make.isEmpty() || model.isEmpty() || serialNumber.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "All fields are required.");
+                return;
+            }
+
+            equipment.setEquipmentType(equipmentType);
+            equipment.setMake(make);
+            equipment.setModel(model);
+            equipment.setSerialNumber(serialNumber);
+            refreshEquipmentsTable();
+        }
+    }
+
+    private void deleteEquipment() {
+        int selectedRow = equipmentsTable.getSelectedRow();
+        if (selectedRow < 0) {
+            JOptionPane.showMessageDialog(this, "Select an equipment to delete.");
+            return;
+        }
+        equipments.remove(selectedRow);
+        for (int i = 0; i < equipments.size(); i++) {
+            equipments.get(i).setRowNumber(i + 1);
+        }
+        refreshEquipmentsTable();
+    }
+
+    private void refreshEquipmentsTable() {
+        equipmentsTableModel.setRowCount(0);
+        for (PMAgreementEquipment equipment : equipments) {
+            equipmentsTableModel.addRow(new Object[]{
+                equipment.getRowNumber(),
+                equipment.getEquipmentType(),
+                equipment.getMake(),
+                equipment.getModel(),
+                equipment.getSerialNumber()
+            });
+        }
+    }
+
+    private void saveEquipments(Integer agreementId) throws SQLException {
+        if (agreementId == null) return;
+        equipmentDAO.deleteEquipmentByAgreementId(agreementId);
+        for (PMAgreementEquipment equipment : equipments) {
+            equipment.setPreventiveMaintenanceAgreementId(agreementId);
+            equipmentDAO.addEquipment(equipment);
+        }
+    }
+
     public void refreshData() {
         loadClients();
         loadAgreements();
+    }
+
+    /**
+     * Auto-format MM/dd/yyyy as user types and cap at 8 digits.
+     */
+    private void setupDateFormatting(JTextField field) {
+        ((AbstractDocument) field.getDocument()).setDocumentFilter(new DocumentFilter() {
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                    throws BadLocationException {
+                applyDateFormatting(fb, offset, length, text, attrs);
+            }
+
+            @Override
+            public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
+                applyDateFormatting(fb, offset, length, "", null);
+            }
+
+            private void applyDateFormatting(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                    throws BadLocationException {
+                if (isUpdatingDate) {
+                    super.replace(fb, offset, length, text, attrs);
+                    return;
+                }
+
+                String current = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String next = current.substring(0, offset) + (text == null ? "" : text) +
+                              current.substring(offset + length);
+                String digits = next.replaceAll("[^0-9]", "");
+                if (digits.length() > 8) {
+                    digits = digits.substring(0, 8);
+                }
+
+                String formatted = formatDateDigits(digits);
+                isUpdatingDate = true;
+                fb.remove(0, fb.getDocument().getLength());
+                fb.insertString(0, formatted, attrs);
+                isUpdatingDate = false;
+            }
+        });
+    }
+
+    private String formatDateDigits(String digits) {
+        if (digits.isEmpty()) return "";
+        if (digits.length() <= 2) return digits;
+        if (digits.length() <= 4) {
+            return digits.substring(0, 2) + "/" + digits.substring(2);
+        }
+        return digits.substring(0, 2) + "/" + digits.substring(2, 4) + "/" + digits.substring(4);
     }
 }

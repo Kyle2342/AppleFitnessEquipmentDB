@@ -199,7 +199,7 @@ public class DatabaseManagementApp extends JFrame {
         PreventiveMaintenancePanel pmPanel = new PreventiveMaintenancePanel();
         salesServiceTabs.addTab("Invoices", invoicesPanel);
         salesServiceTabs.addTab("Equipment Quotes", quotesPanel);
-        salesServiceTabs.addTab("Preventive Maintenance", pmPanel);
+        salesServiceTabs.addTab("Preventive Maintenance Quotes", pmPanel);
         tabbedPane.addTab("Sales & Service", salesServiceTabs);
 
         // Add change listeners to refresh data when tabs are selected

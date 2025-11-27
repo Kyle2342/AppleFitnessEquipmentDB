@@ -60,6 +60,8 @@ public class EmployeesPanel extends JPanel {
 
     // flag to prevent recursive updates in phone formatting
     private boolean isUpdatingPhone = false;
+    // flag to prevent recursive updates in DOB formatting
+    private boolean isUpdatingDob = false;
 
     public EmployeesPanel() {
         this.employeeDAO = new EmployeeDAO();
@@ -164,6 +166,7 @@ public class EmployeesPanel extends JPanel {
         gbc.gridx = 1;
         dobField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
         ModernUIHelper.styleTextField(dobField);
+        setupDobFormatting(dobField);
         formPanel.add(dobField, gbc);
         row++;
 
@@ -285,6 +288,7 @@ public class EmployeesPanel extends JPanel {
         hireDateField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
         hireDateField.setText(LocalDate.now().format(dateFormatter));
         ModernUIHelper.styleTextField(hireDateField);
+        setupDobFormatting(hireDateField);
         formPanel.add(hireDateField, gbc);
         row++;
 
@@ -294,6 +298,7 @@ public class EmployeesPanel extends JPanel {
         gbc.gridx = 1;
         terminationDateField = new JTextField(ModernUIHelper.STANDARD_FIELD_WIDTH);
         ModernUIHelper.styleTextField(terminationDateField);
+        setupDobFormatting(terminationDateField);
         formPanel.add(terminationDateField, gbc);
         row++;
 
@@ -428,6 +433,64 @@ public class EmployeesPanel extends JPanel {
      */
     private String getPhoneDigits(String formatted) {
         return formatted.replaceAll("[^0-9]", "");
+    }
+
+    // ===================== DOB FORMATTING =====================
+
+    /**
+     * Setup DOB formatting: auto-inserts slashes as MM/dd/yyyy while keeping raw value parsable.
+     */
+    private void setupDobFormatting(JTextField field) {
+        ((AbstractDocument) field.getDocument()).setDocumentFilter(new DocumentFilter() {
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                    throws BadLocationException {
+                applyDobFormatting(fb, offset, length, text, attrs);
+            }
+
+            @Override
+            public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
+                applyDobFormatting(fb, offset, length, "", null);
+            }
+
+            private void applyDobFormatting(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                    throws BadLocationException {
+                if (isUpdatingDob) {
+                    super.replace(fb, offset, length, text, attrs);
+                    return;
+                }
+
+                String current = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String next = current.substring(0, offset) + (text == null ? "" : text) +
+                              current.substring(offset + length);
+                String digits = next.replaceAll("[^0-9]", "");
+                if (digits.length() > 8) {
+                    digits = digits.substring(0, 8);
+                }
+
+                String formatted = formatDobDigits(digits);
+                isUpdatingDob = true;
+                fb.remove(0, fb.getDocument().getLength());
+                fb.insertString(0, formatted, attrs);
+                isUpdatingDob = false;
+            }
+        });
+    }
+
+    /**
+     * Convert up to 8 digits into MM/dd/yyyy-style string.
+     */
+    private String formatDobDigits(String digits) {
+        if (digits.isEmpty()) return "";
+        if (digits.length() <= 2) return digits;
+        if (digits.length() <= 4) {
+            return digits.substring(0, 2) + "/" + digits.substring(2);
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(digits.substring(0, 2)).append("/");
+        sb.append(digits.substring(2, 4)).append("/");
+        sb.append(digits.substring(4));
+        return sb.toString();
     }
 
     // ===================== DATA LOADING / FILTERING =====================

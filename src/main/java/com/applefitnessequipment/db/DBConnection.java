@@ -11,6 +11,15 @@ public class DBConnection {
     private static final String USER = "root";
     private static final String PASSWORD = "sTILLsINK8678";
 
+    static {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            DriverManager.setLoginTimeout(10);
+        } catch (ClassNotFoundException e) {
+            throw new ExceptionInInitializerError("MySQL driver not found: " + e.getMessage());
+        }
+    }
+
     private DBConnection() {} // prevent instantiation
 
     // Connection Function

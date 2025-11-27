@@ -1,6 +1,7 @@
 package com.applefitnessequipment.ui;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -10,6 +11,7 @@ import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -26,27 +28,36 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 
 import com.applefitnessequipment.dao.ClientDAO;
 import com.applefitnessequipment.dao.ClientLocationDAO;
 import com.applefitnessequipment.dao.EquipmentQuoteDAO;
+import com.applefitnessequipment.dao.EquipmentQuoteItemDAO;
 import com.applefitnessequipment.model.Client;
 import com.applefitnessequipment.model.ClientLocation;
 import com.applefitnessequipment.model.EquipmentQuote;
+import com.applefitnessequipment.model.EquipmentQuoteItem;
 
 /**
  * UI for EquipmentQuotes aligned to applefitnessequipmentdb_schema.sql.
  */
 public class EquipmentQuotesPanel extends JPanel {
     private final EquipmentQuoteDAO quoteDAO;
+    private final EquipmentQuoteItemDAO quoteItemDAO;
     private final ClientDAO clientDAO;
     private final ClientLocationDAO locationDAO;
 
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
+    private boolean isUpdatingDate = false;
 
     private JTable quotesTable;
     private DefaultTableModel tableModel;
 
+    // NOTE: now a plain JComboBox, not AutocompleteComboBox
     private JComboBox<Client> clientCombo;
     private JComboBox<ClientLocation> billLocationCombo;
     private JComboBox<ClientLocation> jobLocationCombo;
@@ -68,10 +79,15 @@ public class EquipmentQuotesPanel extends JPanel {
     private JTextField quoteTotalField;
     private JCheckBox signatureCheckbox;
 
+    private JTable quoteItemsTable;
+    private DefaultTableModel itemsTableModel;
+    private final List<EquipmentQuoteItem> quoteItems = new ArrayList<>();
+
     private EquipmentQuote selectedQuote;
 
     public EquipmentQuotesPanel() {
         this.quoteDAO = new EquipmentQuoteDAO();
+        this.quoteItemDAO = new EquipmentQuoteItemDAO();
         this.clientDAO = new ClientDAO();
         this.locationDAO = new ClientLocationDAO();
 
@@ -121,11 +137,13 @@ public class EquipmentQuotesPanel extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         int row = 0;
 
-        // Client info
+        addSectionLabel(formPanel, gbc, row++, "CLIENT");
+
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Client:*"), gbc);
         gbc.gridx = 1;
         clientCombo = new JComboBox<>();
+        clientCombo.setEditable(false); // non-typable dropdown
         clientCombo.addActionListener(e -> loadLocationsForClient());
         ModernUIHelper.styleComboBox(clientCombo);
         formPanel.add(clientCombo, gbc);
@@ -147,7 +165,8 @@ public class EquipmentQuotesPanel extends JPanel {
         formPanel.add(jobLocationCombo, gbc);
         row++;
 
-        // Quote details
+        addSectionLabel(formPanel, gbc, row++, "QUOTE INFO");
+
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Quote #*"), gbc);
         gbc.gridx = 1;
@@ -161,6 +180,7 @@ public class EquipmentQuotesPanel extends JPanel {
         gbc.gridx = 1;
         quoteDateField = new JTextField(20);
         ModernUIHelper.styleTextField(quoteDateField);
+        setupDateFormatting(quoteDateField);
         formPanel.add(quoteDateField, gbc);
         row++;
 
@@ -188,7 +208,8 @@ public class EquipmentQuotesPanel extends JPanel {
         formPanel.add(salespersonField, gbc);
         row++;
 
-        // Shipping & payment
+        addSectionLabel(formPanel, gbc, row++, "SHIPPING & PAYMENT");
+
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Ship Via:*"), gbc);
         gbc.gridx = 1;
@@ -221,11 +242,14 @@ public class EquipmentQuotesPanel extends JPanel {
         formPanel.add(fobField, gbc);
         row++;
 
-        // Amounts
+        addSectionLabel(formPanel, gbc, row++, "AMOUNTS");
+
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Subtotal:*"), gbc);
         gbc.gridx = 1;
         subtotalField = new JTextField(20);
+        subtotalField.setEditable(false);
+        subtotalField.setBackground(java.awt.Color.WHITE);
         ModernUIHelper.styleTextField(subtotalField);
         formPanel.add(subtotalField, gbc);
         row++;
@@ -234,6 +258,8 @@ public class EquipmentQuotesPanel extends JPanel {
         formPanel.add(new JLabel("Total Discount:"), gbc);
         gbc.gridx = 1;
         discountField = new JTextField(20);
+        discountField.setEditable(false);
+        discountField.setBackground(java.awt.Color.WHITE);
         ModernUIHelper.styleTextField(discountField);
         formPanel.add(discountField, gbc);
         row++;
@@ -284,6 +310,48 @@ public class EquipmentQuotesPanel extends JPanel {
         formPanel.add(quoteTotalField, gbc);
         row++;
 
+        // Items section
+        addSectionLabel(formPanel, gbc, row++, "QUOTE ITEMS");
+
+        itemsTableModel = new DefaultTableModel(
+                new String[]{"Row #", "Qty", "Model", "Description", "Unit Cost", "Disc Price", "Total"}, 0) {
+            @Override
+            public boolean isCellEditable(int rowIdx, int column) {
+                return false;
+            }
+        };
+        quoteItemsTable = new JTable(itemsTableModel);
+        ModernUIHelper.addTableToggleBehavior(quoteItemsTable);
+        JScrollPane itemsScroll = new JScrollPane(quoteItemsTable);
+        itemsScroll.setPreferredSize(new Dimension(450, 150));
+        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridwidth = 2;
+        formPanel.add(itemsScroll, gbc);
+        gbc.gridwidth = 1;
+        row++;
+
+        JPanel itemButtons = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton addItemButton = new JButton("Add Item");
+        addItemButton.addActionListener(e -> addQuoteItem());
+        ModernUIHelper.styleButton(addItemButton, "success");
+        itemButtons.add(addItemButton);
+
+        JButton editItemButton = new JButton("Edit Item");
+        editItemButton.addActionListener(e -> editQuoteItem());
+        ModernUIHelper.styleButton(editItemButton, "primary");
+        itemButtons.add(editItemButton);
+
+        JButton deleteItemButton = new JButton("Delete Item");
+        deleteItemButton.addActionListener(e -> deleteQuoteItem());
+        ModernUIHelper.styleButton(deleteItemButton, "danger");
+        itemButtons.add(deleteItemButton);
+
+        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridwidth = 2;
+        formPanel.add(itemButtons, gbc);
+        gbc.gridwidth = 1;
+        row++;
+
         // Signature
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Client Signed:"), gbc);
@@ -328,8 +396,6 @@ public class EquipmentQuotesPanel extends JPanel {
             public void removeUpdate(DocumentEvent e) { recalculateDerivedTotals(); }
             public void changedUpdate(DocumentEvent e) { recalculateDerivedTotals(); }
         };
-        subtotalField.getDocument().addDocumentListener(calcListener);
-        discountField.getDocument().addDocumentListener(calcListener);
         freightField.getDocument().addDocumentListener(calcListener);
         taxRateField.getDocument().addDocumentListener(calcListener);
 
@@ -340,10 +406,11 @@ public class EquipmentQuotesPanel extends JPanel {
         try {
             List<Client> clients = clientDAO.getAllClients();
             clientCombo.removeAllItems();
-            for (Client client : clients) {
-                clientCombo.addItem(client);
+            for (Client c : clients) {
+                clientCombo.addItem(c);
             }
-            clientCombo.setSelectedIndex(-1);
+            // clear selection
+            clientCombo.setSelectedItem(null);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading clients: " + ex.getMessage());
         }
@@ -369,6 +436,9 @@ public class EquipmentQuotesPanel extends JPanel {
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading locations: " + ex.getMessage());
         }
+
+        billLocationCombo.setSelectedIndex(-1);
+        jobLocationCombo.setSelectedIndex(-1);
     }
 
     private void loadQuotes() {
@@ -377,12 +447,12 @@ public class EquipmentQuotesPanel extends JPanel {
             tableModel.setRowCount(0);
             for (EquipmentQuote quote : quotes) {
                 tableModel.addRow(new Object[]{
-                    quote.getEquipmentQuoteId(),
-                    quote.getQuoteNumber(),
-                    getClientName(quote.getClientId()),
-                    quote.getQuoteDate() != null ? quote.getQuoteDate().format(dateFormatter) : "",
-                    quote.getStatus(),
-                    quote.getQuoteTotalAmount()
+                        quote.getEquipmentQuoteId(),
+                        quote.getQuoteNumber(),
+                        getClientName(quote.getClientId()),
+                        quote.getQuoteDate() != null ? quote.getQuoteDate().format(dateFormatter) : "",
+                        quote.getStatus(),
+                        quote.getQuoteTotalAmount()
                 });
             }
         } catch (SQLException ex) {
@@ -413,8 +483,8 @@ public class EquipmentQuotesPanel extends JPanel {
             freightTermsField.setText(selectedQuote.getFreightTerms());
             paymentTermsField.setText(selectedQuote.getPaymentTerms());
             fobField.setText(selectedQuote.getFobLocation());
-            subtotalField.setText(valueOrDefault(selectedQuote.getSubtotalAmount(), "0.00"));
-            discountField.setText(valueOrDefault(selectedQuote.getTotalDiscountAmount(), "0.00"));
+            subtotalField.setText("0.00");
+            discountField.setText("0.00");
             freightField.setText(valueOrDefault(selectedQuote.getFreightAmount(), "0.00"));
             taxRateField.setText(valueOrDefault(selectedQuote.getSalesTaxRatePercent(), "6.00"));
             signatureCheckbox.setSelected(Boolean.TRUE.equals(selectedQuote.getClientSignatureBoolean()));
@@ -423,7 +493,13 @@ public class EquipmentQuotesPanel extends JPanel {
             extendedTotalField.setText(valueOrDefault(selectedQuote.getExtendedTotalAmount(), ""));
             taxAmountField.setText(valueOrDefault(selectedQuote.getSalesTaxAmount(), ""));
             quoteTotalField.setText(valueOrDefault(selectedQuote.getQuoteTotalAmount(), ""));
-            recalculateDerivedTotals();
+
+            // Load quote items
+            quoteItems.clear();
+            quoteItems.addAll(quoteItemDAO.getItemsByQuoteId(selectedQuote.getEquipmentQuoteId()));
+            refreshItemsTable();
+
+            recalculateSubtotalFromItems();
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading quote: " + ex.getMessage());
         }
@@ -437,6 +513,7 @@ public class EquipmentQuotesPanel extends JPanel {
 
         try {
             if (quoteDAO.addQuote(quote)) {
+                saveQuoteItems(quote.getEquipmentQuoteId());
                 JOptionPane.showMessageDialog(this, "Quote added successfully!");
                 clearForm();
                 loadQuotes();
@@ -454,6 +531,7 @@ public class EquipmentQuotesPanel extends JPanel {
 
         try {
             if (quoteDAO.updateQuote(selectedQuote)) {
+                saveQuoteItems(selectedQuote.getEquipmentQuoteId());
                 JOptionPane.showMessageDialog(this, "Quote updated successfully!");
                 clearForm();
                 loadQuotes();
@@ -497,14 +575,16 @@ public class EquipmentQuotesPanel extends JPanel {
         quote.setFreightTerms(freightTermsField.getText().trim());
         quote.setPaymentTerms(paymentTermsField.getText().trim());
         quote.setFobLocation(fobField.getText().trim());
-        quote.setSubtotalAmount(new BigDecimal(subtotalField.getText().trim()));
-        quote.setTotalDiscountAmount(new BigDecimal(discountField.getText().trim()));
+        quote.setSubtotalAmount(calculateSubtotalFromItems());
+        quote.setTotalDiscountAmount(calculateDiscountFromItems());
         quote.setFreightAmount(new BigDecimal(freightField.getText().trim()));
         quote.setSalesTaxRatePercent(new BigDecimal(taxRateField.getText().trim()));
         quote.setClientSignatureBoolean(signatureCheckbox.isSelected());
     }
 
     private boolean validateForm() {
+        recalculateSubtotalFromItems();
+
         if (clientCombo.getSelectedItem() == null ||
             billLocationCombo.getSelectedItem() == null ||
             jobLocationCombo.getSelectedItem() == null) {
@@ -517,10 +597,13 @@ public class EquipmentQuotesPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Quote number, date, and contact name are required.");
             return false;
         }
+        if (quoteItems.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Add at least one quote item.");
+            return false;
+        }
         try {
             LocalDate.parse(quoteDateField.getText().trim(), dateFormatter);
             new BigDecimal(subtotalField.getText().trim());
-            new BigDecimal(discountField.getText().trim());
             new BigDecimal(freightField.getText().trim());
             new BigDecimal(taxRateField.getText().trim());
         } catch (Exception e) {
@@ -531,7 +614,7 @@ public class EquipmentQuotesPanel extends JPanel {
     }
 
     private void clearForm() {
-        clientCombo.setSelectedIndex(-1);
+        clientCombo.setSelectedItem(null);
         billLocationCombo.removeAllItems();
         jobLocationCombo.removeAllItems();
         quoteNumberField.setText("");
@@ -551,9 +634,13 @@ public class EquipmentQuotesPanel extends JPanel {
         taxAmountField.setText("");
         quoteTotalField.setText("");
         signatureCheckbox.setSelected(false);
+        quoteItems.clear();
+        refreshItemsTable();
         selectedQuote = null;
         quotesTable.clearSelection();
         recalculateDerivedTotals();
+        billLocationCombo.setSelectedIndex(-1);
+        jobLocationCombo.setSelectedIndex(-1);
     }
 
     private void recalculateDerivedTotals() {
@@ -614,8 +701,279 @@ public class EquipmentQuotesPanel extends JPanel {
         return value == null ? defaultValue : value.toString();
     }
 
+    private void addSectionLabel(JPanel panel, GridBagConstraints gbc, int row, String text) {
+        gbc.gridx = 0; gbc.gridy = row;
+        gbc.gridwidth = 2;
+        JLabel label = new JLabel(text);
+        label.setFont(label.getFont().deriveFont(java.awt.Font.BOLD, 13f));
+        label.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, new java.awt.Color(200, 200, 200)),
+                BorderFactory.createEmptyBorder(8, 0, 4, 0)
+        ));
+        panel.add(label, gbc);
+        gbc.gridwidth = 1;
+    }
+
+    private void addQuoteItem() {
+        JTextField qtyField = new JTextField(10);
+        JTextField modelField = new JTextField(30);
+        JTextField descriptionField = new JTextField(30);
+        JTextField unitCostField = new JTextField(10);
+        JTextField discPriceField = new JTextField(10);
+
+        qtyField.setText("1.00");
+        unitCostField.setText("0.00");
+        discPriceField.setText("0.00");
+
+        JPanel itemPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        gbc.gridx = 0; gbc.gridy = 0;
+        itemPanel.add(new JLabel("Qty:*"), gbc);
+        gbc.gridx = 1;
+        itemPanel.add(qtyField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 1;
+        itemPanel.add(new JLabel("Model:"), gbc);
+        gbc.gridx = 1;
+        itemPanel.add(modelField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 2;
+        itemPanel.add(new JLabel("Description:*"), gbc);
+        gbc.gridx = 1;
+        itemPanel.add(descriptionField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 3;
+        itemPanel.add(new JLabel("Unit Cost:*"), gbc);
+        gbc.gridx = 1;
+        itemPanel.add(unitCostField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 4;
+        itemPanel.add(new JLabel("Disc Unit Price:*"), gbc);
+        gbc.gridx = 1;
+        itemPanel.add(discPriceField, gbc);
+
+        int result = JOptionPane.showConfirmDialog(this, itemPanel, "Add Quote Item", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                String description = descriptionField.getText().trim();
+                if (description.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Description is required.");
+                    return;
+                }
+                BigDecimal qty = new BigDecimal(qtyField.getText().trim());
+                String model = modelField.getText().trim();
+                BigDecimal unitCost = new BigDecimal(unitCostField.getText().trim());
+                BigDecimal discPrice = new BigDecimal(discPriceField.getText().trim());
+                BigDecimal total = qty.multiply(discPrice);
+
+                EquipmentQuoteItem item = new EquipmentQuoteItem();
+                item.setRowNumber(quoteItems.size() + 1);
+                item.setQty(qty);
+                item.setModel(model.isEmpty() ? null : model);
+                item.setDescription(description);
+                item.setUnitCost(unitCost);
+                item.setDiscountUnitPrice(discPrice);
+                item.setUnitTotal(total);
+                quoteItems.add(item);
+                refreshItemsTable();
+                recalculateSubtotalFromItems();
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Invalid quantity or price.");
+            }
+        }
+    }
+
+    private void editQuoteItem() {
+        int selectedRow = quoteItemsTable.getSelectedRow();
+        if (selectedRow < 0) {
+            JOptionPane.showMessageDialog(this, "Select an item to edit.");
+            return;
+        }
+        EquipmentQuoteItem item = quoteItems.get(selectedRow);
+
+        JTextField qtyField = new JTextField(item.getQty().toString(), 10);
+        JTextField modelField = new JTextField(item.getModel() != null ? item.getModel() : "", 30);
+        JTextField descriptionField = new JTextField(item.getDescription(), 30);
+        JTextField unitCostField = new JTextField(item.getUnitCost().toString(), 10);
+        JTextField discPriceField = new JTextField(item.getDiscountUnitPrice().toString(), 10);
+
+        JPanel itemPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        gbc.gridx = 0; gbc.gridy = 0;
+        itemPanel.add(new JLabel("Qty:*"), gbc);
+        gbc.gridx = 1;
+        itemPanel.add(qtyField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 1;
+        itemPanel.add(new JLabel("Model:"), gbc);
+        gbc.gridx = 1;
+        itemPanel.add(modelField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 2;
+        itemPanel.add(new JLabel("Description:*"), gbc);
+        gbc.gridx = 1;
+        itemPanel.add(descriptionField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 3;
+        itemPanel.add(new JLabel("Unit Cost:*"), gbc);
+        gbc.gridx = 1;
+        itemPanel.add(unitCostField, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 4;
+        itemPanel.add(new JLabel("Disc Unit Price:*"), gbc);
+        gbc.gridx = 1;
+        itemPanel.add(discPriceField, gbc);
+
+        int result = JOptionPane.showConfirmDialog(this, itemPanel, "Edit Quote Item", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                String description = descriptionField.getText().trim();
+                if (description.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Description is required.");
+                    return;
+                }
+                item.setQty(new BigDecimal(qtyField.getText().trim()));
+                item.setModel(modelField.getText().trim().isEmpty() ? null : modelField.getText().trim());
+                item.setDescription(description);
+                item.setUnitCost(new BigDecimal(unitCostField.getText().trim()));
+                item.setDiscountUnitPrice(new BigDecimal(discPriceField.getText().trim()));
+                item.setUnitTotal(item.getQty().multiply(item.getDiscountUnitPrice()));
+                refreshItemsTable();
+                recalculateSubtotalFromItems();
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Invalid quantity or price.");
+            }
+        }
+    }
+
+    private void deleteQuoteItem() {
+        int selectedRow = quoteItemsTable.getSelectedRow();
+        if (selectedRow < 0) {
+            JOptionPane.showMessageDialog(this, "Select an item to delete.");
+            return;
+        }
+        quoteItems.remove(selectedRow);
+        for (int i = 0; i < quoteItems.size(); i++) {
+            quoteItems.get(i).setRowNumber(i + 1);
+        }
+        refreshItemsTable();
+        recalculateSubtotalFromItems();
+    }
+
+    private void refreshItemsTable() {
+        itemsTableModel.setRowCount(0);
+        for (EquipmentQuoteItem item : quoteItems) {
+            itemsTableModel.addRow(new Object[]{
+                    item.getRowNumber(),
+                    item.getQty(),
+                    item.getModel(),
+                    item.getDescription(),
+                    item.getUnitCost(),
+                    item.getDiscountUnitPrice(),
+                    item.getUnitTotal()
+            });
+        }
+    }
+
+    private void saveQuoteItems(Integer quoteId) throws SQLException {
+        if (quoteId == null) return;
+        quoteItemDAO.deleteItemsByQuoteId(quoteId);
+        for (EquipmentQuoteItem item : quoteItems) {
+            item.setEquipmentQuoteId(quoteId);
+            quoteItemDAO.addItem(item);
+        }
+    }
+
+    private BigDecimal calculateSubtotalFromItems() {
+        BigDecimal subtotal = BigDecimal.ZERO;
+        for (EquipmentQuoteItem item : quoteItems) {
+            if (item.getUnitTotal() != null) {
+                subtotal = subtotal.add(item.getUnitTotal());
+            }
+        }
+        return subtotal.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal calculateDiscountFromItems() {
+        BigDecimal discount = BigDecimal.ZERO;
+        for (EquipmentQuoteItem item : quoteItems) {
+            if (item.getQty() == null || item.getUnitCost() == null || item.getDiscountUnitPrice() == null) {
+                continue;
+            }
+            BigDecimal diff = item.getUnitCost().subtract(item.getDiscountUnitPrice());
+            if (diff.compareTo(BigDecimal.ZERO) < 0) {
+                diff = BigDecimal.ZERO;
+            }
+            discount = discount.add(diff.multiply(item.getQty()));
+        }
+        return discount.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private void recalculateSubtotalFromItems() {
+        BigDecimal subtotal = calculateSubtotalFromItems();
+        BigDecimal discount = calculateDiscountFromItems();
+        subtotalField.setText(subtotal.toString());
+        discountField.setText(discount.toString());
+        recalculateDerivedTotals();
+    }
+
     public void refreshData() {
         loadClients();
         loadQuotes();
+    }
+
+    /**
+     * Auto-format MM/dd/yyyy as user types and cap at 8 digits.
+     */
+    private void setupDateFormatting(JTextField field) {
+        ((AbstractDocument) field.getDocument()).setDocumentFilter(new DocumentFilter() {
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                    throws BadLocationException {
+                applyDateFormatting(fb, offset, length, text, attrs);
+            }
+
+            @Override
+            public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
+                applyDateFormatting(fb, offset, length, "", null);
+            }
+
+            private void applyDateFormatting(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                    throws BadLocationException {
+                if (isUpdatingDate) {
+                    super.replace(fb, offset, length, text, attrs);
+                    return;
+                }
+
+                String current = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String next = current.substring(0, offset) + (text == null ? "" : text) +
+                              current.substring(offset + length);
+                String digits = next.replaceAll("[^0-9]", "");
+                if (digits.length() > 8) {
+                    digits = digits.substring(0, 8);
+                }
+
+                String formatted = formatDateDigits(digits);
+                isUpdatingDate = true;
+                fb.remove(0, fb.getDocument().getLength());
+                fb.insertString(0, formatted, attrs);
+                isUpdatingDate = false;
+            }
+        });
+    }
+
+    private String formatDateDigits(String digits) {
+        if (digits.isEmpty()) return "";
+        if (digits.length() <= 2) return digits;
+        if (digits.length() <= 4) {
+            return digits.substring(0, 2) + "/" + digits.substring(2);
+        }
+        return digits.substring(0, 2) + "/" + digits.substring(2, 4) + "/" + digits.substring(4);
     }
 }

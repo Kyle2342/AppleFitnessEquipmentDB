@@ -9,7 +9,6 @@ import java.awt.Insets;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +26,10 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 
 import com.applefitnessequipment.dao.ClientDAO;
 import com.applefitnessequipment.dao.ClientLocationDAO;
@@ -53,6 +56,7 @@ public class InvoicesPanel extends JPanel {
     private final PMAgreementDAO pmaDAO;
 
     private final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
+    private boolean isUpdatingDate = false;
 
     private JTable invoicesTable;
     private DefaultTableModel invoiceTableModel;
@@ -195,7 +199,9 @@ public class InvoicesPanel extends JPanel {
         row = addField(formPanel, gbc, row, "Invoice #*:", invoiceNumberField = new JTextField(20));
         row = addField(formPanel, gbc, row, "PO Number:", poNumberField = new JTextField(20));
         row = addField(formPanel, gbc, row, "Invoice Date (MM/dd/yyyy):*", invoiceDateField = new JTextField(20));
+        setupDateFormatting(invoiceDateField);
         row = addField(formPanel, gbc, row, "Due Date (MM/dd/yyyy):*", dueDateField = new JTextField(20));
+        setupDateFormatting(dueDateField);
         row = addField(formPanel, gbc, row, "Terms:*", termsField = new JTextField(20));
 
         gbc.gridx = 0; gbc.gridy = row;
@@ -208,6 +214,7 @@ public class InvoicesPanel extends JPanel {
         row++;
 
         row = addField(formPanel, gbc, row, "Paid Date (MM/dd/yyyy):", paidDateField = new JTextField(20));
+        setupDateFormatting(paidDateField);
 
         addSectionLabel(formPanel, gbc, row++, "AMOUNTS");
 
@@ -237,7 +244,7 @@ public class InvoicesPanel extends JPanel {
         balanceDueField.setBackground(java.awt.Color.WHITE);
         row = addField(formPanel, gbc, row, "Balance Due (calc):", balanceDueField);
 
-        addSectionLabel(formPanel, gbc, row++, "ITEMS");
+        addSectionLabel(formPanel, gbc, row++, "INVOICE ITEMS");
 
         itemsTableModel = new DefaultTableModel(new String[]{"Row #", "Description", "Qty", "Rate", "Total"}, 0) {
             @Override
@@ -339,18 +346,70 @@ public class InvoicesPanel extends JPanel {
         return row + 1;
     }
 
-    private void loadClients() {
-        try {
-            List<Client> clients = clientDAO.getAllClients();
-            clientCombo.removeAllItems();
-            for (Client client : clients) {
-                clientCombo.addItem(client);
+    /**
+     * Auto-format MM/dd/yyyy as user types and cap at 8 digits.
+     */
+    private void setupDateFormatting(JTextField field) {
+        ((AbstractDocument) field.getDocument()).setDocumentFilter(new DocumentFilter() {
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                    throws BadLocationException {
+                applyDateFormatting(fb, offset, length, text, attrs);
             }
-            clientCombo.setSelectedIndex(-1);
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error loading clients: " + ex.getMessage());
-        }
+
+            @Override
+            public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
+                applyDateFormatting(fb, offset, length, "", null);
+            }
+
+            private void applyDateFormatting(FilterBypass fb, int offset, int length, String text, AttributeSet attrs)
+                    throws BadLocationException {
+                if (isUpdatingDate) {
+                    super.replace(fb, offset, length, text, attrs);
+                    return;
+                }
+
+                String current = fb.getDocument().getText(0, fb.getDocument().getLength());
+                String next = current.substring(0, offset) + (text == null ? "" : text) +
+                              current.substring(offset + length);
+                String digits = next.replaceAll("[^0-9]", "");
+                if (digits.length() > 8) {
+                    digits = digits.substring(0, 8);
+                }
+
+                String formatted = formatDateDigits(digits);
+                isUpdatingDate = true;
+                fb.remove(0, fb.getDocument().getLength());
+                fb.insertString(0, formatted, attrs);
+                isUpdatingDate = false;
+            }
+        });
     }
+
+    /**
+     * Convert up to 8 digits into MM/dd/yyyy style string.
+     */
+    private String formatDateDigits(String digits) {
+        if (digits.isEmpty()) return "";
+        if (digits.length() <= 2) return digits;
+        if (digits.length() <= 4) {
+            return digits.substring(0, 2) + "/" + digits.substring(2);
+        }
+        return digits.substring(0, 2) + "/" + digits.substring(2, 4) + "/" + digits.substring(4);
+    }
+
+private void loadClients() {
+    try {
+        List<Client> clients = clientDAO.getAllClients();
+        clientCombo.removeAllItems();
+        for (Client c : clients) {
+            clientCombo.addItem(c);
+        }
+        clientCombo.setSelectedIndex(-1);
+    } catch (SQLException ex) {
+        JOptionPane.showMessageDialog(this, "Error loading clients: " + ex.getMessage());
+    }
+}
 
     private void onClientChanged() {
         Client client = (Client) clientCombo.getSelectedItem();
@@ -378,6 +437,12 @@ public class InvoicesPanel extends JPanel {
         }
 
         loadQuotesAndAgreementsForClient(client.getClientId());
+
+        // Default to no selection
+        billLocationCombo.setSelectedIndex(-1);
+        jobLocationCombo.setSelectedIndex(-1);
+        equipmentQuoteCombo.setSelectedIndex(-1);
+        pmaCombo.setSelectedIndex(-1);
     }
 
     private void loadQuotesAndAgreementsForClient(int clientId) {
@@ -424,16 +489,16 @@ public class InvoicesPanel extends JPanel {
         }
     }
 
-    private void selectClientById(Integer clientId) {
-        if (clientId == null) return;
-        for (int i = 0; i < clientCombo.getItemCount(); i++) {
-            Client c = clientCombo.getItemAt(i);
-            if (c != null && clientId.equals(c.getClientId())) {
-                clientCombo.setSelectedIndex(i);
-                break;
-            }
+private void selectClientById(Integer clientId) {
+    if (clientId == null) return;
+    for (int i = 0; i < clientCombo.getItemCount(); i++) {
+        Client c = clientCombo.getItemAt(i);
+        if (c != null && clientId.equals(c.getClientId())) {
+            clientCombo.setSelectedIndex(i);
+            return;
         }
     }
+}
 
     private void selectLocation(JComboBox<ClientLocation> combo, Integer id) {
         if (id == null) return;
@@ -648,6 +713,10 @@ public class InvoicesPanel extends JPanel {
         jobLocationCombo.removeAllItems();
         equipmentQuoteCombo.removeAllItems();
         pmaCombo.removeAllItems();
+        billLocationCombo.setSelectedIndex(-1);
+        jobLocationCombo.setSelectedIndex(-1);
+        equipmentQuoteCombo.setSelectedIndex(-1);
+        pmaCombo.setSelectedIndex(-1);
         invoiceNumberField.setText("");
         poNumberField.setText("");
         invoiceDateField.setText(java.time.LocalDate.now().format(dateFormatter));

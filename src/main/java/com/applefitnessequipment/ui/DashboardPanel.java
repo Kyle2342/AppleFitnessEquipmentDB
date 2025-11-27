@@ -170,8 +170,8 @@ public class DashboardPanel extends JPanel {
 
         // Create stat cards
         panel.add(createStatCard("Active Clients", String.valueOf(clientCount), "With Active Contracts or Invoices", new Color(59, 130, 246)));
-        panel.add(createStatCard("Open Invoices", "$" + formatCurrency((BigDecimal) invoiceData[1]), (int) invoiceData[0] + " Invoices Outstanding", new Color(16, 185, 129)));
-        panel.add(createStatCard("Active Contracts", String.valueOf(activeContractCount), "Signed & Active", new Color(245, 158, 11)));
+        panel.add(createStatCard("Open Invoices", "$" + formatCurrency((BigDecimal) invoiceData[1]), (int) invoiceData[0] + " Invoices Unpaid", new Color(16, 185, 129)));
+        panel.add(createStatCard("Active Contracts", String.valueOf(activeContractCount), "Signed & Active Quotes", new Color(245, 158, 11)));
         panel.add(createStatCard("Pending Customer Response", String.valueOf(pendingResponseCount), "Sent Quotes", PRIMARY_RED));
 
         return panel;

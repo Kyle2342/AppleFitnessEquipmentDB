@@ -160,8 +160,7 @@ public class EmployeeTimeLogsPanel extends JPanel {
 
         int row = 0;
 
-        // Section header
-        addSectionLabel(formPanel, gbc, row++, "TIME LOG DETAILS");
+
 
         // Employee
         gbc.gridx = 0; gbc.gridy = row;
