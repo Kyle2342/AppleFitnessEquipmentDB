@@ -52,26 +52,20 @@ public class Client {
 
     @Override
     public String toString() {
-        StringBuilder display = new StringBuilder();
+        boolean isBusiness = "Business".equalsIgnoreCase(clientType);
 
-        // Add company name if present
-        if (companyName != null && !companyName.trim().isEmpty()) {
-            display.append(companyName.trim());
+        String company = companyName != null ? companyName.trim() : "";
+        String fullName = ((firstName != null ? firstName.trim() : "") + " " +
+                (lastName != null ? lastName.trim() : "")).trim();
+
+        if (isBusiness) {
+            if (!company.isEmpty()) return company;
+            if (!fullName.isEmpty()) return fullName;
+        } else { // Individual
+            if (!fullName.isEmpty()) return fullName;
+            if (!company.isEmpty()) return company;
         }
 
-        // Add first/last name if present
-        String fullName = (firstName != null ? firstName.trim() : "") + " " + (lastName != null ? lastName.trim() : "");
-        fullName = fullName.trim();
-
-        if (!fullName.isEmpty()) {
-            if (display.length() > 0) {
-                display.append(" - ").append(fullName);
-            } else {
-                display.append(fullName);
-            }
-        }
-
-        // Fallback if everything is empty
-        return display.length() > 0 ? display.toString() : "Unnamed Client";
+        return "Unnamed Client";
     }
 }

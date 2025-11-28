@@ -188,7 +188,7 @@ public class DatabaseManagementApp extends JFrame {
         EmployeesPanel employeesPanel = new EmployeesPanel();
         EmployeeTimeLogsPanel timeLogsPanel = new EmployeeTimeLogsPanel();
         employeesTabs.addTab("Employees", employeesPanel);
-        employeesTabs.addTab("Time Logs", timeLogsPanel);
+        employeesTabs.addTab("Employee Time Logs", timeLogsPanel);
         tabbedPane.addTab("Employees", employeesTabs);
 
         // Create Sales & Service category with nested tabs

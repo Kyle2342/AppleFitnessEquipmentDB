@@ -181,10 +181,7 @@ public class Employee {
     @Override
     public String toString() {
         String name = getFullName();
-        String positionSuffix = positionTitle != null && !positionTitle.trim().isEmpty()
-                ? " (" + positionTitle.trim() + ")"
-                : "";
-        return name == null ? "Unnamed Employee" : name + positionSuffix;
+        return name == null ? "Unnamed Employee" : name;
     }
 
     @Override

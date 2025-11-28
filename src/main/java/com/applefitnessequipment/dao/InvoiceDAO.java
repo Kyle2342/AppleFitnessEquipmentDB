@@ -36,7 +36,7 @@ public class InvoiceDAO {
         String sql = "SELECT * FROM Invoices WHERE InvoiceID = ?";
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, invoiceId);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -57,7 +57,7 @@ public class InvoiceDAO {
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             pstmt.setInt(1, invoice.getClientId());
             pstmt.setInt(2, invoice.getClientBillingLocationId());

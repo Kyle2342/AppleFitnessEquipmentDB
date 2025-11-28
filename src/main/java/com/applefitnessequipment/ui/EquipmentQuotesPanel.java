@@ -137,7 +137,7 @@ public class EquipmentQuotesPanel extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         int row = 0;
 
-        addSectionLabel(formPanel, gbc, row++, "CLIENT");
+        addSectionLabel(formPanel, gbc, row++, "CLIENT INFO");
 
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Client:*"), gbc);
@@ -245,7 +245,7 @@ public class EquipmentQuotesPanel extends JPanel {
         addSectionLabel(formPanel, gbc, row++, "AMOUNTS");
 
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Subtotal:*"), gbc);
+        formPanel.add(new JLabel("Subtotal:"), gbc);
         gbc.gridx = 1;
         subtotalField = new JTextField(20);
         subtotalField.setEditable(false);
@@ -281,7 +281,7 @@ public class EquipmentQuotesPanel extends JPanel {
         row++;
 
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Extended Total (calc):"), gbc);
+        formPanel.add(new JLabel("Extended Total:"), gbc);
         gbc.gridx = 1;
         extendedTotalField = new JTextField(20);
         extendedTotalField.setEditable(false);
@@ -291,7 +291,7 @@ public class EquipmentQuotesPanel extends JPanel {
         row++;
 
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Sales Tax (calc):"), gbc);
+        formPanel.add(new JLabel("Sales Tax:"), gbc);
         gbc.gridx = 1;
         taxAmountField = new JTextField(20);
         taxAmountField.setEditable(false);
@@ -301,7 +301,7 @@ public class EquipmentQuotesPanel extends JPanel {
         row++;
 
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Quote Total (calc):"), gbc);
+        formPanel.add(new JLabel("Quote Total:"), gbc);
         gbc.gridx = 1;
         quoteTotalField = new JTextField(20);
         quoteTotalField.setEditable(false);

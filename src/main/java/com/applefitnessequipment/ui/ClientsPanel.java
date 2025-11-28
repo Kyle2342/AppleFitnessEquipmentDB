@@ -148,7 +148,7 @@ public class ClientsPanel extends JPanel {
 
         // Client Type - Make dropdown bigger like text fields
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Client Type:"), gbc);
+        formPanel.add(new JLabel("Client Type:*"), gbc);
         gbc.gridx = 1;
         clientTypeCombo = new JComboBox<>(new String[]{"Individual", "Business"});
         clientTypeCombo.setFont(ModernUIHelper.NORMAL_FONT);

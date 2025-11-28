@@ -148,7 +148,7 @@ public class EmployeeTimeLogsPanel extends JPanel {
         // Right Panel - Form
         // ============================================================
         JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBorder(ModernUIHelper.createModernBorder("Time Log Details"));
+        formPanel.setBorder(ModernUIHelper.createModernBorder("Employee Time Log Details"));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -254,8 +254,9 @@ public class EmployeeTimeLogsPanel extends JPanel {
         totalHoursField = new JTextField();
         totalHoursField.setPreferredSize(standardInputSize);
         totalHoursField.setEditable(false);
+        totalHoursField.setFocusable(false);  // Prevent highlighting when clicked
         ModernUIHelper.styleTextField(totalHoursField);
-        totalHoursField.setBackground(Color.WHITE);
+        totalHoursField.setBackground(new Color(240, 240, 240));  // Light gray to indicate auto-generated
         formPanel.add(totalHoursField, gbc);
         row++;
 

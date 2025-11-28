@@ -13,6 +13,7 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -44,6 +45,9 @@ public class EmployeesPanel extends JPanel {
     private DefaultTableModel tableModel;
 
     private JTextField searchField;
+    private JComboBox<String> activeFilterCombo;
+    private JComboBox<String> typeFilterCombo;
+    private JComboBox<String> payTypeFilterCombo;
     private JTextField firstNameField, lastNameField;
     private JTextField dobField, emailField;
     private JTextField phoneNumberField;
@@ -73,10 +77,11 @@ public class EmployeesPanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // ===================== TOP: SEARCH =====================
-        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // ===================== TOP: SEARCH AND FILTERS =====================
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+
         searchPanel.add(new JLabel("Search:"));
-        searchField = new JTextField(35);
+        searchField = new JTextField(25);
         searchField.setFont(ModernUIHelper.NORMAL_FONT);
         searchField.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new java.awt.Color(180, 180, 180), 1),
@@ -88,10 +93,38 @@ public class EmployeesPanel extends JPanel {
             public void insertUpdate(DocumentEvent e) { filterEmployees(); }
         });
         searchPanel.add(searchField);
+
+        searchPanel.add(Box.createHorizontalStrut(20));
+
+        // Filter by Active
+        searchPanel.add(new JLabel("Filter by Active:"));
+        activeFilterCombo = new JComboBox<>(new String[]{"Active Only", "Inactive Only", "Show All"});
+        activeFilterCombo.setFont(ModernUIHelper.NORMAL_FONT);
+        activeFilterCombo.setPreferredSize(new java.awt.Dimension(120, 38));
+        activeFilterCombo.setSelectedIndex(0);  // Default to "Active Only"
+        activeFilterCombo.addActionListener(e -> filterEmployees());
+        searchPanel.add(activeFilterCombo);
+
+        // Filter by Type
+        searchPanel.add(new JLabel("Filter by Type:"));
+        typeFilterCombo = new JComboBox<>(new String[]{"Show All", "Full-Time", "Part-Time"});
+        typeFilterCombo.setFont(ModernUIHelper.NORMAL_FONT);
+        typeFilterCombo.setPreferredSize(new java.awt.Dimension(120, 38));
+        typeFilterCombo.addActionListener(e -> filterEmployees());
+        searchPanel.add(typeFilterCombo);
+
+        // Filter by Pay Type
+        searchPanel.add(new JLabel("Filter by Pay Type:"));
+        payTypeFilterCombo = new JComboBox<>(new String[]{"Show All", "Hourly", "Salary"});
+        payTypeFilterCombo.setFont(ModernUIHelper.NORMAL_FONT);
+        payTypeFilterCombo.setPreferredSize(new java.awt.Dimension(120, 38));
+        payTypeFilterCombo.addActionListener(e -> filterEmployees());
+        searchPanel.add(payTypeFilterCombo);
+
         add(searchPanel, BorderLayout.NORTH);
 
         // ===================== CENTER: TABLE =====================
-        String[] columns = {"ID", "Name", "Position", "Type", "Active", "Hire Date"};
+        String[] columns = {"ID", "Name", "Phone", "Email", "Position", "Type", "Active", "Address", "Pay Type", "Pay Rate"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) { return false; }
@@ -107,6 +140,23 @@ public class EmployeesPanel extends JPanel {
         employeesTable.getColumnModel().getColumn(0).setMinWidth(0);
         employeesTable.getColumnModel().getColumn(0).setMaxWidth(0);
         employeesTable.getColumnModel().getColumn(0).setWidth(0);
+
+        // Set column widths based on content
+        // Column 2: Phone - max 14 characters "(###) ###-####"
+        employeesTable.getColumnModel().getColumn(2).setPreferredWidth(120);
+        employeesTable.getColumnModel().getColumn(2).setMaxWidth(130);
+
+        // Column 5: Type - max 9 characters "Full-Time" or "Part-Time"
+        employeesTable.getColumnModel().getColumn(5).setPreferredWidth(80);
+        employeesTable.getColumnModel().getColumn(5).setMaxWidth(90);
+
+        // Column 6: Active - max 3 characters "Yes" or "No"
+        employeesTable.getColumnModel().getColumn(6).setPreferredWidth(60);
+        employeesTable.getColumnModel().getColumn(6).setMaxWidth(70);
+
+        // Column 8: Pay Type - max 6 characters "Hourly" or "Salary"
+        employeesTable.getColumnModel().getColumn(8).setPreferredWidth(80);
+        employeesTable.getColumnModel().getColumn(8).setMaxWidth(90);
 
         employeesTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
@@ -304,7 +354,7 @@ public class EmployeesPanel extends JPanel {
 
         // Active
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Active:"), gbc);
+        formPanel.add(new JLabel("Active:*"), gbc);
         gbc.gridx = 1;
         activeCheckBox = new JCheckBox();
         activeCheckBox.setSelected(true);
@@ -511,9 +561,14 @@ public class EmployeesPanel extends JPanel {
         if (allEmployees == null) return;
 
         String searchTerm = searchField.getText().trim().toLowerCase();
+        String activeFilter = (String) activeFilterCombo.getSelectedItem();
+        String typeFilter = (String) typeFilterCombo.getSelectedItem();
+        String payTypeFilter = (String) payTypeFilterCombo.getSelectedItem();
+
         tableModel.setRowCount(0);
 
         for (Employee emp : allEmployees) {
+            // Apply search filter
             boolean searchMatches =
                 searchTerm.isEmpty() ||
                 (emp.getFirstName() != null && emp.getFirstName().toLowerCase().contains(searchTerm)) ||
@@ -521,28 +576,94 @@ public class EmployeesPanel extends JPanel {
                 (emp.getPositionTitle() != null && emp.getPositionTitle().toLowerCase().contains(searchTerm)) ||
                 (emp.getEmail() != null && emp.getEmail().toLowerCase().contains(searchTerm));
 
-            if (searchMatches) {
+            // Apply active filter
+            boolean activeMatches = false;
+            if ("Active Only".equals(activeFilter)) {
+                activeMatches = emp.isActive();
+            } else if ("Inactive Only".equals(activeFilter)) {
+                activeMatches = !emp.isActive();
+            } else { // Show All
+                activeMatches = true;
+            }
+
+            // Apply type filter
+            boolean typeMatches = "Show All".equals(typeFilter) ||
+                                  typeFilter.equals(emp.getEmploymentType());
+
+            // Apply pay type filter
+            boolean payTypeMatches = "Show All".equals(payTypeFilter) ||
+                                     payTypeFilter.equals(emp.getPayType());
+
+            if (searchMatches && activeMatches && typeMatches && payTypeMatches) {
                 String fullName = emp.getFullName() != null
                     ? emp.getFullName()
                     : ( (emp.getFirstName() != null ? emp.getFirstName() : "") + " " +
                         (emp.getLastName() != null ? emp.getLastName() : "") ).trim();
 
+                String phone = emp.getPhoneNumber() != null && !emp.getPhoneNumber().isEmpty()
+                    ? formatPhoneNumber(emp.getPhoneNumber())
+                    : "";
+
+                String email = emp.getEmail() != null ? emp.getEmail() : "";
+
                 String activeDisplay = emp.isActive() ? "Yes" : "No";
 
-                String hireDateDisplay = emp.getHireDate() != null
-                    ? emp.getHireDate().toString()
-                    : "";
+                // Format address as: Street Address, City, State ZIP Code, Country
+                String address = formatAddress(emp);
+
+                String payType = emp.getPayType() != null ? emp.getPayType() : "";
+                String payRate = emp.getPayRate() != null ? emp.getPayRate().toString() : "";
 
                 tableModel.addRow(new Object[]{
                     emp.getEmployeeId(),
                     fullName,
+                    phone,
+                    email,
                     emp.getPositionTitle(),
                     emp.getEmploymentType(),
                     activeDisplay,
-                    hireDateDisplay
+                    address,
+                    payType,
+                    payRate
                 });
             }
         }
+    }
+
+    private String formatAddress(Employee emp) {
+        StringBuilder sb = new StringBuilder();
+
+        String street = emp.getStreetAddress();
+        if (street != null && !street.trim().isEmpty()) {
+            sb.append(street.trim());
+        }
+
+        String city = emp.getCity();
+        if (city != null && !city.trim().isEmpty()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(city.trim());
+        }
+
+        String state = emp.getState();
+        String zip = emp.getZipCode();
+        if ((state != null && !state.trim().isEmpty()) || (zip != null && !zip.trim().isEmpty())) {
+            if (sb.length() > 0) sb.append(", ");
+            if (state != null && !state.trim().isEmpty()) {
+                sb.append(state.trim());
+            }
+            if (zip != null && !zip.trim().isEmpty()) {
+                if (state != null && !state.trim().isEmpty()) sb.append(" ");
+                sb.append(zip.trim());
+            }
+        }
+
+        String country = emp.getCountry();
+        if (country != null && !country.trim().isEmpty()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(country.trim());
+        }
+
+        return sb.toString();
     }
 
     private void loadSelectedEmployee() {

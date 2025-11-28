@@ -132,7 +132,7 @@ public class PreventiveMaintenancePanel extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         int row = 0;
 
-        addSectionLabel(formPanel, gbc, row++, "CLIENT");
+        addSectionLabel(formPanel, gbc, row++, "CLIENT INFO");
 
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Client:*"), gbc);
@@ -208,7 +208,7 @@ public class PreventiveMaintenancePanel extends JPanel {
         formPanel.add(statusCombo, gbc);
         row++;
 
-        addSectionLabel(formPanel, gbc, row++, "PRICING");
+        addSectionLabel(formPanel, gbc, row++, "AMOUNTS");
 
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Visit Price:*"), gbc);
@@ -246,7 +246,7 @@ public class PreventiveMaintenancePanel extends JPanel {
         formPanel.add(pricePerYearField, gbc);
         row++;
 
-        addSectionLabel(formPanel, gbc, row++, "EQUIPMENT");
+        addSectionLabel(formPanel, gbc, row++, "AGREEMENT ITEMS");
 
         equipmentsTableModel = new DefaultTableModel(new String[]{"Row #", "Equipment Type", "Make", "Model", "Serial Number"}, 0) {
             @Override
@@ -265,17 +265,17 @@ public class PreventiveMaintenancePanel extends JPanel {
         row++;
 
         JPanel equipmentButtons = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton addEquipmentButton = new JButton("Add Equipment");
+        JButton addEquipmentButton = new JButton("Add Item");
         addEquipmentButton.addActionListener(e -> addEquipment());
         ModernUIHelper.styleButton(addEquipmentButton, "success");
         equipmentButtons.add(addEquipmentButton);
 
-        JButton editEquipmentButton = new JButton("Edit Equipment");
+        JButton editEquipmentButton = new JButton("Edit Item");
         editEquipmentButton.addActionListener(e -> editEquipment());
         ModernUIHelper.styleButton(editEquipmentButton, "primary");
         equipmentButtons.add(editEquipmentButton);
 
-        JButton deleteEquipmentButton = new JButton("Delete Equipment");
+        JButton deleteEquipmentButton = new JButton("Delete Item");
         deleteEquipmentButton.addActionListener(e -> deleteEquipment());
         ModernUIHelper.styleButton(deleteEquipmentButton, "danger");
         equipmentButtons.add(deleteEquipmentButton);

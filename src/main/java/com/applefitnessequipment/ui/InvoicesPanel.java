@@ -1,6 +1,7 @@
 package com.applefitnessequipment.ui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -60,6 +61,10 @@ public class InvoicesPanel extends JPanel {
 
     private JTable invoicesTable;
     private DefaultTableModel invoiceTableModel;
+    private JTextField searchField;
+    private JComboBox<String> statusFilterCombo;
+    private JComboBox<String> totalFilterCombo;
+    private JComboBox<String> balanceDueFilterCombo;
 
     private JComboBox<Client> clientCombo;
     private JComboBox<ClientLocation> billLocationCombo;
@@ -107,8 +112,52 @@ public class InvoicesPanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(javax.swing.BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
+        // Search panel at top
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        searchPanel.add(new JLabel("Search:"));
+        searchField = new JTextField(25);
+        searchField.setFont(ModernUIHelper.NORMAL_FONT);
+        searchField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new java.awt.Color(180, 180, 180), 1),
+            BorderFactory.createEmptyBorder(8, 8, 8, 8)
+        ));
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { filterInvoices(); }
+            public void removeUpdate(DocumentEvent e) { filterInvoices(); }
+            public void changedUpdate(DocumentEvent e) { filterInvoices(); }
+        });
+        searchPanel.add(searchField);
+
+        searchPanel.add(javax.swing.Box.createHorizontalStrut(20));
+
+        // Filter by Status
+        searchPanel.add(new JLabel("Filter by Status:"));
+        statusFilterCombo = new JComboBox<>(new String[]{"Show All", "Draft", "Open", "Paid", "Overdue", "Void"});
+        statusFilterCombo.setFont(ModernUIHelper.NORMAL_FONT);
+        statusFilterCombo.setPreferredSize(new java.awt.Dimension(120, 38));
+        statusFilterCombo.addActionListener(e -> filterInvoices());
+        searchPanel.add(statusFilterCombo);
+
+        // Filter by Total
+        searchPanel.add(new JLabel("Filter by Total:"));
+        totalFilterCombo = new JComboBox<>(new String[]{"Show All", "Most", "Least"});
+        totalFilterCombo.setFont(ModernUIHelper.NORMAL_FONT);
+        totalFilterCombo.setPreferredSize(new java.awt.Dimension(120, 38));
+        totalFilterCombo.addActionListener(e -> filterInvoices());
+        searchPanel.add(totalFilterCombo);
+
+        // Filter by Balance Due
+        searchPanel.add(new JLabel("Filter by Balance Due:"));
+        balanceDueFilterCombo = new JComboBox<>(new String[]{"Show All", "Most", "Least"});
+        balanceDueFilterCombo.setFont(ModernUIHelper.NORMAL_FONT);
+        balanceDueFilterCombo.setPreferredSize(new java.awt.Dimension(120, 38));
+        balanceDueFilterCombo.addActionListener(e -> filterInvoices());
+        searchPanel.add(balanceDueFilterCombo);
+
+        add(searchPanel, BorderLayout.NORTH);
+
         // Invoice table
-        String[] columns = {"ID", "Invoice #", "Client", "Invoice Date", "Due Date", "Status", "Total", "Balance Due"};
+        String[] columns = {"ID", "Invoice #", "Client", "Job Location", "Invoice Date", "Total", "Balance Due", "Due Date", "Status", "Bill Location"};
         invoiceTableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -123,6 +172,21 @@ public class InvoicesPanel extends JPanel {
         invoicesTable.getColumnModel().getColumn(0).setMinWidth(0);
         invoicesTable.getColumnModel().getColumn(0).setMaxWidth(0);
         invoicesTable.getColumnModel().getColumn(0).setWidth(0);
+
+        // Set column widths: Invoice # (9), Invoice Date (10), Due Date (10), Status (7)
+        // Amount and Balance Due should be smaller but readable
+        invoicesTable.getColumnModel().getColumn(1).setPreferredWidth(80);
+        invoicesTable.getColumnModel().getColumn(1).setMaxWidth(90);
+        invoicesTable.getColumnModel().getColumn(4).setPreferredWidth(100);  // Invoice Date
+        invoicesTable.getColumnModel().getColumn(4).setMaxWidth(110);
+        invoicesTable.getColumnModel().getColumn(5).setPreferredWidth(95);  // Total
+        invoicesTable.getColumnModel().getColumn(5).setMaxWidth(105);
+        invoicesTable.getColumnModel().getColumn(6).setPreferredWidth(105);  // Balance Due
+        invoicesTable.getColumnModel().getColumn(6).setMaxWidth(115);
+        invoicesTable.getColumnModel().getColumn(7).setPreferredWidth(100);  // Due Date
+        invoicesTable.getColumnModel().getColumn(7).setMaxWidth(110);
+        invoicesTable.getColumnModel().getColumn(8).setPreferredWidth(70);  // Status
+        invoicesTable.getColumnModel().getColumn(8).setMaxWidth(80);
 
         invoicesTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && invoicesTable.getSelectedRow() >= 0) {
@@ -141,7 +205,7 @@ public class InvoicesPanel extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         int row = 0;
 
-        addSectionLabel(formPanel, gbc, row++, "CLIENT");
+        addSectionLabel(formPanel, gbc, row++, "CLIENT INFO");
 
         gbc.gridx = 0; gbc.gridy = row;
         formPanel.add(new JLabel("Client:*"), gbc);
@@ -220,29 +284,33 @@ public class InvoicesPanel extends JPanel {
 
         subtotalAmountField = new JTextField(20);
         subtotalAmountField.setEditable(false);
-        subtotalAmountField.setBackground(java.awt.Color.WHITE);
-        row = addField(formPanel, gbc, row, "Subtotal (calc):", subtotalAmountField);
+        subtotalAmountField.setFocusable(false);
+        subtotalAmountField.setBackground(new Color(240, 240, 240));
+        row = addField(formPanel, gbc, row, "Subtotal", subtotalAmountField);
 
         taxRateField = new JTextField(20);
         row = addField(formPanel, gbc, row, "Tax Rate %:*", taxRateField);
 
         taxAmountField = new JTextField(20);
         taxAmountField.setEditable(false);
-        taxAmountField.setBackground(java.awt.Color.WHITE);
-        row = addField(formPanel, gbc, row, "Tax Amount (calc):", taxAmountField);
+        taxAmountField.setFocusable(false);
+        taxAmountField.setBackground(new Color(240, 240, 240));
+        row = addField(formPanel, gbc, row, "Tax Amount:", taxAmountField);
 
         totalAmountField = new JTextField(20);
         totalAmountField.setEditable(false);
-        totalAmountField.setBackground(java.awt.Color.WHITE);
-        row = addField(formPanel, gbc, row, "Total (calc):", totalAmountField);
+        totalAmountField.setFocusable(false);
+        totalAmountField.setBackground(new Color(240, 240, 240));
+        row = addField(formPanel, gbc, row, "Total:", totalAmountField);
 
         paymentsAppliedField = new JTextField(20);
         row = addField(formPanel, gbc, row, "Payments Applied:*", paymentsAppliedField);
 
         balanceDueField = new JTextField(20);
         balanceDueField.setEditable(false);
-        balanceDueField.setBackground(java.awt.Color.WHITE);
-        row = addField(formPanel, gbc, row, "Balance Due (calc):", balanceDueField);
+        balanceDueField.setFocusable(false);
+        balanceDueField.setBackground(new Color(240, 240, 240));
+        row = addField(formPanel, gbc, row, "Balance Due:", balanceDueField);
 
         addSectionLabel(formPanel, gbc, row++, "INVOICE ITEMS");
 
@@ -477,15 +545,77 @@ private void loadClients() {
                     invoice.getInvoiceId(),
                     invoice.getInvoiceNumber(),
                     getClientName(invoice.getClientId()),
+                    getLocationName(invoice.getClientJobLocationId()),
                     formatDate(invoice.getInvoiceDate()),
+                    invoice.getTotalAmount(),
+                    invoice.getBalanceDue(),
                     formatDate(invoice.getDueDate()),
                     invoice.getStatus(),
-                    invoice.getTotalAmount(),
-                    invoice.getBalanceDue()
+                    getLocationName(invoice.getClientBillingLocationId())
                 });
             }
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading invoices: " + ex.getMessage());
+        }
+    }
+
+    private void filterInvoices() {
+        String searchText = searchField.getText().toLowerCase().trim();
+        String statusFilter = (String) statusFilterCombo.getSelectedItem();
+        String amountFilter = (String) amountFilterCombo.getSelectedItem();
+
+        try {
+            List<Invoice> invoices = invoiceDAO.getAllInvoices();
+            invoiceTableModel.setRowCount(0);
+            for (Invoice invoice : invoices) {
+                // Search across multiple fields
+                String invoiceNumber = invoice.getInvoiceNumber() != null ? invoice.getInvoiceNumber().toLowerCase() : "";
+                String clientName = getClientName(invoice.getClientId()).toLowerCase();
+                String status = invoice.getStatus() != null ? invoice.getStatus().toLowerCase() : "";
+                String jobLocation = getLocationName(invoice.getClientJobLocationId()).toLowerCase();
+                String billLocation = getLocationName(invoice.getClientBillingLocationId()).toLowerCase();
+
+                boolean searchMatches = searchText.isEmpty() ||
+                    invoiceNumber.contains(searchText) ||
+                    clientName.contains(searchText) ||
+                    status.contains(searchText) ||
+                    jobLocation.contains(searchText) ||
+                    billLocation.contains(searchText);
+
+                // Apply status filter
+                boolean statusMatches = "Show All".equals(statusFilter) ||
+                    statusFilter.equalsIgnoreCase(invoice.getStatus());
+
+                // Apply amount filter
+                boolean amountMatches = true;
+                if (!"Show All".equals(amountFilter) && invoice.getTotalAmount() != null) {
+                    BigDecimal total = invoice.getTotalAmount();
+                    if ("Over $1000".equals(amountFilter)) {
+                        amountMatches = total.compareTo(new BigDecimal("1000")) > 0;
+                    } else if ("Over $500".equals(amountFilter)) {
+                        amountMatches = total.compareTo(new BigDecimal("500")) > 0;
+                    } else if ("Under $500".equals(amountFilter)) {
+                        amountMatches = total.compareTo(new BigDecimal("500")) < 0;
+                    }
+                }
+
+                if (searchMatches && statusMatches && amountMatches) {
+                    invoiceTableModel.addRow(new Object[]{
+                        invoice.getInvoiceId(),
+                        invoice.getInvoiceNumber(),
+                        getClientName(invoice.getClientId()),
+                        getLocationName(invoice.getClientJobLocationId()),
+                        formatDate(invoice.getInvoiceDate()),
+                        invoice.getTotalAmount(),
+                        invoice.getBalanceDue(),
+                        formatDate(invoice.getDueDate()),
+                        invoice.getStatus(),
+                        getLocationName(invoice.getClientBillingLocationId())
+                    });
+                }
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error filtering invoices: " + ex.getMessage());
         }
     }
 
@@ -538,6 +668,16 @@ private void selectClientById(Integer clientId) {
         try {
             Client client = clientDAO.getClientById(clientId);
             return client == null ? "Unknown" : client.toString();
+        } catch (SQLException e) {
+            return "Unknown";
+        }
+    }
+
+    private String getLocationName(Integer locationId) {
+        if (locationId == null) return "Unknown";
+        try {
+            ClientLocation location = locationDAO.getClientLocationById(locationId);
+            return location == null ? "Unknown" : location.toString();
         } catch (SQLException e) {
             return "Unknown";
         }
