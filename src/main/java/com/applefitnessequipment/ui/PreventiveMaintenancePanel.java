@@ -57,6 +57,11 @@ public class PreventiveMaintenancePanel extends JPanel {
     private JTable pmaTable;
     private DefaultTableModel tableModel;
 
+    private JTextField searchField;
+    private JComboBox<String> statusFilterCombo;
+    private JComboBox<String> visitFrequencyFilterCombo;
+    private JComboBox<String> agreementTotalFilterCombo;
+
     // changed to plain JComboBox
     private JComboBox<Client> clientCombo;
     private JComboBox<ClientLocation> billLocationCombo;
@@ -93,11 +98,53 @@ public class PreventiveMaintenancePanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // Search and filter panel
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+
+        topPanel.add(new JLabel("Search:"));
+        searchField = new JTextField(25);
+        searchField.setFont(ModernUIHelper.NORMAL_FONT);
+        searchField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new java.awt.Color(180, 180, 180), 1),
+            BorderFactory.createEmptyBorder(8, 8, 8, 8)
+        ));
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { filterAgreements(); }
+            public void removeUpdate(DocumentEvent e) { filterAgreements(); }
+            public void changedUpdate(DocumentEvent e) { filterAgreements(); }
+        });
+        topPanel.add(searchField);
+
+        topPanel.add(javax.swing.Box.createHorizontalStrut(20));
+
+        // Filter by Status
+        topPanel.add(new JLabel("Filter by Status:"));
+        statusFilterCombo = new JComboBox<>(new String[]{"Show All", "Draft", "Sent", "Expired", "Active", "Declined", "Canceled", "Completed"});
+        statusFilterCombo.setFont(ModernUIHelper.NORMAL_FONT);
+        statusFilterCombo.setPreferredSize(new java.awt.Dimension(120, 38));
+        statusFilterCombo.addActionListener(e -> filterAgreements());
+        topPanel.add(statusFilterCombo);
+
+        // Filter by Visit Frequency
+        topPanel.add(new JLabel("Filter by Visit Frequency:"));
+        visitFrequencyFilterCombo = new JComboBox<>(new String[]{"Show All", "Monthly", "Quarterly", "Semi-Annual", "Annual"});
+        visitFrequencyFilterCombo.setFont(ModernUIHelper.NORMAL_FONT);
+        visitFrequencyFilterCombo.setPreferredSize(new java.awt.Dimension(120, 38));
+        visitFrequencyFilterCombo.addActionListener(e -> filterAgreements());
+        topPanel.add(visitFrequencyFilterCombo);
+
+        // Filter by Agreement Total
+        topPanel.add(new JLabel("Filter by Agreement Total:"));
+        agreementTotalFilterCombo = new JComboBox<>(new String[]{"Show All", "Most", "Least"});
+        agreementTotalFilterCombo.setFont(ModernUIHelper.NORMAL_FONT);
+        agreementTotalFilterCombo.setPreferredSize(new java.awt.Dimension(120, 38));
+        agreementTotalFilterCombo.addActionListener(e -> filterAgreements());
+        topPanel.add(agreementTotalFilterCombo);
+
         add(topPanel, BorderLayout.NORTH);
 
-        // Table
-        String[] columns = {"ID", "Quote #", "Client", "Start", "End", "Status", "Visit Price", "Price/Year"};
+        // Table - reordered columns: Agreement #, Client, Job Location, Start Date, Visit Frequency, End Date, Agreement Total, Status, Bill Location
+        String[] columns = {"ID", "Agreement #", "Client", "Job Location", "Start Date", "Visit Frequency", "End Date", "Agreement Total", "Status", "Bill Location"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -114,6 +161,20 @@ public class PreventiveMaintenancePanel extends JPanel {
         pmaTable.getColumnModel().getColumn(0).setMinWidth(0);
         pmaTable.getColumnModel().getColumn(0).setMaxWidth(0);
         pmaTable.getColumnModel().getColumn(0).setWidth(0);
+
+        // Set column widths: Agreement # (11), Start Date (10), End Date (10), Status (7), Visit Frequency (15)
+        pmaTable.getColumnModel().getColumn(1).setPreferredWidth(110); // Agreement #
+        pmaTable.getColumnModel().getColumn(1).setMaxWidth(120);
+        pmaTable.getColumnModel().getColumn(4).setPreferredWidth(100); // Start Date
+        pmaTable.getColumnModel().getColumn(4).setMaxWidth(110);
+        pmaTable.getColumnModel().getColumn(5).setPreferredWidth(130); // Visit Frequency
+        pmaTable.getColumnModel().getColumn(5).setMaxWidth(140);
+        pmaTable.getColumnModel().getColumn(6).setPreferredWidth(100); // End Date
+        pmaTable.getColumnModel().getColumn(6).setMaxWidth(110);
+        pmaTable.getColumnModel().getColumn(7).setPreferredWidth(125); // Agreement Total
+        pmaTable.getColumnModel().getColumn(7).setMaxWidth(135);
+        pmaTable.getColumnModel().getColumn(8).setPreferredWidth(70);  // Status
+        pmaTable.getColumnModel().getColumn(8).setMaxWidth(80);
 
         pmaTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && pmaTable.getSelectedRow() >= 0) {
@@ -164,7 +225,7 @@ public class PreventiveMaintenancePanel extends JPanel {
         addSectionLabel(formPanel, gbc, row++, "AGREEMENT INFO");
 
         gbc.gridx = 0; gbc.gridy = row;
-        formPanel.add(new JLabel("Quote #:*"), gbc);
+        formPanel.add(new JLabel("Agreement #:*"), gbc);
         gbc.gridx = 1;
         agreementNumberField = new JTextField(20);
         ModernUIHelper.styleTextField(agreementNumberField);
@@ -231,7 +292,8 @@ public class PreventiveMaintenancePanel extends JPanel {
         gbc.gridx = 1;
         taxAmountField = new JTextField(20);
         taxAmountField.setEditable(false);
-        taxAmountField.setBackground(java.awt.Color.WHITE);
+        taxAmountField.setFocusable(false);
+        taxAmountField.setBackground(new java.awt.Color(240, 240, 240));
         ModernUIHelper.styleTextField(taxAmountField);
         formPanel.add(taxAmountField, gbc);
         row++;
@@ -241,7 +303,8 @@ public class PreventiveMaintenancePanel extends JPanel {
         gbc.gridx = 1;
         pricePerYearField = new JTextField(20);
         pricePerYearField.setEditable(false);
-        pricePerYearField.setBackground(java.awt.Color.WHITE);
+        pricePerYearField.setFocusable(false);
+        pricePerYearField.setBackground(new java.awt.Color(240, 240, 240));
         ModernUIHelper.styleTextField(pricePerYearField);
         formPanel.add(pricePerYearField, gbc);
         row++;
@@ -378,23 +441,83 @@ public class PreventiveMaintenancePanel extends JPanel {
     }
 
     private void loadAgreements() {
+        filterAgreements();
+    }
+
+    private void filterAgreements() {
+        String searchText = searchField.getText().toLowerCase().trim();
+        String statusFilter = (String) statusFilterCombo.getSelectedItem();
+        String visitFrequencyFilter = (String) visitFrequencyFilterCombo.getSelectedItem();
+        String agreementTotalFilter = (String) agreementTotalFilterCombo.getSelectedItem();
+
         try {
             List<PreventiveMaintenanceAgreement> agreements = pmaDAO.getAllAgreements();
-            tableModel.setRowCount(0);
+            List<PreventiveMaintenanceAgreement> filteredAgreements = new ArrayList<>();
+
             for (PreventiveMaintenanceAgreement pma : agreements) {
+                // Search across multiple fields
+                String agreementNumber = pma.getAgreementNumber() != null ? pma.getAgreementNumber().toLowerCase() : "";
+                String clientName = getClientName(pma.getClientId()).toLowerCase();
+                String status = pma.getStatus() != null ? pma.getStatus().toLowerCase() : "";
+                String jobLocation = getLocationName(pma.getClientJobLocationId()).toLowerCase();
+                String billLocation = getLocationName(pma.getClientBillingLocationId()).toLowerCase();
+                String visitFrequency = pma.getVisitFrequency() != null ? pma.getVisitFrequency().toLowerCase() : "";
+
+                boolean searchMatches = searchText.isEmpty() ||
+                    agreementNumber.contains(searchText) ||
+                    clientName.contains(searchText) ||
+                    status.contains(searchText) ||
+                    jobLocation.contains(searchText) ||
+                    billLocation.contains(searchText) ||
+                    visitFrequency.contains(searchText);
+
+                // Apply status filter
+                boolean statusMatches = "Show All".equals(statusFilter) ||
+                    statusFilter.equalsIgnoreCase(pma.getStatus());
+
+                // Apply visit frequency filter
+                boolean frequencyMatches = "Show All".equals(visitFrequencyFilter) ||
+                    visitFrequencyFilter.equalsIgnoreCase(pma.getVisitFrequency());
+
+                if (searchMatches && statusMatches && frequencyMatches) {
+                    filteredAgreements.add(pma);
+                }
+            }
+
+            // Sort by Agreement Total if needed
+            if ("Most".equals(agreementTotalFilter)) {
+                filteredAgreements.sort((a1, a2) -> {
+                    BigDecimal t1 = a1.getPricePerYear() != null ? a1.getPricePerYear() : BigDecimal.ZERO;
+                    BigDecimal t2 = a2.getPricePerYear() != null ? a2.getPricePerYear() : BigDecimal.ZERO;
+                    return t2.compareTo(t1); // Descending
+                });
+            } else if ("Least".equals(agreementTotalFilter)) {
+                filteredAgreements.sort((a1, a2) -> {
+                    BigDecimal t1 = a1.getPricePerYear() != null ? a1.getPricePerYear() : BigDecimal.ZERO;
+                    BigDecimal t2 = a2.getPricePerYear() != null ? a2.getPricePerYear() : BigDecimal.ZERO;
+                    return t1.compareTo(t2); // Ascending
+                });
+            }
+
+            // Populate table with filtered and sorted results
+            // Columns: Agreement #, Client, Job Location, Start Date, Visit Frequency, End Date, Agreement Total, Status, Bill Location
+            tableModel.setRowCount(0);
+            for (PreventiveMaintenanceAgreement pma : filteredAgreements) {
                 tableModel.addRow(new Object[]{
                     pma.getPreventiveMaintenanceAgreementId(),
                     pma.getAgreementNumber(),
                     getClientName(pma.getClientId()),
+                    getLocationName(pma.getClientJobLocationId()),
                     formatDate(pma.getStartDate()),
+                    pma.getVisitFrequency(),
                     formatDate(pma.getEndDate()),
+                    pma.getPricePerYear(),
                     pma.getStatus(),
-                    pma.getVisitPrice(),
-                    pma.getPricePerYear()
+                    getLocationName(pma.getClientBillingLocationId())
                 });
             }
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Error loading quotes: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Error loading agreements: " + ex.getMessage());
         }
     }
 
@@ -619,6 +742,16 @@ public class PreventiveMaintenancePanel extends JPanel {
             Client client = clientDAO.getClientById(clientId);
             if (client == null) return "Unknown";
             return client.toString();
+        } catch (SQLException e) {
+            return "Unknown";
+        }
+    }
+
+    private String getLocationName(Integer locationId) {
+        if (locationId == null) return "Unknown";
+        try {
+            ClientLocation location = locationDAO.getClientLocationById(locationId);
+            return location == null ? "Unknown" : location.toString();
         } catch (SQLException e) {
             return "Unknown";
         }

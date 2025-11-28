@@ -562,11 +562,13 @@ private void loadClients() {
     private void filterInvoices() {
         String searchText = searchField.getText().toLowerCase().trim();
         String statusFilter = (String) statusFilterCombo.getSelectedItem();
-        String amountFilter = (String) amountFilterCombo.getSelectedItem();
+        String totalFilter = (String) totalFilterCombo.getSelectedItem();
+        String balanceDueFilter = (String) balanceDueFilterCombo.getSelectedItem();
 
         try {
             List<Invoice> invoices = invoiceDAO.getAllInvoices();
-            invoiceTableModel.setRowCount(0);
+            List<Invoice> filteredInvoices = new ArrayList<>();
+
             for (Invoice invoice : invoices) {
                 // Search across multiple fields
                 String invoiceNumber = invoice.getInvoiceNumber() != null ? invoice.getInvoiceNumber().toLowerCase() : "";
@@ -586,33 +588,56 @@ private void loadClients() {
                 boolean statusMatches = "Show All".equals(statusFilter) ||
                     statusFilter.equalsIgnoreCase(invoice.getStatus());
 
-                // Apply amount filter
-                boolean amountMatches = true;
-                if (!"Show All".equals(amountFilter) && invoice.getTotalAmount() != null) {
-                    BigDecimal total = invoice.getTotalAmount();
-                    if ("Over $1000".equals(amountFilter)) {
-                        amountMatches = total.compareTo(new BigDecimal("1000")) > 0;
-                    } else if ("Over $500".equals(amountFilter)) {
-                        amountMatches = total.compareTo(new BigDecimal("500")) > 0;
-                    } else if ("Under $500".equals(amountFilter)) {
-                        amountMatches = total.compareTo(new BigDecimal("500")) < 0;
-                    }
+                if (searchMatches && statusMatches) {
+                    filteredInvoices.add(invoice);
                 }
+            }
 
-                if (searchMatches && statusMatches && amountMatches) {
-                    invoiceTableModel.addRow(new Object[]{
-                        invoice.getInvoiceId(),
-                        invoice.getInvoiceNumber(),
-                        getClientName(invoice.getClientId()),
-                        getLocationName(invoice.getClientJobLocationId()),
-                        formatDate(invoice.getInvoiceDate()),
-                        invoice.getTotalAmount(),
-                        invoice.getBalanceDue(),
-                        formatDate(invoice.getDueDate()),
-                        invoice.getStatus(),
-                        getLocationName(invoice.getClientBillingLocationId())
-                    });
-                }
+            // Sort by Total if needed
+            if ("Most".equals(totalFilter)) {
+                filteredInvoices.sort((i1, i2) -> {
+                    BigDecimal t1 = i1.getTotalAmount() != null ? i1.getTotalAmount() : BigDecimal.ZERO;
+                    BigDecimal t2 = i2.getTotalAmount() != null ? i2.getTotalAmount() : BigDecimal.ZERO;
+                    return t2.compareTo(t1); // Descending
+                });
+            } else if ("Least".equals(totalFilter)) {
+                filteredInvoices.sort((i1, i2) -> {
+                    BigDecimal t1 = i1.getTotalAmount() != null ? i1.getTotalAmount() : BigDecimal.ZERO;
+                    BigDecimal t2 = i2.getTotalAmount() != null ? i2.getTotalAmount() : BigDecimal.ZERO;
+                    return t1.compareTo(t2); // Ascending
+                });
+            }
+
+            // Sort by Balance Due if needed (overrides Total sort)
+            if ("Most".equals(balanceDueFilter)) {
+                filteredInvoices.sort((i1, i2) -> {
+                    BigDecimal b1 = i1.getBalanceDue() != null ? i1.getBalanceDue() : BigDecimal.ZERO;
+                    BigDecimal b2 = i2.getBalanceDue() != null ? i2.getBalanceDue() : BigDecimal.ZERO;
+                    return b2.compareTo(b1); // Descending
+                });
+            } else if ("Least".equals(balanceDueFilter)) {
+                filteredInvoices.sort((i1, i2) -> {
+                    BigDecimal b1 = i1.getBalanceDue() != null ? i1.getBalanceDue() : BigDecimal.ZERO;
+                    BigDecimal b2 = i2.getBalanceDue() != null ? i2.getBalanceDue() : BigDecimal.ZERO;
+                    return b1.compareTo(b2); // Ascending
+                });
+            }
+
+            // Populate table with filtered and sorted results
+            invoiceTableModel.setRowCount(0);
+            for (Invoice invoice : filteredInvoices) {
+                invoiceTableModel.addRow(new Object[]{
+                    invoice.getInvoiceId(),
+                    invoice.getInvoiceNumber(),
+                    getClientName(invoice.getClientId()),
+                    getLocationName(invoice.getClientJobLocationId()),
+                    formatDate(invoice.getInvoiceDate()),
+                    invoice.getTotalAmount(),
+                    invoice.getBalanceDue(),
+                    formatDate(invoice.getDueDate()),
+                    invoice.getStatus(),
+                    getLocationName(invoice.getClientBillingLocationId())
+                });
             }
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error filtering invoices: " + ex.getMessage());

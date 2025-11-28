@@ -97,10 +97,10 @@ public class EmployeesPanel extends JPanel {
         searchPanel.add(Box.createHorizontalStrut(20));
 
         // Filter by Active
-        searchPanel.add(new JLabel("Filter by Active:"));
+        searchPanel.add(new JLabel("Filter by Employee:"));
         activeFilterCombo = new JComboBox<>(new String[]{"Active Only", "Inactive Only", "Show All"});
         activeFilterCombo.setFont(ModernUIHelper.NORMAL_FONT);
-        activeFilterCombo.setPreferredSize(new java.awt.Dimension(120, 38));
+        activeFilterCombo.setPreferredSize(new java.awt.Dimension(135, 38));
         activeFilterCombo.setSelectedIndex(0);  // Default to "Active Only"
         activeFilterCombo.addActionListener(e -> filterEmployees());
         searchPanel.add(activeFilterCombo);
@@ -109,7 +109,7 @@ public class EmployeesPanel extends JPanel {
         searchPanel.add(new JLabel("Filter by Type:"));
         typeFilterCombo = new JComboBox<>(new String[]{"Show All", "Full-Time", "Part-Time"});
         typeFilterCombo.setFont(ModernUIHelper.NORMAL_FONT);
-        typeFilterCombo.setPreferredSize(new java.awt.Dimension(120, 38));
+        typeFilterCombo.setPreferredSize(new java.awt.Dimension(135, 38));
         typeFilterCombo.addActionListener(e -> filterEmployees());
         searchPanel.add(typeFilterCombo);
 
@@ -117,7 +117,7 @@ public class EmployeesPanel extends JPanel {
         searchPanel.add(new JLabel("Filter by Pay Type:"));
         payTypeFilterCombo = new JComboBox<>(new String[]{"Show All", "Hourly", "Salary"});
         payTypeFilterCombo.setFont(ModernUIHelper.NORMAL_FONT);
-        payTypeFilterCombo.setPreferredSize(new java.awt.Dimension(120, 38));
+        payTypeFilterCombo.setPreferredSize(new java.awt.Dimension(135, 38));
         payTypeFilterCombo.addActionListener(e -> filterEmployees());
         searchPanel.add(payTypeFilterCombo);
 

@@ -56,7 +56,7 @@ public class PMAgreementDAO {
                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             pstmt.setInt(1, pma.getClientId());
             pstmt.setInt(2, pma.getClientBillingLocationId());

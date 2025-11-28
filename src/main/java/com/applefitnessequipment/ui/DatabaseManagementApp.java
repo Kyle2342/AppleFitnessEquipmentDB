@@ -13,7 +13,9 @@ import javax.swing.JTabbedPane;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
+import com.applefitnessequipment.dao.CompanyDAO;
 import com.applefitnessequipment.db.DBConnection;
+import com.applefitnessequipment.model.Company;
 
 public class DatabaseManagementApp extends JFrame {
     private JTabbedPane tabbedPane;
@@ -301,12 +303,60 @@ public class DatabaseManagementApp extends JFrame {
         }
         contentPanel.add(logoPanel);
 
-        String info = "<html><body style='font-family: Segoe UI; font-size: 13px; text-align: center; width: 700px;'>" +
-            "<h1 style='color: #CC2229; font-size: 26px; margin: 10px 0 5px 0;'>Apple Fitness Equipment</h1>" +
+        // Load company data from database
+        Company company = null;
+        try {
+            CompanyDAO companyDAO = new CompanyDAO();
+            company = companyDAO.getCompany();
+        } catch (Exception e) {
+            System.err.println("Error loading company data: " + e.getMessage());
+        }
+
+        // Format phone number: (###) ###-####
+        String formattedPhone = "";
+        String formattedFax = "";
+        if (company != null) {
+            if (company.getPhone() != null && company.getPhone().length() == 10) {
+                String phone = company.getPhone();
+                formattedPhone = "(" + phone.substring(0, 3) + ") " + phone.substring(3, 6) + "-" + phone.substring(6);
+            }
+            if (company.getFax() != null && company.getFax().length() == 10) {
+                String fax = company.getFax();
+                formattedFax = "(" + fax.substring(0, 3) + ") " + fax.substring(3, 6) + "-" + fax.substring(6);
+            }
+        }
+
+        String info = "<html><body style='font-family: Segoe UI; font-size: 13px; text-align: center; width: 750px;'>" +
+            "<h1 style='color: #CC2229; font-size: 26px; margin: 10px 0 5px 0;'>" +
+            (company != null ? company.getCompanyName() : "Apple Fitness Equipment") + "</h1>" +
             "<h2 style='color: #333; font-size: 18px; font-weight: normal; margin: 0 0 5px 0;'>Database Management System</h2>" +
             "<p style='color: #666; font-size: 14px; margin: 0 0 15px 0;'>Version 1.0</p>" +
-            "<hr style='border: 1px solid #eee; margin: 15px 0;'>" +
-            "<p style='font-size: 13px; margin-bottom: 15px;'>This application provides a comprehensive interface for managing the Apple Fitness Equipment database.</p>" +
+            "<hr style='border: 1px solid #eee; margin: 15px 0;'>";
+
+        // Company information section
+        if (company != null) {
+            info += "<div style='margin-bottom: 20px;'>" +
+                "<h3 style='color: #CC2229; font-size: 15px; margin: 10px 0;'>Company Information</h3>" +
+                "<table style='margin: 0 auto; text-align: left; font-size: 12px;'>" +
+                "<tr><td style='padding: 4px 10px; font-weight: bold;'>Address:</td><td style='padding: 4px 10px;'>" +
+                company.getStreetAddress() + "</td></tr>" +
+                "<tr><td style='padding: 4px 10px;'></td><td style='padding: 4px 10px;'>" +
+                company.getCity() + ", " + company.getState() + " " + company.getZipCode() + "</td></tr>" +
+                "<tr><td style='padding: 4px 10px;'></td><td style='padding: 4px 10px;'>" +
+                company.getCounty() + " County, " + company.getCountry() + "</td></tr>" +
+                "<tr><td style='padding: 4px 10px; font-weight: bold;'>Phone:</td><td style='padding: 4px 10px;'>" +
+                formattedPhone + "</td></tr>" +
+                "<tr><td style='padding: 4px 10px; font-weight: bold;'>Fax:</td><td style='padding: 4px 10px;'>" +
+                formattedFax + "</td></tr>" +
+                "<tr><td style='padding: 4px 10px; font-weight: bold;'>Email:</td><td style='padding: 4px 10px;'>" +
+                company.getEmail() + "</td></tr>" +
+                "<tr><td style='padding: 4px 10px; font-weight: bold;'>Website:</td><td style='padding: 4px 10px;'>" +
+                company.getWebsiteURL() + "</td></tr>" +
+                "</table></div>" +
+                "<hr style='border: 1px solid #eee; margin: 15px 0;'>";
+        }
+
+        info += "<p style='font-size: 13px; margin-bottom: 15px;'>This application provides a comprehensive interface for managing the Apple Fitness Equipment database.</p>" +
             "<table style='width: 100%; text-align: left;'><tr><td style='vertical-align: top; padding-right: 20px;'>" +
             "<h3 style='color: #CC2229; font-size: 15px; margin: 10px 0;'>Features:</h3>" +
             "<ul style='font-size: 12px; line-height: 1.6; margin: 0; padding-left: 20px;'>" +

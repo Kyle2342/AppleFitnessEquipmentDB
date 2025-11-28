@@ -57,6 +57,10 @@ public class EquipmentQuotesPanel extends JPanel {
     private JTable quotesTable;
     private DefaultTableModel tableModel;
 
+    private JTextField searchField;
+    private JComboBox<String> statusFilterCombo;
+    private JComboBox<String> totalFilterCombo;
+
     // NOTE: now a plain JComboBox, not AutocompleteComboBox
     private JComboBox<Client> clientCombo;
     private JComboBox<ClientLocation> billLocationCombo;
@@ -100,11 +104,45 @@ public class EquipmentQuotesPanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // Search and filter panel
+        JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+
+        topPanel.add(new JLabel("Search:"));
+        searchField = new JTextField(25);
+        searchField.setFont(ModernUIHelper.NORMAL_FONT);
+        searchField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new java.awt.Color(180, 180, 180), 1),
+            BorderFactory.createEmptyBorder(8, 8, 8, 8)
+        ));
+        searchField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { filterQuotes(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { filterQuotes(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { filterQuotes(); }
+        });
+        topPanel.add(searchField);
+
+        topPanel.add(javax.swing.Box.createHorizontalStrut(20));
+
+        // Filter by Status
+        topPanel.add(new JLabel("Filter by Status:"));
+        statusFilterCombo = new JComboBox<>(new String[]{"Show All", "Draft", "Sent", "Expired", "Active", "Declined", "Canceled", "Completed"});
+        statusFilterCombo.setFont(ModernUIHelper.NORMAL_FONT);
+        statusFilterCombo.setPreferredSize(new java.awt.Dimension(120, 38));
+        statusFilterCombo.addActionListener(e -> filterQuotes());
+        topPanel.add(statusFilterCombo);
+
+        // Filter by Quote Total
+        topPanel.add(new JLabel("Filter by Quote Total:"));
+        totalFilterCombo = new JComboBox<>(new String[]{"Show All", "Most", "Least"});
+        totalFilterCombo.setFont(ModernUIHelper.NORMAL_FONT);
+        totalFilterCombo.setPreferredSize(new java.awt.Dimension(120, 38));
+        totalFilterCombo.addActionListener(e -> filterQuotes());
+        topPanel.add(totalFilterCombo);
+
         add(topPanel, BorderLayout.NORTH);
 
         // Table
-        String[] columns = {"ID", "Quote #", "Client", "Date", "Status", "Total"};
+        String[] columns = {"ID", "Quote #", "Client", "Job Location", "Quote Date", "Quote Total", "Status", "Bill Location"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -119,6 +157,16 @@ public class EquipmentQuotesPanel extends JPanel {
         quotesTable.getColumnModel().getColumn(0).setMinWidth(0);
         quotesTable.getColumnModel().getColumn(0).setMaxWidth(0);
         quotesTable.getColumnModel().getColumn(0).setWidth(0);
+
+        // Set column widths: Quote # (9), Quote Date (10), Status (7)
+        quotesTable.getColumnModel().getColumn(1).setPreferredWidth(80);
+        quotesTable.getColumnModel().getColumn(1).setMaxWidth(90);
+        quotesTable.getColumnModel().getColumn(4).setPreferredWidth(100);  // Quote Date
+        quotesTable.getColumnModel().getColumn(4).setMaxWidth(110);
+        quotesTable.getColumnModel().getColumn(5).setPreferredWidth(95);  // Quote Total
+        quotesTable.getColumnModel().getColumn(5).setMaxWidth(105);
+        quotesTable.getColumnModel().getColumn(6).setPreferredWidth(70);  // Status
+        quotesTable.getColumnModel().getColumn(6).setMaxWidth(80);
 
         quotesTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && quotesTable.getSelectedRow() >= 0) {
@@ -249,7 +297,8 @@ public class EquipmentQuotesPanel extends JPanel {
         gbc.gridx = 1;
         subtotalField = new JTextField(20);
         subtotalField.setEditable(false);
-        subtotalField.setBackground(java.awt.Color.WHITE);
+        subtotalField.setFocusable(true);
+        subtotalField.setBackground(new java.awt.Color(240, 240, 240));
         ModernUIHelper.styleTextField(subtotalField);
         formPanel.add(subtotalField, gbc);
         row++;
@@ -259,7 +308,8 @@ public class EquipmentQuotesPanel extends JPanel {
         gbc.gridx = 1;
         discountField = new JTextField(20);
         discountField.setEditable(false);
-        discountField.setBackground(java.awt.Color.WHITE);
+        discountField.setFocusable(true);
+        discountField.setBackground(new java.awt.Color(240, 240, 240));
         ModernUIHelper.styleTextField(discountField);
         formPanel.add(discountField, gbc);
         row++;
@@ -285,7 +335,8 @@ public class EquipmentQuotesPanel extends JPanel {
         gbc.gridx = 1;
         extendedTotalField = new JTextField(20);
         extendedTotalField.setEditable(false);
-        extendedTotalField.setBackground(java.awt.Color.WHITE);
+        extendedTotalField.setFocusable(true);
+        extendedTotalField.setBackground(new java.awt.Color(240, 240, 240));
         ModernUIHelper.styleTextField(extendedTotalField);
         formPanel.add(extendedTotalField, gbc);
         row++;
@@ -295,7 +346,8 @@ public class EquipmentQuotesPanel extends JPanel {
         gbc.gridx = 1;
         taxAmountField = new JTextField(20);
         taxAmountField.setEditable(false);
-        taxAmountField.setBackground(java.awt.Color.WHITE);
+        taxAmountField.setFocusable(true);
+        taxAmountField.setBackground(new java.awt.Color(240, 240, 240));
         ModernUIHelper.styleTextField(taxAmountField);
         formPanel.add(taxAmountField, gbc);
         row++;
@@ -305,7 +357,8 @@ public class EquipmentQuotesPanel extends JPanel {
         gbc.gridx = 1;
         quoteTotalField = new JTextField(20);
         quoteTotalField.setEditable(false);
-        quoteTotalField.setBackground(java.awt.Color.WHITE);
+        quoteTotalField.setFocusable(true);
+        quoteTotalField.setBackground(new java.awt.Color(240, 240, 240));
         ModernUIHelper.styleTextField(quoteTotalField);
         formPanel.add(quoteTotalField, gbc);
         row++;
@@ -442,17 +495,69 @@ public class EquipmentQuotesPanel extends JPanel {
     }
 
     private void loadQuotes() {
+        filterQuotes();
+    }
+
+    private void filterQuotes() {
+        String searchText = searchField.getText().toLowerCase().trim();
+        String statusFilter = (String) statusFilterCombo.getSelectedItem();
+        String totalFilter = (String) totalFilterCombo.getSelectedItem();
+
         try {
             List<EquipmentQuote> quotes = quoteDAO.getAllQuotes();
-            tableModel.setRowCount(0);
+            List<EquipmentQuote> filteredQuotes = new ArrayList<>();
+
             for (EquipmentQuote quote : quotes) {
+                // Search across multiple fields
+                String quoteNumber = quote.getQuoteNumber() != null ? quote.getQuoteNumber().toLowerCase() : "";
+                String clientName = getClientName(quote.getClientId()).toLowerCase();
+                String status = quote.getStatus() != null ? quote.getStatus().toLowerCase() : "";
+                String jobLocation = getLocationName(quote.getClientJobLocationId()).toLowerCase();
+                String billLocation = getLocationName(quote.getClientBillingLocationId()).toLowerCase();
+
+                boolean searchMatches = searchText.isEmpty() ||
+                    quoteNumber.contains(searchText) ||
+                    clientName.contains(searchText) ||
+                    status.contains(searchText) ||
+                    jobLocation.contains(searchText) ||
+                    billLocation.contains(searchText);
+
+                // Apply status filter
+                boolean statusMatches = "Show All".equals(statusFilter) ||
+                    statusFilter.equalsIgnoreCase(quote.getStatus());
+
+                if (searchMatches && statusMatches) {
+                    filteredQuotes.add(quote);
+                }
+            }
+
+            // Sort by Quote Total if needed
+            if ("Most".equals(totalFilter)) {
+                filteredQuotes.sort((q1, q2) -> {
+                    BigDecimal t1 = q1.getQuoteTotalAmount() != null ? q1.getQuoteTotalAmount() : BigDecimal.ZERO;
+                    BigDecimal t2 = q2.getQuoteTotalAmount() != null ? q2.getQuoteTotalAmount() : BigDecimal.ZERO;
+                    return t2.compareTo(t1); // Descending
+                });
+            } else if ("Least".equals(totalFilter)) {
+                filteredQuotes.sort((q1, q2) -> {
+                    BigDecimal t1 = q1.getQuoteTotalAmount() != null ? q1.getQuoteTotalAmount() : BigDecimal.ZERO;
+                    BigDecimal t2 = q2.getQuoteTotalAmount() != null ? q2.getQuoteTotalAmount() : BigDecimal.ZERO;
+                    return t1.compareTo(t2); // Ascending
+                });
+            }
+
+            // Populate table with filtered and sorted results
+            tableModel.setRowCount(0);
+            for (EquipmentQuote quote : filteredQuotes) {
                 tableModel.addRow(new Object[]{
                         quote.getEquipmentQuoteId(),
                         quote.getQuoteNumber(),
                         getClientName(quote.getClientId()),
+                        getLocationName(quote.getClientJobLocationId()),
                         quote.getQuoteDate() != null ? quote.getQuoteDate().format(dateFormatter) : "",
+                        quote.getQuoteTotalAmount(),
                         quote.getStatus(),
-                        quote.getQuoteTotalAmount()
+                        getLocationName(quote.getClientBillingLocationId())
                 });
             }
         } catch (SQLException ex) {
@@ -646,11 +751,11 @@ public class EquipmentQuotesPanel extends JPanel {
     private void recalculateDerivedTotals() {
         try {
             BigDecimal subtotal = new BigDecimal(subtotalField.getText().trim());
-            BigDecimal discount = new BigDecimal(discountField.getText().trim());
             BigDecimal freight = new BigDecimal(freightField.getText().trim());
             BigDecimal taxRate = new BigDecimal(taxRateField.getText().trim());
 
-            BigDecimal extendedTotal = subtotal.subtract(discount).add(freight);
+            // Extended Total = Subtotal + Freight (discount already applied in subtotal)
+            BigDecimal extendedTotal = subtotal.add(freight);
             BigDecimal taxAmount = extendedTotal.multiply(taxRate)
                     .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
             BigDecimal quoteTotal = extendedTotal.add(taxAmount);
@@ -692,6 +797,16 @@ public class EquipmentQuotesPanel extends JPanel {
         try {
             Client client = clientDAO.getClientById(clientId);
             return client == null ? "Unknown" : client.toString();
+        } catch (SQLException e) {
+            return "Unknown";
+        }
+    }
+
+    private String getLocationName(Integer locationId) {
+        if (locationId == null) return "Unknown";
+        try {
+            ClientLocation location = locationDAO.getClientLocationById(locationId);
+            return location == null ? "Unknown" : location.toString();
         } catch (SQLException e) {
             return "Unknown";
         }
@@ -767,6 +882,13 @@ public class EquipmentQuotesPanel extends JPanel {
                 String model = modelField.getText().trim();
                 BigDecimal unitCost = new BigDecimal(unitCostField.getText().trim());
                 BigDecimal discPrice = new BigDecimal(discPriceField.getText().trim());
+
+                // Validate that discounted price is not greater than unit cost
+                if (discPrice.compareTo(unitCost) > 0) {
+                    JOptionPane.showMessageDialog(this, "Disc Unit Price cannot be greater than Unit Cost.");
+                    return;
+                }
+
                 BigDecimal total = qty.multiply(discPrice);
 
                 EquipmentQuoteItem item = new EquipmentQuoteItem();
@@ -838,11 +960,21 @@ public class EquipmentQuotesPanel extends JPanel {
                     JOptionPane.showMessageDialog(this, "Description is required.");
                     return;
                 }
+
+                BigDecimal unitCost = new BigDecimal(unitCostField.getText().trim());
+                BigDecimal discPrice = new BigDecimal(discPriceField.getText().trim());
+
+                // Validate that discounted price is not greater than unit cost
+                if (discPrice.compareTo(unitCost) > 0) {
+                    JOptionPane.showMessageDialog(this, "Disc Unit Price cannot be greater than Unit Cost.");
+                    return;
+                }
+
                 item.setQty(new BigDecimal(qtyField.getText().trim()));
                 item.setModel(modelField.getText().trim().isEmpty() ? null : modelField.getText().trim());
                 item.setDescription(description);
-                item.setUnitCost(new BigDecimal(unitCostField.getText().trim()));
-                item.setDiscountUnitPrice(new BigDecimal(discPriceField.getText().trim()));
+                item.setUnitCost(unitCost);
+                item.setDiscountUnitPrice(discPrice);
                 item.setUnitTotal(item.getQty().multiply(item.getDiscountUnitPrice()));
                 refreshItemsTable();
                 recalculateSubtotalFromItems();
