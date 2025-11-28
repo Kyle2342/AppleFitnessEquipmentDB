@@ -83,6 +83,9 @@ public class EmployeeTimeLogsPanel extends JPanel {
                     JList<?> list, Object value, int index,
                     boolean isSelected, boolean cellHasFocus) {
 
+                if (value == null) {
+                    value = "Show All";
+                }
                 Component comp = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 if (!isSelected) {
                     comp.setBackground(Color.WHITE);
@@ -342,12 +345,16 @@ public class EmployeeTimeLogsPanel extends JPanel {
             employeeCombo.removeAllItems();
             filterEmployeeCombo.removeAllItems();
 
+            // Add "Show All" option first for filter combo
+            filterEmployeeCombo.addItem(null);
+
             for (Employee emp : employees) {
                 employeeCombo.addItem(emp);
                 filterEmployeeCombo.addItem(emp);
             }
 
             employeeCombo.setSelectedIndex(-1);
+            filterEmployeeCombo.setSelectedIndex(0);  // Default to "Show All"
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(this, "Error loading employees: " + ex.getMessage(),
                 "Database Error", JOptionPane.ERROR_MESSAGE);
