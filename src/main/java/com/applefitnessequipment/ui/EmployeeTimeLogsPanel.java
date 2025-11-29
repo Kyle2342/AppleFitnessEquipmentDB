@@ -238,6 +238,11 @@ public class EmployeeTimeLogsPanel extends JPanel {
         gbc.gridx = 1;
         timeInField = createMaskedField("##:##");
         timeInField.setPreferredSize(standardInputSize);
+        timeInField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { updateTotalHoursDisplay(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { updateTotalHoursDisplay(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { updateTotalHoursDisplay(); }
+        });
         formPanel.add(timeInField, gbc);
         row++;
 
@@ -247,6 +252,11 @@ public class EmployeeTimeLogsPanel extends JPanel {
         gbc.gridx = 1;
         timeOutField = createMaskedField("##:##");
         timeOutField.setPreferredSize(standardInputSize);
+        timeOutField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { updateTotalHoursDisplay(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { updateTotalHoursDisplay(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { updateTotalHoursDisplay(); }
+        });
         formPanel.add(timeOutField, gbc);
         row++;
 
@@ -336,6 +346,41 @@ public class EmployeeTimeLogsPanel extends JPanel {
             JFormattedTextField field = new JFormattedTextField();
             ModernUIHelper.styleTextField(field);
             return field;
+        }
+    }
+
+    // Auto-update Total Hours field as user types TimeIn/TimeOut
+    private void updateTotalHoursDisplay() {
+        String timeInText = timeInField.getText().trim();
+        String timeOutText = timeOutField.getText().trim();
+
+        // Check if both fields have valid time format (HH:mm)
+        if (timeInText.length() == 5 && timeOutText.length() == 5 &&
+            !timeInText.contains("_") && !timeOutText.contains("_")) {
+            try {
+                LocalTime timeIn = LocalTime.parse(timeInText, timeFormatter);
+                LocalTime timeOut = LocalTime.parse(timeOutText, timeFormatter);
+
+                if (timeOut.isAfter(timeIn)) {
+                    // Calculate hours using the same logic as the model
+                    EmployeeTimeLog tempLog = new EmployeeTimeLog();
+                    tempLog.setTimeIn(timeIn);
+                    tempLog.setTimeOut(timeOut);
+                    tempLog.recalculateTotalHours();
+
+                    if (tempLog.getTotalHours() != null) {
+                        totalHoursField.setText(tempLog.getTotalHours().toString());
+                    } else {
+                        totalHoursField.setText("");
+                    }
+                } else {
+                    totalHoursField.setText("");
+                }
+            } catch (DateTimeParseException e) {
+                totalHoursField.setText("");
+            }
+        } else {
+            totalHoursField.setText("");
         }
     }
 
