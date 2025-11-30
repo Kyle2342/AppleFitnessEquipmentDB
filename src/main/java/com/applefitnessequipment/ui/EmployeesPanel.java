@@ -412,15 +412,6 @@ public class EmployeesPanel extends JPanel {
         formScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         formScrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
-        // Add mouse listener to clear table selection when clicking on form panel background
-        // This allows you to work on the form without the table interfering
-        formPanel.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mousePressed(java.awt.event.MouseEvent e) {
-                employeesTable.clearSelection();
-                // Don't clear the form - let user keep their typed data
-            }
-        });
-
         add(formScrollPane, BorderLayout.EAST);
     }
 
