@@ -379,6 +379,17 @@ public class InvoicesPanel extends JPanel {
 
         JScrollPane formScroll = new JScrollPane(formPanel);
         formScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        formScroll.getVerticalScrollBar().setUnitIncrement(16);
+
+        // Add mouse listener to clear table selection when clicking on form panel background
+        // This allows you to work on the form without the table interfering
+        formPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                invoicesTable.clearSelection();
+                // Don't clear the form - let user keep their typed data
+            }
+        });
+
         add(formScroll, BorderLayout.EAST);
 
         DocumentListener totalsListener = new DocumentListener() {

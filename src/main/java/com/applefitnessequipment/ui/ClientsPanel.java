@@ -216,6 +216,7 @@ public class ClientsPanel extends JPanel {
         notesArea.setFont(ModernUIHelper.NORMAL_FONT);
         JScrollPane notesScroll = new JScrollPane(notesArea);
         notesScroll.setPreferredSize(new Dimension(250, 70));  // Fixed smaller height
+        notesScroll.getVerticalScrollBar().setUnitIncrement(16);
         formPanel.add(notesScroll, gbc);
         row++;
 
@@ -258,6 +259,15 @@ public class ClientsPanel extends JPanel {
         buttonPanel.add(clearButton);
 
         formPanel.add(buttonPanel, gbc);
+
+        // Add mouse listener to clear table selection when clicking on form panel background
+        // This allows you to work on the form without the table interfering
+        formPanel.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent e) {
+                clientsTable.clearSelection();
+                // Don't clear the form - let user keep their typed data
+            }
+        });
 
         add(formPanel, BorderLayout.EAST);
     }

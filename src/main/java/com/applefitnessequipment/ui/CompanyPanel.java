@@ -165,6 +165,7 @@ public class CompanyPanel extends JPanel {
         // Wrap form in scroll pane for smaller screens
         JScrollPane scrollPane = new JScrollPane(formPanel);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         add(scrollPane, BorderLayout.CENTER);
     }
 

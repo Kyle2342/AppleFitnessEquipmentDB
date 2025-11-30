@@ -327,39 +327,39 @@ public class DatabaseManagementApp extends JFrame {
         }
 
         String info = "<html><body style='font-family: Segoe UI; font-size: 13px; text-align: center; width: 750px;'>" +
-            "<h1 style='color: #CC2229; font-size: 26px; margin: 10px 0 5px 0;'>" +
+            "<h1 style='color: #CC2229; font-size: 24px; margin: 5px 0 3px 0;'>" +
             (company != null ? company.getCompanyName() : "Apple Fitness Equipment") + "</h1>" +
-            "<h2 style='color: #333; font-size: 18px; font-weight: normal; margin: 0 0 5px 0;'>Database Management System</h2>" +
-            "<p style='color: #666; font-size: 14px; margin: 0 0 15px 0;'>Version 1.0</p>" +
-            "<hr style='border: 1px solid #eee; margin: 15px 0;'>";
+            "<h2 style='color: #333; font-size: 16px; font-weight: normal; margin: 0 0 3px 0;'>Database Management System</h2>" +
+            "<p style='color: #666; font-size: 13px; margin: 0 0 8px 0;'>Version 1.0</p>" +
+            "<hr style='border: 1px solid #eee; margin: 8px 0;'>";
 
         // Company information section
         if (company != null) {
-            info += "<div style='margin-bottom: 20px;'>" +
-                "<h3 style='color: #CC2229; font-size: 15px; margin: 10px 0;'>Company Information</h3>" +
-                "<table style='margin: 0 auto; text-align: left; font-size: 12px;'>" +
-                "<tr><td style='padding: 4px 10px; font-weight: bold;'>Address:</td><td style='padding: 4px 10px;'>" +
+            info += "<div style='margin-bottom: 10px;'>" +
+                "<h3 style='color: #CC2229; font-size: 14px; margin: 5px 0;'>Company Information</h3>" +
+                "<table style='margin: 0 auto; text-align: left; font-size: 11px;'>" +
+                "<tr><td style='padding: 2px 10px; font-weight: bold;'>Address:</td><td style='padding: 2px 10px;'>" +
                 company.getStreetAddress() + "</td></tr>" +
-                "<tr><td style='padding: 4px 10px;'></td><td style='padding: 4px 10px;'>" +
+                "<tr><td style='padding: 2px 10px;'></td><td style='padding: 2px 10px;'>" +
                 company.getCity() + ", " + company.getState() + " " + company.getZipCode() + "</td></tr>" +
-                "<tr><td style='padding: 4px 10px;'></td><td style='padding: 4px 10px;'>" +
+                "<tr><td style='padding: 2px 10px;'></td><td style='padding: 2px 10px;'>" +
                 company.getCounty() + " County, " + company.getCountry() + "</td></tr>" +
-                "<tr><td style='padding: 4px 10px; font-weight: bold;'>Phone:</td><td style='padding: 4px 10px;'>" +
+                "<tr><td style='padding: 2px 10px; font-weight: bold;'>Phone:</td><td style='padding: 2px 10px;'>" +
                 formattedPhone + "</td></tr>" +
-                "<tr><td style='padding: 4px 10px; font-weight: bold;'>Fax:</td><td style='padding: 4px 10px;'>" +
+                "<tr><td style='padding: 2px 10px; font-weight: bold;'>Fax:</td><td style='padding: 2px 10px;'>" +
                 formattedFax + "</td></tr>" +
-                "<tr><td style='padding: 4px 10px; font-weight: bold;'>Email:</td><td style='padding: 4px 10px;'>" +
+                "<tr><td style='padding: 2px 10px; font-weight: bold;'>Email:</td><td style='padding: 2px 10px;'>" +
                 company.getEmail() + "</td></tr>" +
-                "<tr><td style='padding: 4px 10px; font-weight: bold;'>Website:</td><td style='padding: 4px 10px;'>" +
+                "<tr><td style='padding: 2px 10px; font-weight: bold;'>Website:</td><td style='padding: 2px 10px;'>" +
                 company.getWebsiteURL() + "</td></tr>" +
                 "</table></div>" +
-                "<hr style='border: 1px solid #eee; margin: 15px 0;'>";
+                "<hr style='border: 1px solid #eee; margin: 8px 0;'>";
         }
 
-        info += "<p style='font-size: 13px; margin-bottom: 15px;'>This application provides a comprehensive interface for managing the Apple Fitness Equipment database.</p>" +
+        info += "<p style='font-size: 12px; margin-bottom: 8px;'>This application provides a comprehensive interface for managing the Apple Fitness Equipment database.</p>" +
             "<table style='width: 100%; text-align: left;'><tr><td style='vertical-align: top; padding-right: 20px;'>" +
-            "<h3 style='color: #CC2229; font-size: 15px; margin: 10px 0;'>Features:</h3>" +
-            "<ul style='font-size: 12px; line-height: 1.6; margin: 0; padding-left: 20px;'>" +
+            "<h3 style='color: #CC2229; font-size: 14px; margin: 5px 0;'>Features:</h3>" +
+            "<ul style='font-size: 11px; line-height: 1.4; margin: 0; padding-left: 20px;'>" +
             "<li><b>Client Management:</b> Add, edit, delete, and search clients</li>" +
             "<li><b>Location Management:</b> Manage billing and job locations</li>" +
             "<li><b>Employee Management:</b> Track employee info and pay rates</li>" +
@@ -369,8 +369,8 @@ public class DatabaseManagementApp extends JFrame {
             "<li><b>Equipment Quotes:</b> Generate sales quotes</li>" +
             "</ul>" +
             "</td><td style='vertical-align: top;'>" +
-            "<h3 style='color: #CC2229; font-size: 15px; margin: 10px 0;'>Usage Instructions:</h3>" +
-            "<ul style='font-size: 12px; line-height: 1.6; margin: 0; padding-left: 20px;'>" +
+            "<h3 style='color: #CC2229; font-size: 14px; margin: 5px 0;'>Usage Instructions:</h3>" +
+            "<ul style='font-size: 11px; line-height: 1.4; margin: 0; padding-left: 20px;'>" +
             "<li><b>Navigation:</b> Use tabs to switch sections</li>" +
             "<li><b>Adding:</b> Fill form fields, click 'Add'</li>" +
             "<li><b>Editing:</b> Select row, modify, click 'Update'</li>" +
@@ -379,17 +379,12 @@ public class DatabaseManagementApp extends JFrame {
             "<li><b>Required:</b> Fields with (*) are required</li>" +
             "</ul>" +
             "</td></tr></table>" +
-            "<p style='font-size: 11px; color: #666; margin-top: 15px;'>Database: localhost:3306/applefitnessequipmentdb</p>" +
+            "<p style='font-size: 10px; color: #666; margin-top: 8px;'>© 2025 Apple Fitness Equipment</p>" +
             "</body></html>";
 
         JLabel infoLabel = new JLabel(info);
         infoLabel.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
         contentPanel.add(infoLabel);
-
-        // Wrap in scroll pane to handle overflow
-        javax.swing.JScrollPane scrollPane = new javax.swing.JScrollPane(contentPanel);
-        scrollPane.setBorder(null);
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
         // Use GridBagConstraints to center content both horizontally and vertically
         java.awt.GridBagConstraints gbc = new java.awt.GridBagConstraints();
