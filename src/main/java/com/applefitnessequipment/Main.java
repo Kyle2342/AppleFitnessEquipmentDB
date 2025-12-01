@@ -33,8 +33,6 @@ public class Main {
                 app.setVisible(true);
                 app.setLocationRelativeTo(null); 
                 System.out.println("Apple Fitness Equipment Database Management System started successfully!");
-                System.out.println("Database: applefitnessequipmentdb");
-                System.out.println("User: root");
             } catch (Exception e) {
                 System.err.println("Error starting application: " + e.getMessage());
                 e.printStackTrace();

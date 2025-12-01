@@ -6,23 +6,22 @@ import java.sql.SQLException;
 
 public class DBConnection {
 
-    // Connection Information
-    private static final String URL =  "jdbc:mysql://localhost:3306/applefitnessequipmentdb?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC";
-    private static final String USER = "root";
-    private static final String PASSWORD = "sTILLsINK8678";
+    // Towson DB credentials
+    private static final String ID = "kmattox2";   // NetID
+    private static final String USER = ID;         // Username = NetID
 
-    static {
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            DriverManager.setLoginTimeout(10);
-        } catch (ClassNotFoundException e) {
-            throw new ExceptionInInitializerError("MySQL driver not found: " + e.getMessage());
-        }
-    }
+    private static final String PASSWORD = "COSC*rjils";
 
-    private DBConnection() {} // prevent instantiation
+    // Towson JDBC URL
+    private static final String URL =
+        "jdbc:mysql://triton.towson.edu:3360/" + ID + "db"
+        + "?serverTimezone=America/New_York"
+        + "&useSSL=false"
+        + "&allowPublicKeyRetrieval=true";
 
-    // Connection Function
+    private DBConnection() {} // Prevent instantiation
+
+    // Connection function
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASSWORD);
     }
