@@ -117,13 +117,10 @@ public class EmployeeTimeLogsPanel extends JPanel {
         ModernUIHelper.styleTable(timeLogsTable);
         ModernUIHelper.addTableToggleBehavior(timeLogsTable, this::clearForm);
 
-        // Hide ID + Employee technical column
+        // Hide ID column only
         timeLogsTable.getColumnModel().getColumn(0).setMinWidth(0);
         timeLogsTable.getColumnModel().getColumn(0).setMaxWidth(0);
         timeLogsTable.getColumnModel().getColumn(0).setWidth(0);
-        timeLogsTable.getColumnModel().getColumn(1).setMinWidth(0);
-        timeLogsTable.getColumnModel().getColumn(1).setMaxWidth(0);
-        timeLogsTable.getColumnModel().getColumn(1).setWidth(0);
 
         timeLogsTable.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
